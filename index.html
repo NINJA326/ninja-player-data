@@ -214,19 +214,10 @@
 
         <div id="comment" class="tabview">
           <div class="section">
-            <h3>AIコーチ所見</h3>
+            <h3>コーチ所見</h3>
             <div class="notice">ChatGPTで作成した所見を貼り付けるか、コーチが直接入力して保存します。</div>
             <div style="height:10px"></div>
-            <div class="row" style="flex-wrap:wrap">
-              
-              
-              <select id="commentTone" class="input" style="width:auto">
-                <option value="balanced">標準</option>
-                <option value="encouraging">前向き・励ます</option>
-                <option value="direct">課題を明確に</option>
-                <option value="parent">保護者向け</option>
-              </select>
-            </div>
+            
             
             <textarea id="coachComment" class="input" placeholder="ChatGPTで作成した所見を貼り付けるか、コーチが直接入力してください"></textarea>
             <div style="height:10px"></div>
@@ -259,11 +250,9 @@
     <div class="chatgpt-flow">
       <div class="chatgpt-flow-main">
         <button id="copyChatGptPromptBtn" class="btn">ChatGPT用データをコピー</button>
-        <button id="openChatGptBtn" class="btn secondary">ChatGPTを開く</button>
+        
       </div>
-      <div class="chatgpt-note">
-        ①で選手データと所見作成指示をコピーし、②でChatGPTを開きます。身長が30日以上、シューティングが7日以上未入力の場合は、入力間隔への注意もプロンプトへ自動追加されます。
-      </div>
+      <div class="chatgpt-note">選手データと所見作成指示をコピーします。ChatGPTへ貼り付けて所見を作成してください。</div>
     </div>
     <textarea id="dataSummaryText" class="input data-summary-text" readonly placeholder="選手を選択するとデータまとめが表示されます。"></textarea>
     <div id="dataSummaryCopyStatus" class="copy-success"></div>
@@ -777,7 +766,7 @@ async function copyChatGptPrompt(){
   $('#dataSummaryText').select();
   document.execCommand('copy');
  }
- $('#dataSummaryCopyStatus').textContent='ChatGPT用のデータをコピーしました。次に「ChatGPTを開く」を押してください。';
+ $('#dataSummaryCopyStatus').textContent='ChatGPT用のデータをコピーしました。次に「」を押してください。';
  setTimeout(()=>$('#dataSummaryCopyStatus').textContent='',2500);
 }
 
@@ -810,7 +799,6 @@ function savePlayerFeedback(){
 
 $('#refreshDataSummaryBtn').onclick=refreshDataSummary;
 $('#copyChatGptPromptBtn').onclick=copyChatGptPrompt;
-$('#openChatGptBtn').onclick=()=>window.open('https://chatgpt.com/','_blank','noopener');
 $('#saveFeedbackBtn').onclick=savePlayerFeedback;
 
 loadPlayers();
