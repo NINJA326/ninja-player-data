@@ -145,7 +145,7 @@
 <div class="app">
   <header class="topbar">
     <div class="brand"><h1>NINJA PLAYER DATA</h1><p>全選手｜成長・シューティング・アジリティ</p></div>
-    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">一括取得・キャッシュ対応</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
+    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v25 一括取得・ボタン修正版</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
   </header>
 
   <main class="layout">
@@ -480,7 +480,8 @@ async function apiWithRetry(action,params={},options={}){
  }
  throw lastError;
 }
-){return new Promise((resolve,reject)=>{if(!state.apiUrl)return reject(new Error('NO_API'));const cb='ninjaCb'+Date.now()+Math.random().toString(36).slice(2);const q=new URLSearchParams({action,callback:cb,...params});const s=document.createElement('script');window[cb]=data=>{resolve(data);delete window[cb];s.remove()};s.onerror=()=>{reject(new Error('接続失敗'));delete window[cb];s.remove()};s.src=state.apiUrl+(state.apiUrl.includes('?')?'&':'?')+q.toString();document.body.appendChild(s);setTimeout(()=>{if(window[cb]){delete window[cb];s.remove();reject(new Error('タイムアウト'))}},15000)})}
+
+
 
 async function loadPlayers(){
  $('#connectionStatus').textContent=state.apiUrl?'接続中':'デモデータ';
@@ -779,8 +780,8 @@ $('#searchInput').oninput=renderPlayers;$('#categoryFilter').onchange=renderPlay
  if(state.selected)selectPlayer(state.selected.playerId,{force:true});
 };$('#saveCommentBtn').onclick=saveComment;
 $('#settingsBtn').onclick=()=>{$('#apiUrlInput').value=state.apiUrl;$('#settingsModal').classList.add('open')};$('#closeSettingsBtn').onclick=()=>$('#settingsModal').classList.remove('open');
-$('#saveSettingsBtn').onclick=()=>{state.apiUrl=$('#apiUrlInput').value.trim().replace(/\/$/,'');localStorage.setItem('ninjaPlayerApiUrl',state.apiUrl);$('#settingsModal').classList.remove('open');state.selected=null;$('#detail').hidden=true;$('#emptyState').hidden=false;loadPlayers()};
-$('#demoBtn').onclick=()=>{state.apiUrl='';localStorage.removeItem('ninjaPlayerApiUrl');$('#settingsModal').classList.remove('open');state.selected=null;$('#detail').hidden=true;$('#emptyState').hidden=false;loadPlayers()};
+$('#saveSettingsBtn').onclick=()=>{state.apiUrl=$('#apiUrlInput').value.trim().replace(/\/$/,'');state.playerCache.clear();state.inflight.clear();localStorage.setItem('ninjaPlayerApiUrl',state.apiUrl);$('#settingsModal').classList.remove('open');state.selected=null;$('#detail').hidden=true;$('#emptyState').hidden=false;loadPlayers()};
+$('#demoBtn').onclick=()=>{state.apiUrl='';state.playerCache.clear();state.inflight.clear();localStorage.removeItem('ninjaPlayerApiUrl');$('#settingsModal').classList.remove('open');state.selected=null;$('#detail').hidden=true;$('#emptyState').hidden=false;loadPlayers()};
 if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 
 
@@ -1194,6 +1195,14 @@ $('#closeParentReportBtn').onclick=closeParentReport;
 $('#copyLineMessageBtn').onclick=copyParentLineMessage;
 $('#parentReportModal').onclick=e=>{if(e.target===$('#parentReportModal'))closeParentReport()};
 $('#saveFeedbackBtn').onclick=savePlayerFeedback;
+
+
+window.addEventListener('error',event=>{
+ console.error('NINJA PLAYER DATA error:',event.error||event.message);
+});
+$('#settingsModal')?.addEventListener('click',e=>{
+ if(e.target===$('#settingsModal'))$('#settingsModal').classList.remove('open');
+});
 
 fillPromptSettings();
 loadPlayers();

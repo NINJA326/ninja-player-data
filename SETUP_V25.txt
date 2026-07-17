@@ -1,0 +1,19 @@
+NINJA PLAYER DATA v25 更新手順
+
+1. ZIPを解凍します。
+2. GitHubの ninja-player-data リポジトリへ以下を上書きします。
+   ・index.html
+   ・manifest.json
+   ・sw.js
+   ・icon.svg
+3. Apps Scriptをまだv24対応していない場合は、GAS_V24_REFACTOR_PATCH.jsも適用します。
+4. GitHub Pagesの反映を待ちます。
+5. Chromeでアプリを開き、Command + Shift + Rを押します。
+6. まだ古い画面の場合：
+   Chrome設定 → プライバシーとセキュリティ → 閲覧履歴データを削除
+   または、DevTools → Application → Service Workers → Unregister
+7. 「接続設定」「プロンプト設定」を押して動作確認します。
+
+原因：
+v24のindex.html内に旧API関数の一部が残り、JavaScript全体が構文エラーで停止していました。
+v25ではその断片を削除し、全インラインJavaScriptの構文検査を通しています。
