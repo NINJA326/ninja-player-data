@@ -426,6 +426,26 @@ function renderPlayers(){
  $('#playerList').innerHTML=list.map(p=>`<div class="player ${state.selected&&state.selected.playerId===p.playerId?'active':''}" data-id="${esc(p.playerId)}"><div class="player-name">${esc(p.name)}</div><div class="player-meta">${esc(p.category||'カテゴリー未設定')}</div></div>`).join('')||'<div class="empty" style="padding:30px 10px">該当する選手がいません</div>';
  document.querySelectorAll('.player').forEach(x=>x.onclick=()=>selectPlayer(x.dataset.id));
 }
+
+function normalizeAgilityApiRecords(rows){
+ return (rows||[]).map(row=>{
+  const type=String(row.type||row.metric||row['種目']||row['項目']||'').trim();
+  const value=row.value??row.record??row['記録']??row['測定値'];
+  const rec={
+   date:row.date||row.recordDate||row.measurementDate||row['測定日']||row['日付']||row.createdAt||'',
+   shuttleRun:row.shuttleRun??null,
+   sideSteps:row.sideSteps??null,
+   lCone:row.lCone??null,
+   verticalJump:row.verticalJump??null
+  };
+  if(type.includes('シャトル'))rec.shuttleRun=value;
+  else if(type.includes('反復横'))rec.sideSteps=value;
+  else if(type.includes('L字'))rec.lCone=value;
+  else if(type.includes('垂直'))rec.verticalJump=value;
+  return rec;
+ }).filter(r=>[r.shuttleRun,r.sideSteps,r.lCone,r.verticalJump].some(v=>v!==null&&v!==undefined&&v!==''));
+}
+
 async function selectPlayer(id){
  id=String(id);
  const p=state.players.find(x=>String(x.playerId)===id);
@@ -472,7 +492,7 @@ async function selectPlayer(id){
   }
 
   const growth=g.records||[];
-  const agility=a.records||[];
+  const agility=normalizeAgilityApiRecords(a.records||[]);
   state.currentData={growth,shooting:s,agility};
   renderGrowth(growth);
   renderShooting(s);
@@ -520,6 +540,8 @@ function normalizePositionName(name){
 }
 function courtPosition(name,type){
  const n=normalizePositionName(name);
+ const t=normalizePositionName(type);
+ if(n.includes('マイカン')||t.includes('マイカン'))return {x:50,y:91};
  const is3=String(type).includes('3P');
  const map=[
   {keys:['右0度','右コーナー','右底角'],x:is3?94:76,y:is3?82:82},
@@ -576,15 +598,44 @@ function showShotDetail(x){
  $('#courtDetail').innerHTML=`<h4>${esc(x.position)}</h4><span class="category">${esc(x.type)}</span><div class="court-detail-value">${x.rate}%</div><div class="small">${crown}${rank.label}ランク</div><div class="court-detail-grid"><div><small>成功</small><strong>${x.made??'-'}本</strong></div><div><small>試投</small><strong>${x.attempts}本</strong></div></div>`;
 }
 function renderAgility(records){
- const root=$('#agilityCards');
- if(!root)return;
+ const cards=$('#agilityCards');
+ const table=$('#agilityTable');
  const latest=latestAgilityValues(records);
  const items=Object.values(latest);
- if(!items.length){
-  root.innerHTML='<div class="empty">アジリティの記録はありません。</div>';
-  return;
+
+ if(cards){
+  cards.innerHTML=items.length
+   ? items.map(x=>`<div class="metric"><small>${esc(x.label)}<span class="latest-badge">最新</span></small><strong>${esc(String(x.value))}${esc(x.unit)}</strong><span>${esc(x.date)}</span></div>`).join('')
+   : '<div class="empty">スプレッドシートにアジリティ記録がありません。</div>';
  }
- root.innerHTML=items.map(x=>`<div class="metric"><small>${esc(x.label)}<span class="latest-badge">最新</span></small><strong>${esc(String(x.value))}</strong><span>${esc(x.date)}</span></div>`).join('');
+
+ if(table){
+  const defs=[
+   ['shuttleRun','シャトルラン','回',false],
+   ['sideSteps','反復横跳び','回',false],
+   ['lCone','L字コーンドリル','秒',true],
+   ['verticalJump','垂直跳び','cm',false]
+  ];
+  const rows=[];
+  defs.forEach(([key,label,unit,lowerBetter])=>{
+   const valid=(records||[]).filter(r=>r[key]!==null&&r[key]!==undefined&&r[key]!=='')
+     .sort((a,b)=>dateKey(b).localeCompare(dateKey(a)));
+   valid.forEach((r,i)=>{
+    const prev=valid[i+1];
+    let diff='--';
+    if(prev && Number.isFinite(Number(r[key])) && Number.isFinite(Number(prev[key]))){
+     const d=Number(r[key])-Number(prev[key]);
+     diff=`${d>0?'+':''}${Number(d.toFixed(2))}${unit}`;
+     if((lowerBetter&&d<0)||(!lowerBetter&&d>0))diff+='（改善）';
+    }
+    rows.push({date:dateKey(r)||'日付不明',label,value:`${r[key]}${unit}`,diff});
+   });
+  });
+  rows.sort((a,b)=>b.date.localeCompare(a.date)||a.label.localeCompare(b.label,'ja'));
+  table.innerHTML=rows.length
+   ? rows.map(r=>`<tr><td>${esc(r.date)}</td><td>${esc(r.label)}</td><td>${esc(r.value)}</td><td>${esc(r.diff)}</td></tr>`).join('')
+   : '<tr><td colspan="4">スプレッドシートに記録がありません</td></tr>';
+ }
 }
 
 function buildAiPayload(){
@@ -690,15 +741,15 @@ function summarizeShooting(s){
 function latestAgilityValues(records){
  const sorted=(records||[]).slice().sort((a,b)=>dateKey(b).localeCompare(dateKey(a)));
  const defs=[
-  ['shuttleRun','シャトルラン'],
-  ['sideSteps','反復横跳び'],
-  ['lCone','L字コーン'],
-  ['verticalJump','垂直跳び']
+  ['shuttleRun','シャトルラン','回'],
+  ['sideSteps','反復横跳び','回'],
+  ['lCone','L字コーンドリル','秒'],
+  ['verticalJump','垂直跳び','cm']
  ];
  const latest={};
- defs.forEach(([key,label])=>{
+ defs.forEach(([key,label,unit])=>{
   const row=sorted.find(r=>r && r[key]!==null && r[key]!==undefined && r[key]!=='');
-  if(row)latest[key]={label,value:row[key],date:dateKey(row)||'日付不明'};
+  if(row)latest[key]={key,label,value:row[key],date:dateKey(row)||'日付不明',unit};
  });
  return latest;
 }
@@ -707,7 +758,7 @@ function summarizeAgility(records){
  const latest=latestAgilityValues(records);
  const vals=Object.values(latest);
  if(!vals.length){lines.push('記録なし');return lines}
- vals.forEach(x=>lines.push(`・${x.label}：${x.value}（${x.date}）`));
+ vals.forEach(x=>lines.push(`・${x.label}：${x.value}${x.unit}（${x.date}）`));
  return lines;
 }
 
