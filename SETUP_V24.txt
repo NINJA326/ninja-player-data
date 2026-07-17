@@ -1,0 +1,28 @@
+NINJA PLAYER DATA v24 更新手順
+
+【重要】
+v24はフロント画面だけでなく、Google Apps Script側の更新も必要です。
+
+1. ZIP内の index.html / manifest.json / sw.js / icon.svg をGitHubへ上書き
+2. スプレッドシートを開く
+3. 拡張機能 → Apps Script
+4. 既存コード内の doGet(e) を削除
+5. GAS_V24_REFACTOR_PATCH.js 内の doGet(e) を貼り付け
+6. 同ファイルの prepareReadSheets_ と playerBundle_ をコード末尾へ追加
+7. 保存
+8. デプロイ → デプロイを管理 → 編集
+9. バージョンを「新しいバージョン」にしてデプロイ
+10. アプリを開き Command + Shift + R
+
+【v24の通信構造】
+・選手クリック時のWeb通信は playerBundle 1回
+・身体測定、シューティング、アジリティを同じ応答で受信
+・取得結果を5分間メモリキャッシュ
+・同一通信の重複実行を防止
+・45秒タイムアウト、1回自動再試行
+・別選手へ素早く切り替えた場合、古い応答を画面へ反映しない
+・データ更新ボタンでキャッシュを削除して再取得
+
+【タイムアウト対策】
+旧コードはGETのたびに setupSheets_ を実行し、移行・並べ替え処理まで走る可能性がありました。
+v24では必須シートが不足している場合だけ setupSheets_ を実行します。
