@@ -118,6 +118,19 @@
       @page{size:A4 portrait;margin:0}
     }
 
+
+    .prompt-settings{border:1px solid var(--line);border-radius:14px;padding:14px;background:#0b1525;margin:12px 0}
+    .prompt-settings h4{margin:0 0 10px}
+    .prompt-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .prompt-field{display:grid;gap:5px}.prompt-field.full{grid-column:1/-1}
+    .prompt-field label{font-size:11px;color:var(--muted);font-weight:700}
+    .prompt-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .prompt-check{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:9px;padding:8px;font-size:12px}
+    .growth-delta-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+    .growth-delta{border:1px solid var(--line);border-radius:10px;padding:9px;background:#0b1525}
+    .growth-delta small{display:block;color:var(--muted);margin-bottom:3px}
+    .growth-delta strong{font-size:14px}
+    @media(max-width:700px){.prompt-grid,.prompt-checks,.growth-delta-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -289,7 +302,46 @@
       <p>選択中の選手データを1つに集約します。コピーしてChatGPTへ貼り付けると、そのままコーチ所見の作成に利用できます。</p>
     </div>
   </div>
-  <div class="data-summary-box">
+  
+    <div class="prompt-settings">
+      <h4>ChatGPTプロンプト設定</h4>
+      <div class="prompt-grid">
+        <div class="prompt-field full">
+          <label for="promptOutputRules">出力ルール</label>
+          <textarea id="promptOutputRules" class="input">出力は必ず「いいところ」「改善点」「方向性」「総合所見」の4項目に分けてください。事実と推測を分け、データがない内容は作らないでください。</textarea>
+        </div>
+        <div class="prompt-field">
+          <label for="promptAudience">文章の対象</label>
+          <select id="promptAudience" class="input"><option value="both">中学生本人と保護者</option><option value="player">中学生本人</option><option value="parent">保護者</option><option value="coach">コーチ</option></select>
+        </div>
+        <div class="prompt-field">
+          <label for="promptLength">文章量</label>
+          <select id="promptLength" class="input"><option value="standard">標準</option><option value="short">短め</option><option value="detailed">詳しく</option></select>
+        </div>
+        <div class="prompt-field full">
+          <label for="promptTeamPolicy">チーム育成方針</label>
+          <textarea id="promptTeamPolicy" class="input">選手の主体性を重視し、メンタル、ファンダメンタル、判断、技術、戦術の順で段階的に成長させます。</textarea>
+        </div>
+        <div class="prompt-field full">
+          <label for="promptAdditional">追加指示</label>
+          <textarea id="promptAdditional" class="input" placeholder="その選手について特に考慮してほしい内容"></textarea>
+        </div>
+        <div class="prompt-field full">
+          <label>自動確認項目</label>
+          <div class="prompt-checks">
+            <label class="prompt-check"><input id="promptCheckHeightGap" type="checkbox" checked>身長30日以上未入力を注意</label>
+            <label class="prompt-check"><input id="promptCheckShootingGap" type="checkbox" checked>シューティング7日以上未入力を注意</label>
+            <label class="prompt-check"><input id="promptIncludeGrowth" type="checkbox" checked>初回・前回からの成長量を含める</label>
+            <label class="prompt-check"><input id="promptAvoidOldData" type="checkbox" checked>古い記録だけで現在を断定しない</label>
+          </div>
+        </div>
+      </div>
+      <div style="height:10px"></div>
+      <button id="savePromptSettingsBtn" class="btn secondary">プロンプト設定を保存</button>
+      <span id="promptSettingsSaved" class="comment-saved"></span>
+    </div>
+
+<div class="data-summary-box">
     <div class="data-summary-actions">
       <button id="refreshDataSummaryBtn" class="btn secondary">まとめを更新</button>
     </div>
@@ -497,6 +549,8 @@ function renderGrowth(records){
  drawChart('heightChart',r.map(x=>fmtMonth(dateKey(x).slice(0,7))),r.map(x=>x.height==null?null:Number(x.height)),'身長 cm','heightChart');
  drawChart('weightChart',r.map(x=>fmtMonth(dateKey(x).slice(0,7))),r.map(x=>x.weight==null?null:Number(x.weight)),'体重 kg','weightChart');
  $('#growthTable').innerHTML=r.slice().reverse().map((x,i,arr)=>{const prev=arr[i+1];return `<tr><td>${fmtDate(dateKey(x))}</td><td>${num(x.height)}cm</td><td>${num(x.weight)}kg</td><td>${prev?`身長 ${signed(x.height-prev.height)} / 体重 ${signed(x.weight-prev.weight)}`:'初回'}</td></tr>`}).join('')||'<tr><td colspan="4">データなし</td></tr>';
+
+ const gb=$('#growthTable')?.closest('.section')||$('#growthTable')?.parentElement;if(gb){let x=$('#bodyGrowthDeltaBox');if(!x){x=document.createElement('div');x.id='bodyGrowthDeltaBox';x.className='section';gb.appendChild(x)}x.innerHTML='<h3>成長結果</h3>'+bodyGrowthSummaryHtml(records)}
 }
 function lastThreeMonths(records){
  if(!records.length)return[];const lastDate=new Date(dateKey(records[records.length-1])+'T00:00:00');const months=[];for(let i=2;i>=0;i--){const d=new Date(lastDate.getFullYear(),lastDate.getMonth()-i,1);months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`)}
@@ -612,6 +666,8 @@ function renderAgility(records){
    ? rows.map(r=>`<tr><td>${esc(r.date)}</td><td>${esc(r.label)}</td><td>${esc(r.value)}</td><td>${esc(r.diff)}</td></tr>`).join('')
    : '<tr><td colspan="4">スプレッドシートに記録がありません</td></tr>';
  }
+
+ const ab=$('#agilityTable')?.closest('.section')||$('#agilityTable')?.parentElement;if(ab){let x=$('#agilityGrowthDeltaBox');if(!x){x=document.createElement('div');x.id='agilityGrowthDeltaBox';x.className='section';ab.appendChild(x)}x.innerHTML='<h3>成長結果</h3>'+agilityGrowthSummaryHtml(records)}
 }
 
 
@@ -631,6 +687,43 @@ $('#saveSettingsBtn').onclick=()=>{state.apiUrl=$('#apiUrlInput').value.trim().r
 $('#demoBtn').onclick=()=>{state.apiUrl='';localStorage.removeItem('ninjaPlayerApiUrl');$('#settingsModal').classList.remove('open');state.selected=null;$('#detail').hidden=true;$('#emptyState').hidden=false;loadPlayers()};
 if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 
+
+
+function numericValue(v){const n=Number(v);return Number.isFinite(n)?n:null}
+function growthComparisons(records){
+ const rows=(records||[]).slice().filter(r=>dateKey(r)).sort((a,b)=>dateKey(a).localeCompare(dateKey(b)));
+ return {first:rows[0]||null,previous:rows.length>=2?rows[rows.length-2]:null,latest:rows[rows.length-1]||null};
+}
+function agilitySeries(records,key){return (records||[]).filter(r=>r&&r[key]!==null&&r[key]!==undefined&&r[key]!=='').sort((a,b)=>dateKey(a).localeCompare(dateKey(b)))}
+function agilityGrowthComparisons(records){
+ return [['shuttleRun','シャトルラン','回',false],['sideSteps','反復横跳び','回',false],['lCone','L字コーンドリル','秒',true],['verticalJump','垂直跳び','cm',false]].map(([key,label,unit,lowerBetter])=>{
+  const rows=agilitySeries(records,key),first=rows[0]||null,latest=rows[rows.length-1]||null,previous=rows.length>=2?rows[rows.length-2]:null;
+  const lv=latest?numericValue(latest[key]):null,fv=first?numericValue(first[key]):null,pv=previous?numericValue(previous[key]):null;
+  return {key,label,unit,lowerBetter,first,previous,latest,firstDelta:lv!==null&&fv!==null?lv-fv:null,previousDelta:lv!==null&&pv!==null?lv-pv:null};
+ });
+}
+function deltaText(v,unit=''){return v===null?'算出不可':`${v>0?'+':''}${Number(v.toFixed(2))}${unit}`}
+function bodyGrowthSummaryHtml(records){
+ const c=growthComparisons(records); if(!c.latest)return '<div class="empty">身体測定の記録はありません。</div>';
+ const items=[]; [['height','身長','cm'],['weight','体重','kg']].forEach(([key,label,unit])=>{
+  const lv=numericValue(c.latest[key]),fv=c.first?numericValue(c.first[key]):null,pv=c.previous?numericValue(c.previous[key]):null;
+  items.push(`<div class="growth-delta"><small>${label}｜初回→現在</small><strong>${deltaText(lv!==null&&fv!==null?lv-fv:null,unit)}</strong></div>`);
+  items.push(`<div class="growth-delta"><small>${label}｜前回→現在</small><strong>${deltaText(lv!==null&&pv!==null?lv-pv:null,unit)}</strong></div>`);
+ });
+ return `<div class="growth-delta-grid">${items.join('')}</div>`;
+}
+function agilityGrowthSummaryHtml(records){
+ const rows=agilityGrowthComparisons(records).filter(x=>x.latest); if(!rows.length)return '<div class="empty">アジリティの記録はありません。</div>';
+ return `<div class="growth-delta-grid">${rows.map(x=>`<div class="growth-delta"><small>${x.label}｜初回→現在</small><strong>${deltaText(x.firstDelta,x.unit)}</strong></div><div class="growth-delta"><small>${x.label}｜前回→現在</small><strong>${deltaText(x.previousDelta,x.unit)}</strong></div>`).join('')}</div>`;
+}
+const defaultPromptSettings={outputRules:'出力は必ず「いいところ」「改善点」「方向性」「総合所見」の4項目に分けてください。事実と推測を分け、データがない内容は作らないでください。',audience:'both',length:'standard',teamPolicy:'選手の主体性を重視し、メンタル、ファンダメンタル、判断、技術、戦術の順で段階的に成長させます。',additional:'',checkHeightGap:true,checkShootingGap:true,includeGrowth:true,avoidOldData:true};
+function loadPromptSettings(){try{return {...defaultPromptSettings,...JSON.parse(localStorage.getItem('ninjaPromptSettings')||'{}')}}catch(e){return {...defaultPromptSettings}}}
+function fillPromptSettings(){const s=loadPromptSettings();$('#promptOutputRules').value=s.outputRules;$('#promptAudience').value=s.audience;$('#promptLength').value=s.length;$('#promptTeamPolicy').value=s.teamPolicy;$('#promptAdditional').value=s.additional||'';$('#promptCheckHeightGap').checked=s.checkHeightGap!==false;$('#promptCheckShootingGap').checked=s.checkShootingGap!==false;$('#promptIncludeGrowth').checked=s.includeGrowth!==false;$('#promptAvoidOldData').checked=s.avoidOldData!==false}
+function savePromptSettings(){const s={outputRules:$('#promptOutputRules').value.trim(),audience:$('#promptAudience').value,length:$('#promptLength').value,teamPolicy:$('#promptTeamPolicy').value.trim(),additional:$('#promptAdditional').value.trim(),checkHeightGap:$('#promptCheckHeightGap').checked,checkShootingGap:$('#promptCheckShootingGap').checked,includeGrowth:$('#promptIncludeGrowth').checked,avoidOldData:$('#promptAvoidOldData').checked};localStorage.setItem('ninjaPromptSettings',JSON.stringify(s));$('#promptSettingsSaved').textContent='保存しました';setTimeout(()=>$('#promptSettingsSaved').textContent='',1500)}
+function promptAudienceText(v){return {both:'中学生本人と保護者の双方',player:'中学生本人',parent:'保護者',coach:'コーチ'}[v]||'中学生本人と保護者の双方'}
+function promptLengthText(v){return {short:'簡潔に',standard:'標準的な文章量で',detailed:'根拠を含めて詳しく'}[v]||'標準的な文章量で'}
+function bodyGrowthSummaryLines(records){const c=growthComparisons(records),lines=['【身体測定・成長結果】'];if(!c.latest){lines.push('記録なし');return lines}[['height','身長','cm'],['weight','体重','kg']].forEach(([key,label,unit])=>{const lv=numericValue(c.latest[key]),fv=c.first?numericValue(c.first[key]):null,pv=c.previous?numericValue(c.previous[key]):null;lines.push(`・${label} 初回→現在：${deltaText(lv!==null&&fv!==null?lv-fv:null,unit)}`);lines.push(`・${label} 前回→現在：${deltaText(lv!==null&&pv!==null?lv-pv:null,unit)}`)});return lines}
+function agilityGrowthSummaryLines(records){const lines=['【アジリティ・成長結果】'],rows=agilityGrowthComparisons(records).filter(x=>x.latest);if(!rows.length){lines.push('記録なし');return lines}rows.forEach(x=>{lines.push(`・${x.label} 初回→現在：${deltaText(x.firstDelta,x.unit)}`);lines.push(`・${x.label} 前回→現在：${deltaText(x.previousDelta,x.unit)}`)});return lines}
 
 function fmtSummaryNumber(v,unit=''){
  if(v===null||v===undefined||v==='')return '記録なし';
@@ -777,42 +870,29 @@ function buildRecordGapAlerts(){
 
 function buildDataSummaryText(){
  if(!state.selected||!state.currentData)return '';
- const p=state.selected;
+ const p=state.selected,s=loadPromptSettings();
+ let alerts=buildRecordGapAlerts();
+ if(!s.checkHeightGap)alerts=alerts.filter(x=>!String(x).includes('身体測定'));
+ if(!s.checkShootingGap)alerts=alerts.filter(x=>!String(x).includes('シューティング'));
  const lines=[
   'あなたは中学生バスケットボールの育成コーチです。',
-  '以下の選手データを基に、事実と推測を分けて評価してください。',
-  '出力は必ず「いいところ」「改善点」「方向性」「総合所見」の4項目に分けてください。',
-  '各項目は具体的かつ前向きにし、データがない内容は作らないでください。',
+  s.outputRules,
+  `${promptAudienceText(s.audience)}に伝わる文章にしてください。`,
+  `${promptLengthText(s.length)}作成してください。`,
+  `【チーム育成方針】${s.teamPolicy}`,
+  s.additional?`【追加指示】${s.additional}`:'',
   '改善点は否定ではなく、次の練習行動へつながる表現にしてください。',
-  '中学生本人と保護者の双方に伝わる文章にしてください。',
-  '記録間隔については、下記の「入力状況・注意事項」を必ず確認してください。',
-  '身長の最新入力から30日以上空いている場合は、直近1か月入力できていないことを明確に伝えてください。',
-  'シューティングの最新入力から14日以上空いている場合は、期間が空きすぎていることを忠告し、継続入力を促してください。',
-  '記録が古い場合、その古い数値だけで現在の状態を断定しないでください。',
+  s.avoidOldData?'記録が古い場合、その古い数値だけで現在の状態を断定しないでください。':'',
   '',
-  '【選手基本情報】',
-  `氏名：${p.name||''}`,
-  `カテゴリー：${p.category||'未設定'}`,
-  p.grade?`学年：${p.grade}`:'',
-  '',
-  ...summarizeGrowth(state.currentData.growth||[]),
-  '',
-  ...summarizeShooting(state.currentData.shooting||{}),
-  `最終シューティング記入日：${latestShootingDate(state.currentData.shooting||{})||'確認できません'}`,
-  '',
-  ...summarizeAgility(state.currentData.agility||[]),
-  '',
-  '【入力状況・注意事項】',
-  ...buildRecordGapAlerts(),
-  '',
-  '【現在のコーチ所見】',
-  ($('#coachComment')&&$('#coachComment').value.trim())||'未記入',
-  '',
-  '【既存フィードバック】',
-  `いいところ：${($('#goodPoints')&&$('#goodPoints').value.trim())||'未記入'}`,
-  `改善点：${($('#improvementPoints')&&$('#improvementPoints').value.trim())||'未記入'}`,
-  `方向性：${($('#futureDirection')&&$('#futureDirection').value.trim())||'未記入'}`
- ].filter(v=>v!==null&&v!==undefined);
+  '【選手基本情報】',`氏名：${p.name||''}`,`カテゴリー：${p.category||'未設定'}`,p.grade?`学年：${p.grade}`:'',
+  '',...summarizeGrowth(state.currentData.growth||[]),
+  '',...summarizeShooting(state.currentData.shooting||{}),`最終シューティング記入日：${latestShootingDate(state.currentData.shooting||{})||'確認できません'}`,
+  '',...summarizeAgility(state.currentData.agility||[]),
+  ...(s.includeGrowth?['',...bodyGrowthSummaryLines(state.currentData.growth||[]),'',...agilityGrowthSummaryLines(state.currentData.agility||[])]:[]),
+  '','【入力状況・注意事項】',...alerts,
+  '','【現在のコーチ所見】',($('#coachComment')&&$('#coachComment').value.trim())||'未記入',
+  '','【既存フィードバック】',`いいところ：${($('#goodPoints')&&$('#goodPoints').value.trim())||'未記入'}`,`改善点：${($('#improvementPoints')&&$('#improvementPoints').value.trim())||'未記入'}`,`方向性：${($('#futureDirection')&&$('#futureDirection').value.trim())||'未記入'}`
+ ].filter(v=>v!==null&&v!==undefined&&v!=='');
  return lines.join('\n');
 }
 function refreshDataSummary(){
@@ -857,13 +937,16 @@ function reportGrowthHtml(){
  if(!latest)return '<p>身体測定の記録はありません。</p>';
  const height=latest.height!=null&&latest.height!==''?`${reportEsc(latest.height)} cm`:'記録なし';
  const weight=latest.weight!=null&&latest.weight!==''?`${reportEsc(latest.weight)} kg`:'記録なし';
- return `<ul><li>測定日：${reportEsc(reportDateJa(dateKey(latest)))}</li><li>身長：${height}</li><li>体重：${weight}</li></ul>`;
+ const c=growthComparisons(state.currentData&&state.currentData.growth||[]);
+ const hv=c.first&&c.latest?numericValue(c.latest.height)-numericValue(c.first.height):null,hp=c.previous&&c.latest?numericValue(c.latest.height)-numericValue(c.previous.height):null,wv=c.first&&c.latest?numericValue(c.latest.weight)-numericValue(c.first.weight):null,wp=c.previous&&c.latest?numericValue(c.latest.weight)-numericValue(c.previous.weight):null;
+ return `<ul><li>測定日：${reportEsc(reportDateJa(dateKey(latest)))}</li><li>身長：${height}</li><li>体重：${weight}</li><li>身長 初回→現在：${reportEsc(deltaText(hv,'cm'))}</li><li>身長 前回→現在：${reportEsc(deltaText(hp,'cm'))}</li><li>体重 初回→現在：${reportEsc(deltaText(wv,'kg'))}</li><li>体重 前回→現在：${reportEsc(deltaText(wp,'kg'))}</li></ul>`;
 }
 function reportAgilityHtml(){
  const latest=latestAgilityValues(state.currentData&&state.currentData.agility||[]);
  const rows=Object.values(latest);
  if(!rows.length)return '<p>アジリティの記録はありません。</p>';
- return `<ul>${rows.map(x=>`<li>${reportEsc(x.label)}：${reportEsc(x.value)}${reportEsc(x.unit)}（${reportEsc(reportDateJa(x.date))}）</li>`).join('')}</ul>`;
+ const growth=agilityGrowthComparisons(state.currentData&&state.currentData.agility||[]);
+ return `<ul>${rows.map(x=>{const g=growth.find(y=>y.key===x.key);return `<li>${reportEsc(x.label)}：${reportEsc(x.value)}${reportEsc(x.unit)}（${reportEsc(reportDateJa(x.date))}）<br>初回→現在：${reportEsc(deltaText(g?g.firstDelta:null,x.unit))}／前回→現在：${reportEsc(deltaText(g?g.previousDelta:null,x.unit))}</li>`}).join('')}</ul>`;
 }
 function reportShootingHtml(){
  const s=state.currentData&&state.currentData.shooting||{};
@@ -994,6 +1077,7 @@ function savePlayerFeedback(){
  setTimeout(()=>$('#feedbackSaved').textContent='',1800);
 }
 
+$('#savePromptSettingsBtn').onclick=savePromptSettings;
 $('#refreshDataSummaryBtn').onclick=refreshDataSummary;
 $('#copyChatGptPromptBtn').onclick=copyChatGptPrompt;
 $('#previewParentPdfBtn').onclick=previewParentReport;
@@ -1004,6 +1088,7 @@ $('#copyLineMessageBtn').onclick=copyParentLineMessage;
 $('#parentReportModal').onclick=e=>{if(e.target===$('#parentReportModal'))closeParentReport()};
 $('#saveFeedbackBtn').onclick=savePlayerFeedback;
 
+fillPromptSettings();
 loadPlayers();
 </script>
 </body></html>
