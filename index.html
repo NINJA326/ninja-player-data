@@ -671,14 +671,17 @@ function summarizeShooting(s){
 }
 function summarizeAgility(records){
  const lines=['【アジリティ】'];
- if(!(records||[]).length){lines.push('記録なし');return lines}
- records.forEach(r=>{
+ const valid=(records||[]).filter(r=>
+  r && [r.shuttleRun,r.sideSteps,r.lCone,r.verticalJump].some(v=>v!==null&&v!==undefined&&v!=='')
+ );
+ if(!valid.length){lines.push('記録なし');return lines}
+ valid.forEach(r=>{
   const parts=[];
-  if(r.shuttleRun!=null)parts.push(`シャトルラン ${r.shuttleRun}`);
-  if(r.sideSteps!=null)parts.push(`反復横跳び ${r.sideSteps}`);
-  if(r.lCone!=null)parts.push(`L字コーン ${r.lCone}`);
-  if(r.verticalJump!=null)parts.push(`垂直跳び ${r.verticalJump}`);
-  lines.push(`・${dateKey(r)||'日付不明'}：${parts.length?parts.join('／'):'記録なし'}`);
+  if(r.shuttleRun!=null&&r.shuttleRun!=='')parts.push(`シャトルラン ${r.shuttleRun}`);
+  if(r.sideSteps!=null&&r.sideSteps!=='')parts.push(`反復横跳び ${r.sideSteps}`);
+  if(r.lCone!=null&&r.lCone!=='')parts.push(`L字コーン ${r.lCone}`);
+  if(r.verticalJump!=null&&r.verticalJump!=='')parts.push(`垂直跳び ${r.verticalJump}`);
+  lines.push(`・${dateKey(r)||'日付不明'}：${parts.join('／')}`);
  });
  return lines;
 }
@@ -769,7 +772,7 @@ async function generateAiFeedback(){
    improvementPoints:$('#improvementPoints').value.trim(),
    futureDirection:$('#futureDirection').value.trim()
   };
-  const result=await jsonpRequest(state.apiUrl,{action:'generatePlayerFeedback',payload:JSON.stringify(payload)});
+  const result=await api('generatePlayerFeedback',{payload:JSON.stringify(payload)});
   if(!result||result.status!=='ok')throw new Error(result?.message||'AI生成に失敗しました');
   $('#goodPoints').value=result.goodPoints||'';
   $('#improvementPoints').value=result.improvementPoints||'';
