@@ -38,6 +38,10 @@
     .data-summary-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
     .data-summary-text{width:100%;min-height:320px;resize:vertical;white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px;line-height:1.65}
     .copy-success{color:#65d394;font-size:12px;min-height:18px;margin-top:8px}
+    .chatgpt-flow{display:grid;gap:10px;margin-top:10px}
+    .chatgpt-flow-main{display:flex;gap:10px;flex-wrap:wrap}
+    .chatgpt-note{border:1px solid #31465f;background:#0b1525;border-radius:12px;padding:10px 12px;font-size:12px;color:var(--muted);line-height:1.6}
+    .latest-badge{display:inline-flex;align-items:center;border:1px solid #3c516d;border-radius:999px;padding:3px 7px;font-size:10px;color:var(--muted);margin-left:6px}
     @media(max-width:850px){.ai-feedback-grid{grid-template-columns:1fr}}
     @media(max-width:680px){.ai-settings-grid{grid-template-columns:1fr}.check-grid{grid-template-columns:1fr}}
 
@@ -244,7 +248,15 @@
   <div class="data-summary-box">
     <div class="data-summary-actions">
       <button id="refreshDataSummaryBtn" class="btn secondary">まとめを更新</button>
-      <button id="copyDataSummaryBtn" class="btn">データまとめをコピー</button>
+    </div>
+    <div class="chatgpt-flow">
+      <div class="chatgpt-flow-main">
+        <button id="copyChatGptPromptBtn" class="btn">① ChatGPT用にコピー</button>
+        <button id="openChatGptBtn" class="btn secondary">② ChatGPTを開く</button>
+      </div>
+      <div class="chatgpt-note">
+        ①で選手データと所見作成指示をコピーし、②でChatGPTを開きます。身長が30日以上、シューティングが14日以上未入力の場合は、入力間隔への注意もプロンプトへ自動追加されます。
+      </div>
     </div>
     <textarea id="dataSummaryText" class="input data-summary-text" readonly placeholder="選手を選択するとデータまとめが表示されます。"></textarea>
     <div id="dataSummaryCopyStatus" class="copy-success"></div>
@@ -258,7 +270,7 @@
       <p>所見とは別に、選手へ伝える「いいところ・改善点・方向性」を整理します。</p>
     </div>
     <div class="row" style="flex-wrap:wrap">
-      <button id="generateFeedbackBtn" class="btn">AIで3項目を生成</button>
+      <button id="generateFeedbackBtn" class="btn">アプリ内AIで3項目を生成（補助）</button>
       <button id="saveFeedbackBtn" class="btn secondary">3項目を保存</button>
     </div>
   </div>
@@ -564,9 +576,15 @@ function showShotDetail(x){
  $('#courtDetail').innerHTML=`<h4>${esc(x.position)}</h4><span class="category">${esc(x.type)}</span><div class="court-detail-value">${x.rate}%</div><div class="small">${crown}${rank.label}ランク</div><div class="court-detail-grid"><div><small>成功</small><strong>${x.made??'-'}本</strong></div><div><small>試投</small><strong>${x.attempts}本</strong></div></div>`;
 }
 function renderAgility(records){
- const sorted=records.slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)));const groups={};sorted.forEach(r=>(groups[r.type]??=[]).push(r));
- $('#agilityCards').innerHTML=Object.entries(groups).map(([type,list])=>{const x=list[list.length-1],prev=list[list.length-2];const lower=type.includes('L字');const diff=prev?x.value-prev.value:null;const cls=diff===null?'':((lower?diff<0:diff>0)?'good':'warn');return `<div class="metric"><div class="metric-label">${esc(type)}</div><div class="metric-value">${num(x.value)}${esc(x.unit||'')}</div><div class="metric-sub ${cls}">${prev?`前回比 ${signed(diff)}${esc(x.unit||'')}`:'初回記録'}</div></div>`}).join('')||'<div class="notice">スプレッドシートにアジリティ記録がありません。</div>';
- $('#agilityTable').innerHTML=sorted.slice().reverse().map(x=>{const list=groups[x.type],idx=list.indexOf(x),prev=idx>0?list[idx-1]:null;return `<tr><td>${fmtDate(x.date)}</td><td>${esc(x.type)}</td><td>${num(x.value)}${esc(x.unit||'')}</td><td>${prev?signed(x.value-prev.value):'初回'}</td></tr>`}).join('')||'<tr><td colspan="4">データなし</td></tr>';
+ const root=$('#agilityCards');
+ if(!root)return;
+ const latest=latestAgilityValues(records);
+ const items=Object.values(latest);
+ if(!items.length){
+  root.innerHTML='<div class="empty">アジリティの記録はありません。</div>';
+  return;
+ }
+ root.innerHTML=items.map(x=>`<div class="metric"><small>${esc(x.label)}<span class="latest-badge">最新</span></small><strong>${esc(String(x.value))}</strong><span>${esc(x.date)}</span></div>`).join('');
 }
 
 function buildAiPayload(){
@@ -590,7 +608,7 @@ function buildAiPayload(){
  if(refs.recent)payload.recent3Months=recent;
  if(refs.shooting)payload.shooting={total:s.total||{},byType:s.byType||[]};
  if(refs.positions)payload.shootingPositions=(s.byPosition||[]).slice(0,12);
- if(refs.agility)payload.agility=a;
+ if(refs.agility)payload.agilityLatest=latestAgilityValues(a);
  if(refs.existing)payload.existingComment=$('#coachComment').value.trim();
  return payload;
 }
@@ -669,29 +687,108 @@ function summarizeShooting(s){
  }
  return lines;
 }
-function summarizeAgility(records){
- const lines=['【アジリティ】'];
- const valid=(records||[]).filter(r=>
-  r && [r.shuttleRun,r.sideSteps,r.lCone,r.verticalJump].some(v=>v!==null&&v!==undefined&&v!=='')
- );
- if(!valid.length){lines.push('記録なし');return lines}
- valid.forEach(r=>{
-  const parts=[];
-  if(r.shuttleRun!=null&&r.shuttleRun!=='')parts.push(`シャトルラン ${r.shuttleRun}`);
-  if(r.sideSteps!=null&&r.sideSteps!=='')parts.push(`反復横跳び ${r.sideSteps}`);
-  if(r.lCone!=null&&r.lCone!=='')parts.push(`L字コーン ${r.lCone}`);
-  if(r.verticalJump!=null&&r.verticalJump!=='')parts.push(`垂直跳び ${r.verticalJump}`);
-  lines.push(`・${dateKey(r)||'日付不明'}：${parts.join('／')}`);
+function latestAgilityValues(records){
+ const sorted=(records||[]).slice().sort((a,b)=>dateKey(b).localeCompare(dateKey(a)));
+ const defs=[
+  ['shuttleRun','シャトルラン'],
+  ['sideSteps','反復横跳び'],
+  ['lCone','L字コーン'],
+  ['verticalJump','垂直跳び']
+ ];
+ const latest={};
+ defs.forEach(([key,label])=>{
+  const row=sorted.find(r=>r && r[key]!==null && r[key]!==undefined && r[key]!=='');
+  if(row)latest[key]={label,value:row[key],date:dateKey(row)||'日付不明'};
  });
+ return latest;
+}
+function summarizeAgility(records){
+ const lines=['【アジリティ・最新記録】'];
+ const latest=latestAgilityValues(records);
+ const vals=Object.values(latest);
+ if(!vals.length){lines.push('記録なし');return lines}
+ vals.forEach(x=>lines.push(`・${x.label}：${x.value}（${x.date}）`));
  return lines;
 }
+
+function parseRecordDate(value){
+ if(!value)return null;
+ if(value instanceof Date && !isNaN(value))return value;
+ const s=String(value).trim().replace(/\./g,'-').replace(/\//g,'-');
+ const d=new Date(s.includes('T')?s:s+'T00:00:00');
+ return isNaN(d)?null:d;
+}
+function daysSinceRecord(value){
+ const d=parseRecordDate(value);
+ if(!d)return null;
+ const now=new Date();
+ now.setHours(0,0,0,0);
+ d.setHours(0,0,0,0);
+ return Math.max(0,Math.floor((now-d)/86400000));
+}
+function latestGrowthRecord(records){
+ return (records||[]).slice()
+  .filter(r=>parseRecordDate(dateKey(r)))
+  .sort((a,b)=>parseRecordDate(dateKey(b))-parseRecordDate(dateKey(a)))[0]||null;
+}
+function latestShootingDate(shooting){
+ const candidates=[];
+ const collect=x=>{
+  if(!x)return;
+  const value=x.date||x.recordDate||x.updatedAt||x.latestDate||x.lastDate;
+  if(parseRecordDate(value))candidates.push(value);
+ };
+ collect(shooting);
+ collect(shooting&&shooting.total);
+ (shooting&&shooting.records||[]).forEach(collect);
+ (shooting&&shooting.byType||[]).forEach(collect);
+ (shooting&&shooting.byPosition||[]).forEach(collect);
+ if(!candidates.length)return null;
+ return candidates.sort((a,b)=>parseRecordDate(b)-parseRecordDate(a))[0];
+}
+function buildRecordGapAlerts(){
+ const alerts=[];
+ const growthLatest=latestGrowthRecord(state.currentData&&state.currentData.growth||[]);
+ if(growthLatest){
+  const latestDate=dateKey(growthLatest);
+  const days=daysSinceRecord(latestDate);
+  if(days!==null&&days>=30){
+   alerts.push(`・身体測定：最新入力は${latestDate}で、${days}日間入力されていません。身長が直近1か月以上入力できていない旨を所見内で明確に伝えてください。`);
+  }else if(days!==null){
+   alerts.push(`・身体測定：最新入力は${latestDate}（${days}日前）です。`);
+  }
+ }else{
+  alerts.push('・身体測定：身長の入力記録が確認できません。未入力である旨を伝えてください。');
+ }
+
+ const shootingDate=latestShootingDate(state.currentData&&state.currentData.shooting||{});
+ if(shootingDate){
+  const days=daysSinceRecord(shootingDate);
+  if(days!==null&&days>=14){
+   alerts.push(`・シューティング：最新入力は${shootingDate}で、${days}日間記録がありません。2週間以上期間が空いており、入力間隔が空きすぎていることを忠告してください。`);
+  }else if(days!==null){
+   alerts.push(`・シューティング：最新入力は${shootingDate}（${days}日前）です。`);
+  }
+ }else{
+  alerts.push('・シューティング：最終入力日を確認できません。継続記録の必要性を伝えてください。');
+ }
+ return alerts;
+}
+
 function buildDataSummaryText(){
  if(!state.selected||!state.currentData)return '';
  const p=state.selected;
  const lines=[
-  '以下の選手データを基に、事実と推測を分けてAI所見を作成してください。',
-  '出力は「いいところ」「改善点」「方向性」「総合所見」の4項目に分けてください。',
-  '中学生本人にも伝わる具体的で前向きな表現にしてください。',
+  'あなたは中学生バスケットボールの育成コーチです。',
+  '以下の選手データを基に、事実と推測を分けて評価してください。',
+  '出力は必ず「いいところ」「改善点」「方向性」「総合所見」の4項目に分けてください。',
+  '各項目は具体的かつ前向きにし、データがない内容は作らないでください。',
+  '改善点は否定ではなく、次の練習行動へつながる表現にしてください。',
+  '中学生本人と保護者の双方に伝わる文章にしてください。',
+  '記録間隔については、下記の「入力状況・注意事項」を必ず確認してください。',
+  '身長の最新入力から30日以上空いている場合は、直近1か月入力できていないことを明確に伝えてください。',
+  'シューティングの最新入力から14日以上空いている場合は、期間が空きすぎていることを忠告し、継続入力を促してください。',
+  '記録が古い場合、その古い数値だけで現在の状態を断定しないでください。',
   '',
   '【選手基本情報】',
   `氏名：${p.name||''}`,
@@ -703,6 +800,9 @@ function buildDataSummaryText(){
   ...summarizeShooting(state.currentData.shooting||{}),
   '',
   ...summarizeAgility(state.currentData.agility||[]),
+  '',
+  '【入力状況・注意事項】',
+  ...buildRecordGapAlerts(),
   '',
   '【現在のコーチ所見】',
   ($('#coachComment')&&$('#coachComment').value.trim())||'未記入',
@@ -719,7 +819,7 @@ function refreshDataSummary(){
  if(!el)return;
  el.value=buildDataSummaryText();
 }
-async function copyDataSummary(){
+async function copyChatGptPrompt(){
  const text=buildDataSummaryText();
  if(!text){alert('選手データがまだ読み込まれていません');return}
  $('#dataSummaryText').value=text;
@@ -730,7 +830,7 @@ async function copyDataSummary(){
   $('#dataSummaryText').select();
   document.execCommand('copy');
  }
- $('#dataSummaryCopyStatus').textContent='データまとめをコピーしました。ChatGPTへそのまま貼り付けできます。';
+ $('#dataSummaryCopyStatus').textContent='ChatGPT用のデータをコピーしました。次に「ChatGPTを開く」を押してください。';
  setTimeout(()=>$('#dataSummaryCopyStatus').textContent='',2500);
 }
 
@@ -786,7 +886,8 @@ async function generateAiFeedback(){
  }
 }
 $('#refreshDataSummaryBtn').onclick=refreshDataSummary;
-$('#copyDataSummaryBtn').onclick=copyDataSummary;
+$('#copyChatGptPromptBtn').onclick=copyChatGptPrompt;
+$('#openChatGptBtn').onclick=()=>window.open('https://chatgpt.com/','_blank','noopener');
 $('#generateFeedbackBtn').onclick=generateAiFeedback;
 $('#saveFeedbackBtn').onclick=savePlayerFeedback;
 
