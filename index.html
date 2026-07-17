@@ -21,12 +21,12 @@
     .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.tab{background:#1c2b40;color:#cad7e7;border:1px solid var(--line);padding:9px 12px;border-radius:999px;cursor:pointer}.tab.active{background:var(--accent);color:#052116;border-color:var(--accent);font-weight:800}.tabview{display:none}.tabview.active{display:block}
     .notice{font-size:12px;color:var(--muted);line-height:1.7;background:#0b1525;border:1px dashed #3c516d;border-radius:13px;padding:12px}.settings{margin-top:12px}.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;place-items:center;padding:20px;z-index:99}.modal.open{display:grid}.modal-card{width:min(620px,100%);background:#101c2d;border:1px solid var(--line);border-radius:18px;padding:18px}.modal-card h3{margin-top:0}.small{font-size:12px;color:var(--muted)}
     textarea.input{min-height:120px;resize:vertical}.comment-saved{color:var(--accent);font-size:12px;min-height:18px}
-    .ai-settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .ai-field{display:grid;gap:6px}.ai-field.full{grid-column:1/-1}.ai-field label{font-size:12px;color:var(--muted);font-weight:700}
-    .check-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-    .check-item{display:flex;align-items:center;gap:8px;background:#0b1525;border:1px solid var(--line);border-radius:10px;padding:9px;font-size:12px}
-    .check-item input{width:18px;height:18px}.modal-card.wide{width:min(850px,100%);max-height:90vh;overflow:auto}
-    .ai-config-badge{display:inline-flex;align-items:center;gap:6px;border:1px solid #3c516d;background:#0b1525;border-radius:999px;padding:6px 9px;font-size:11px;color:var(--muted)}
+    
+    
+    
+    
+    
+    
     .ai-feedback-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
     .ai-feedback-card{border:1px solid var(--line);border-radius:14px;padding:12px;background:#0b1525}
     .ai-feedback-card h4{margin:0 0 8px;font-size:14px}
@@ -43,7 +43,7 @@
     .chatgpt-note{border:1px solid #31465f;background:#0b1525;border-radius:12px;padding:10px 12px;font-size:12px;color:var(--muted);line-height:1.6}
     .latest-badge{display:inline-flex;align-items:center;border:1px solid #3c516d;border-radius:999px;padding:3px 7px;font-size:10px;color:var(--muted);margin-left:6px}
     @media(max-width:850px){.ai-feedback-grid{grid-template-columns:1fr}}
-    @media(max-width:680px){.ai-settings-grid{grid-template-columns:1fr}.check-grid{grid-template-columns:1fr}}
+    @media(max-width:680px){}
 
     .shot-court-wrap{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:14px;align-items:start}
     .shot-court{position:relative;width:min(100%,620px);margin:0 auto;aspect-ratio:0.92/1;background:#d7a86e;border:4px solid #f5f5f5;border-radius:8px;overflow:hidden}
@@ -81,7 +81,7 @@
 <div class="app">
   <header class="topbar">
     <div class="brand"><h1>NINJA PLAYER DATA</h1><p>全選手｜成長・シューティング・アジリティ</p></div>
-    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><button class="btn secondary" id="aiSettingsBtn">AI設定</button><button class="btn secondary" id="settingsBtn">接続設定</button></div>
+    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><button class="btn secondary" id="settingsBtn">接続設定</button></div>
   </header>
 
   <main class="layout">
@@ -215,13 +215,11 @@
         <div id="comment" class="tabview">
           <div class="section">
             <h3>AIコーチ所見</h3>
-            <div class="notice">選手データと、AI設定に登録したNINJA AIRSの育成方針・評価基準・文章ルールを基に下書きを作成します。生成後は自由に修正でき、内容を確認してから保存します。</div>
-            <div style="height:8px"></div>
-            <div id="aiConfigBadge" class="ai-config-badge">AI設定：標準設定</div>
+            <div class="notice">ChatGPTで作成した所見を貼り付けるか、コーチが直接入力して保存します。</div>
             <div style="height:10px"></div>
             <div class="row" style="flex-wrap:wrap">
-              <button id="generateAiCommentBtn" class="btn blue">AI所見を作成</button>
-              <button id="regenerateAiCommentBtn" class="btn secondary">別案を作成</button>
+              
+              
               <select id="commentTone" class="input" style="width:auto">
                 <option value="balanced">標準</option>
                 <option value="encouraging">前向き・励ます</option>
@@ -229,8 +227,8 @@
                 <option value="parent">保護者向け</option>
               </select>
             </div>
-            <div id="aiStatus" class="comment-saved" style="margin-top:8px"></div>
-            <textarea id="coachComment" class="input" placeholder="AI所見を作成するか、コーチが直接入力してください"></textarea>
+            
+            <textarea id="coachComment" class="input" placeholder="ChatGPTで作成した所見を貼り付けるか、コーチが直接入力してください"></textarea>
             <div style="height:10px"></div>
             <div class="row" style="flex-wrap:wrap">
               <button id="saveCommentBtn" class="btn">修正内容を保存</button>
@@ -251,7 +249,7 @@
   <div class="section-title">
     <div>
       <h2>データまとめ</h2>
-      <p>選択中の選手データを1つに集約します。コピーしてChatGPTへ貼り付けると、そのままAI所見の作成に利用できます。</p>
+      <p>選択中の選手データを1つに集約します。コピーしてChatGPTへ貼り付けると、そのままコーチ所見の作成に利用できます。</p>
     </div>
   </div>
   <div class="data-summary-box">
@@ -260,8 +258,8 @@
     </div>
     <div class="chatgpt-flow">
       <div class="chatgpt-flow-main">
-        <button id="copyChatGptPromptBtn" class="btn">① ChatGPT用にコピー</button>
-        <button id="openChatGptBtn" class="btn secondary">② ChatGPTを開く</button>
+        <button id="copyChatGptPromptBtn" class="btn">ChatGPT用データをコピー</button>
+        <button id="openChatGptBtn" class="btn secondary">ChatGPTを開く</button>
       </div>
       <div class="chatgpt-note">
         ①で選手データと所見作成指示をコピーし、②でChatGPTを開きます。身長が30日以上、シューティングが7日以上未入力の場合は、入力間隔への注意もプロンプトへ自動追加されます。
@@ -275,11 +273,11 @@
 <section class="card">
   <div class="section-title">
     <div>
-      <h2>AIフィードバック</h2>
-      <p>所見とは別に、選手へ伝える「いいところ・改善点・方向性」を整理します。</p>
+      <h2>選手フィードバック</h2>
+      <p>選手へ伝える「いいところ・改善点・方向性」を整理して保存します。</p>
     </div>
     <div class="row" style="flex-wrap:wrap">
-      <button id="generateFeedbackBtn" class="btn">アプリ内AIで3項目を生成（補助）</button>
+      
       <button id="saveFeedbackBtn" class="btn secondary">3項目を保存</button>
     </div>
   </div>
@@ -310,101 +308,15 @@
   </div>
 </div>
 
-<div id="aiSettingsModal" class="modal">
-  <div class="modal-card wide">
-    <h3>AI所見・プロジェクト設定</h3>
-    <p class="small">ChatGPTプロジェクトそのものとは直接同期せず、プロジェクトで使用している方針・評価基準・文章ルールをこのアプリへ登録します。設定はこの端末に保存され、所見生成時にApps Script経由でOpenAI APIへ送信されます。</p>
-    <div class="ai-settings-grid">
-      <div class="ai-field full">
-        <label for="aiTeamPolicy">チーム育成方針</label>
-        <textarea id="aiTeamPolicy" class="input" placeholder="例：主体性を重視し、メンタル・基礎能力・判断・技術・戦術の順で段階的に育成する。"></textarea>
-      </div>
-      <div class="ai-field full">
-        <label for="aiEvaluationRules">評価基準</label>
-        <textarea id="aiEvaluationRules" class="input" placeholder="例：数値の改善だけでなく、試投数・継続性・左右差・得意位置と課題位置を確認する。"></textarea>
-      </div>
-      <div class="ai-field full">
-        <label for="aiWritingRules">文章ルール</label>
-        <textarea id="aiWritingRules" class="input" placeholder="例：事実と推測を分ける。威圧的な表現を使わない。成長・強み・今後の重点の3段落で作成する。"></textarea>
-      </div>
-      <div class="ai-field">
-        <label for="aiAudience">出力対象</label>
-        <select id="aiAudience" class="input">
-          <option value="coach">コーチ向け</option>
-          <option value="player">選手向け</option>
-          <option value="parent">保護者向け</option>
-        </select>
-      </div>
-      <div class="ai-field">
-        <label for="aiLength">文章量</label>
-        <select id="aiLength" class="input">
-          <option value="short">短め（150〜220字）</option>
-          <option value="standard">標準（220〜320字）</option>
-          <option value="detailed">詳しく（350〜500字）</option>
-        </select>
-      </div>
-      <div class="ai-field full">
-        <label>AIが参照するデータ</label>
-        <div class="check-grid">
-          <label class="check-item"><input id="refPhysical" type="checkbox" checked>身体測定</label>
-          <label class="check-item"><input id="refRecent" type="checkbox" checked>直近3か月</label>
-          <label class="check-item"><input id="refShooting" type="checkbox" checked>シューティング集計</label>
-          <label class="check-item"><input id="refPositions" type="checkbox" checked>ポジション別成功率</label>
-          <label class="check-item"><input id="refAgility" type="checkbox" checked>アジリティ</label>
-          <label class="check-item"><input id="refExisting" type="checkbox" checked>現在のコーチ所見</label>
-        </div>
-      </div>
-      <div class="ai-field full">
-        <label for="aiProhibited">禁止表現・注意事項</label>
-        <textarea id="aiProhibited" class="input" placeholder="例：身長・体重を否定的に評価しない。医学的判断をしない。他選手と比較して順位付けしない。"></textarea>
-      </div>
-    </div>
-    <div style="height:14px"></div>
-    <div class="row" style="flex-wrap:wrap">
-      <button id="saveAiSettingsBtn" class="btn">AI設定を保存</button>
-      <button id="resetAiSettingsBtn" class="btn secondary">標準設定に戻す</button>
-      <button id="closeAiSettingsBtn" class="btn secondary">閉じる</button>
-    </div>
-    <div id="aiSettingsSaved" class="comment-saved"></div>
-  </div>
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script>
 const $=s=>document.querySelector(s);
 const state={currentData:null,apiUrl:localStorage.getItem('ninjaPlayerApiUrl')||'',players:[],selected:null,heightChart:null,weightChart:null,playerRequestSeq:0};
-const defaultAiConfig={
- teamPolicy:'NINJA AIRSでは、選手の主体性を重視する。メンタル、ファンダメンタル、判断、技術、戦術の順で段階的に育成し、試合で自分で考えて行動できる選手を目指す。',
- evaluationRules:'数値の上下だけで断定せず、記録期間、試投数、継続性、左右差、得意位置、改善余地を総合的に見る。データが少ない項目は参考値として扱う。',
- writingRules:'「成長」「強み」「今後の重点」の3段落で作成する。数値から確認できる事実と推測を分け、具体的かつ前向きに記述する。',
- audience:'coach',
- length:'standard',
- references:{physical:true,recent:true,shooting:true,positions:true,agility:true,existing:true},
- prohibited:'身長・体重を否定的に評価しない。医学的判断をしない。人格を否定しない。他選手との単純な優劣比較をしない。'
-};
-function loadAiConfig(){
- try{return {...defaultAiConfig,...JSON.parse(localStorage.getItem('ninjaAiProjectConfig')||'{}'),references:{...defaultAiConfig.references,...(JSON.parse(localStorage.getItem('ninjaAiProjectConfig')||'{}').references||{})}}}
- catch(e){return JSON.parse(JSON.stringify(defaultAiConfig))}
-}
-function saveAiConfig(config){localStorage.setItem('ninjaAiProjectConfig',JSON.stringify(config));updateAiConfigBadge()}
-function fillAiSettings(){
- const c=loadAiConfig();
- $('#aiTeamPolicy').value=c.teamPolicy||'';$('#aiEvaluationRules').value=c.evaluationRules||'';$('#aiWritingRules').value=c.writingRules||'';
- $('#aiAudience').value=c.audience||'coach';$('#aiLength').value=c.length||'standard';$('#aiProhibited').value=c.prohibited||'';
- $('#refPhysical').checked=c.references.physical!==false;$('#refRecent').checked=c.references.recent!==false;$('#refShooting').checked=c.references.shooting!==false;
- $('#refPositions').checked=c.references.positions!==false;$('#refAgility').checked=c.references.agility!==false;$('#refExisting').checked=c.references.existing!==false;
-}
-function readAiSettingsForm(){
- return {teamPolicy:$('#aiTeamPolicy').value.trim(),evaluationRules:$('#aiEvaluationRules').value.trim(),writingRules:$('#aiWritingRules').value.trim(),
- audience:$('#aiAudience').value,length:$('#aiLength').value,prohibited:$('#aiProhibited').value.trim(),
- references:{physical:$('#refPhysical').checked,recent:$('#refRecent').checked,shooting:$('#refShooting').checked,positions:$('#refPositions').checked,agility:$('#refAgility').checked,existing:$('#refExisting').checked}};
-}
-function updateAiConfigBadge(){
- const c=loadAiConfig();const audience={coach:'コーチ向け',player:'選手向け',parent:'保護者向け'}[c.audience]||'コーチ向け';
- const count=Object.values(c.references||{}).filter(Boolean).length;
- const custom=localStorage.getItem('ninjaAiProjectConfig')?'登録済み':'標準設定';
- const el=$('#aiConfigBadge');if(el)el.textContent=`AI設定：${custom}｜${audience}｜参照 ${count}項目`;
-}
+
+
+
+
+
 const demoPlayers=[{"playerId":"sample-01","name":"加藤 珠浬","category":"女子U13","updatedAt":"2026-07-17"},{"playerId":"sample-02","name":"久山 桃杏","category":"女子U13","updatedAt":"2026-07-17"},{"playerId":"sample-03","name":"橋本　羽望","category":"女子U13","updatedAt":"2026-07-17"},{"playerId":"sample-04","name":"斎藤 里心","category":"女子U13","updatedAt":"2026-07-17"},{"playerId":"sample-05","name":"小杉　結優","category":"女子U13","updatedAt":"2026-07-17"},{"playerId":"sample-06","name":"川上知花","category":"女子U13","updatedAt":"2026-07-17"},{"playerId":"sample-07","name":"早﨑朱璃","category":"女子U13","updatedAt":"2026-07-17"},{"playerId":"sample-08","name":"中間 柚星","category":"女子U13","updatedAt":"2026-07-17"},{"playerId":"sample-09","name":"津賀 愛佳","category":"女子U13","updatedAt":"2026-07-17"},{"playerId":"sample-10","name":"辻村 碧海","category":"女子U13","updatedAt":"2026-07-17"},{"playerId":"sample-11","name":"今元　旭弥","category":"男子U13","updatedAt":"2026-07-17"},{"playerId":"sample-12","name":"山崎　空大","category":"男子U13","updatedAt":"2026-07-17"},{"playerId":"sample-13","name":"山本　仁之丞","category":"男子U13","updatedAt":"2026-07-17"},{"playerId":"sample-14","name":"中村　光成","category":"男子U13","updatedAt":"2026-07-17"},{"playerId":"sample-15","name":"中尾　秋湖","category":"男子U13","updatedAt":"2026-07-17"},{"playerId":"sample-16","name":"中野　行登","category":"男子U13","updatedAt":"2026-07-17"},{"playerId":"sample-17","name":"尾園　颯輝","category":"男子U13","updatedAt":"2026-07-17"},{"playerId":"sample-18","name":"牧　楓真","category":"男子U13","updatedAt":"2026-07-17"},{"playerId":"sample-19","name":"毛利　晃成","category":"男子U13","updatedAt":"2026-07-17"},{"playerId":"sample-20","name":"永冨　晴介","category":"男子U14","updatedAt":"2026-07-17"},{"playerId":"sample-21","name":"高見　凜空","category":"男子U14","updatedAt":"2026-07-17"},{"playerId":"sample-22","name":"高野　颯大","category":"男子U14","updatedAt":"2026-07-17"},{"playerId":"sample-23","name":"小谷　莉空","category":"男子U14","updatedAt":"2026-07-17"},{"playerId":"sample-24","name":"川野　音哉","category":"男子U14","updatedAt":"2026-07-17"},{"playerId":"sample-25","name":"中井　良馬","category":"男子U14","updatedAt":"2026-07-17"},{"playerId":"sample-26","name":"徳増　陽人","category":"男子U14","updatedAt":"2026-07-17"},{"playerId":"sample-27","name":"冨田　陽","category":"男子U14","updatedAt":"2026-07-17"},{"playerId":"sample-28","name":"北村　悠翔","category":"男子U14","updatedAt":"2026-07-17"},{"playerId":"sample-29","name":"橋本　陽葵","category":"男子U15","updatedAt":"2026-07-17"}];
 const demo={"sample-01":{"growth":[{"date":"2026-06-01","height":148,"weight":39},{"date":"2026-07-01","height":149,"weight":41}],"shoot":{"total":{"made":99,"attempts":274,"rate":36,"records":11},"byType":[{"type":"2P","made":61,"attempts":149,"rate":41},{"type":"3P","made":38,"attempts":125,"rate":30}],"byPosition":[{"position":"左45度（ウィングミドル）","type":"2P","made":39,"attempts":102,"rate":38},{"position":"左エルボー","type":"2P","made":22,"attempts":47,"rate":47},{"position":"右0度（コーナー）","type":"3P","made":15,"attempts":36,"rate":42},{"position":"左0度（コーナー）","type":"3P","made":5,"attempts":26,"rate":19},{"position":"右45度（ウィング）","type":"3P","made":6,"attempts":26,"rate":23},{"position":"90度（トップ）","type":"3P","made":9,"attempts":26,"rate":35},{"position":"左45度（ウィング）","type":"3P","made":3,"attempts":11,"rate":27}]},"agility":[{"date":"2026-06-01","type":"シャトルラン","value":108.0,"unit":"回"},{"date":"2026-07-01","type":"シャトルラン","value":139.0,"unit":"回"},{"date":"2026-07-01","type":"反復横跳び","value":54.0,"unit":"回"},{"date":"2026-07-01","type":"L字コーンドリル","value":9.83,"unit":"秒"},{"date":"2026-07-01","type":"垂直跳び","value":37.0,"unit":"cm"}]},"sample-02":{"growth":[{"date":"2026-06-01","height":155,"weight":41},{"date":"2026-07-01","height":154,"weight":42}],"shoot":{"total":{"made":210,"attempts":422,"rate":50,"records":3},"byType":[{"type":"2P","made":142,"attempts":222,"rate":64},{"type":"3P","made":68,"attempts":200,"rate":34}],"byPosition":[{"position":"左エルボー","type":"2P","made":142,"attempts":222,"rate":64},{"position":"左0度（コーナー）","type":"3P","made":31,"attempts":100,"rate":31},{"position":"右45度（ウィング）","type":"3P","made":37,"attempts":100,"rate":37}]},"agility":[{"date":"2026-07-01","type":"シャトルラン","value":107.0,"unit":"回"},{"date":"2026-07-01","type":"反復横跳び","value":46.0,"unit":"回"},{"date":"2026-07-01","type":"L字コーンドリル","value":9.8,"unit":"秒"},{"date":"2026-07-01","type":"垂直跳び","value":37.0,"unit":"cm"}]},"sample-03":{"growth":[{"date":"2026-04-01","height":149,"weight":41},{"date":"2026-05-01","height":150,"weight":41},{"date":"2026-06-01","height":153,"weight":41},{"date":"2026-07-01","height":153,"weight":40.8}],"shoot":{"total":{"made":104,"attempts":227,"rate":46,"records":1},"byType":[{"type":"2P","made":104,"attempts":227,"rate":46}],"byPosition":[{"position":"左エルボー","type":"2P","made":104,"attempts":227,"rate":46}]},"agility":[{"date":"2026-06-01","type":"シャトルラン","value":72.0,"unit":"回"},{"date":"2026-07-01","type":"シャトルラン","value":117.0,"unit":"回"},{"date":"2026-07-01","type":"反復横跳び","value":40.0,"unit":"回"},{"date":"2026-07-01","type":"L字コーンドリル","value":10.16,"unit":"秒"},{"date":"2026-07-01","type":"垂直跳び","value":38.0,"unit":"cm"}]},"sample-04":{"growth":[{"date":"2026-06-01","height":146.6,"weight":37.7},{"date":"2026-07-01","height":146.7,"weight":37.9}],"shoot":{"total":{"made":192,"attempts":390,"rate":49,"records":12},"byType":[{"type":"2P","made":127,"attempts":216,"rate":59},{"type":"3P","made":65,"attempts":174,"rate":37}],"byPosition":[{"position":"左エルボー","type":"2P","made":127,"attempts":216,"rate":59},{"position":"右45度（ウィング）","type":"3P","made":37,"attempts":111,"rate":33},{"position":"90度（トップ）","type":"3P","made":13,"attempts":29,"rate":45},{"position":"左45度（ウィング）","type":"3P","made":5,"attempts":12,"rate":42},{"position":"右0度（コーナー）","type":"3P","made":4,"attempts":11,"rate":36},{"position":"左0度（コーナー）","type":"3P","made":6,"attempts":11,"rate":55}]},"agility":[{"date":"2026-06-01","type":"シャトルラン","value":85.0,"unit":"回"},{"date":"2026-07-01","type":"シャトルラン","value":117.0,"unit":"回"},{"date":"2026-07-01","type":"反復横跳び","value":49.0,"unit":"回"},{"date":"2026-07-01","type":"L字コーンドリル","value":9.13,"unit":"秒"},{"date":"2026-07-01","type":"垂直跳び","value":42.0,"unit":"cm"}]},"sample-05":{"growth":[{"date":"2026-06-01","height":147,"weight":35},{"date":"2026-07-01","height":147,"weight":35.3}],"shoot":{"total":{"made":228,"attempts":537,"rate":42,"records":8},"byType":[{"type":"2P","made":173,"attempts":322,"rate":54},{"type":"3P","made":55,"attempts":215,"rate":26}],"byPosition":[{"position":"右エルボー","type":"2P","made":156,"attempts":270,"rate":58},{"position":"90度（トップ）","type":"3P","made":23,"attempts":80,"rate":29},{"position":"90度（トップミドル）","type":"2P","made":17,"attempts":52,"rate":33},{"position":"右45度（ウィング）","type":"3P","made":11,"attempts":45,"rate":24},{"position":"左45度（ウィング）","type":"3P","made":11,"attempts":43,"rate":26},{"position":"左0度（コーナー）","type":"3P","made":7,"attempts":30,"rate":23},{"position":"右0度（コーナー）","type":"3P","made":3,"attempts":17,"rate":18}]},"agility":[{"date":"2026-06-01","type":"シャトルラン","value":87.0,"unit":"回"},{"date":"2026-07-01","type":"シャトルラン","value":107.0,"unit":"回"},{"date":"2026-07-01","type":"反復横跳び","value":53.0,"unit":"回"},{"date":"2026-07-01","type":"L字コーンドリル","value":9.3,"unit":"秒"},{"date":"2026-07-01","type":"垂直跳び","value":44.0,"unit":"cm"}]},"sample-06":{"growth":[{"date":"2026-07-01","height":160,"weight":49.2}],"shoot":{"total":{"made":0,"attempts":0,"rate":0,"records":0},"byType":[],"byPosition":[]},"agility":[{"date":"2026-07-01","type":"シャトルラン","value":71.0,"unit":"回"},{"date":"2026-07-01","type":"反復横跳び","value":43.0,"unit":"回"},{"date":"2026-07-01","type":"L字コーンドリル","value":9.71,"unit":"秒"},{"date":"2026-07-01","type":"垂直跳び","value":39.0,"unit":"cm"}]},"sample-07":{"growth":[{"date":"2026-06-01","height":156.8,"weight":53},{"date":"2026-07-01","height":156.9,"weight":53}],"shoot":{"total":{"made":75,"attempts":203,"rate":37,"records":1},"byType":[{"type":"2P","made":75,"attempts":203,"rate":37}],"byPosition":[{"position":"右エルボー","type":"2P","made":75,"attempts":203,"rate":37}]},"agility":[{"date":"2026-06-01","type":"シャトルラン","value":70.0,"unit":"回"},{"date":"2026-07-01","type":"シャトルラン","value":92.0,"unit":"回"},{"date":"2026-07-01","type":"反復横跳び","value":54.0,"unit":"回"},{"date":"2026-07-01","type":"L字コーンドリル","value":9.93,"unit":"秒"},{"date":"2026-07-01","type":"垂直跳び","value":43.0,"unit":"cm"}]},"sample-08":{"growth":[{"date":"2026-06-01","height":150,"weight":37},{"date":"2026-07-01","height":152.1,"weight":37.5}],"shoot":{"total":{"made":118,"attempts":276,"rate":43,"records":2},"byType":[{"type":"2P","made":118,"attempts":276,"rate":43}],"byPosition":[{"position":"右エルボー","type":"2P","made":103,"attempts":226,"rate":46},{"position":"左エルボー","type":"2P","made":15,"attempts":50,"rate":30}]},"agility":[{"date":"2026-07-01","type":"シャトルラン","value":90.0,"unit":"回"},{"date":"2026-07-01","type":"反復横跳び","value":48.0,"unit":"回"},{"date":"2026-07-01","type":"L字コーンドリル","value":10.08,"unit":"秒"},{"date":"2026-07-01","type":"垂直跳び","value":42.0,"unit":"cm"}]},"sample-09":{"growth":[{"date":"2026-06-01","height":143.6,"weight":35.3},{"date":"2026-07-01","height":144.1,"weight":35.8}],"shoot":{"total":{"made":181,"attempts":415,"rate":44,"records":8},"byType":[{"type":"2P","made":163,"attempts":325,"rate":50},{"type":"3P","made":18,"attempts":90,"rate":20}],"byPosition":[{"position":"左45度（ウィングミドル）","type":"2P","made":106,"attempts":210,"rate":50},{"position":"右エルボー","type":"2P","made":29,"attempts":61,"rate":48},{"position":"左エルボー","type":"2P","made":28,"attempts":54,"rate":52},{"position":"90度（トップ）","type":"3P","made":6,"attempts":30,"rate":20},{"position":"右0度（コーナー）","type":"3P","made":3,"attempts":15,"rate":20},{"position":"左0度（コーナー）","type":"3P","made":2,"attempts":15,"rate":13},{"position":"右45度（ウィング）","type":"3P","made":3,"attempts":15,"rate":20},{"position":"左45度（ウィング）","type":"3P","made":4,"attempts":15,"rate":27}]},"agility":[{"date":"2026-06-01","type":"シャトルラン","value":100.0,"unit":"回"},{"date":"2026-07-01","type":"シャトルラン","value":134.0,"unit":"回"},{"date":"2026-07-01","type":"反復横跳び","value":51.0,"unit":"回"},{"date":"2026-07-01","type":"L字コーンドリル","value":9.36,"unit":"秒"},{"date":"2026-07-01","type":"垂直跳び","value":41.0,"unit":"cm"}]},"sample-10":{"growth":[{"date":"2026-06-01","height":154,"weight":45.4},{"date":"2026-07-01","height":156.7,"weight":45.3}],"shoot":{"total":{"made":148,"attempts":394,"rate":38,"records":15},"byType":[{"type":"2P","made":100,"attempts":236,"rate":42},{"type":"3P","made":48,"attempts":158,"rate":30}],"byPosition":[{"position":"右45度（ウィングミドル）","type":"2P","made":92,"attempts":213,"rate":43},{"position":"90度（トップ）","type":"3P","made":16,"attempts":45,"rate":36},{"position":"右45度（ウィング）","type":"3P","made":11,"attempts":35,"rate":31},{"position":"左45度（ウィング）","type":"3P","made":10,"attempts":33,"rate":30},{"position":"右0度（コーナー）","type":"3P","made":5,"attempts":24,"rate":21},{"position":"左0度（コーナー）","type":"3P","made":6,"attempts":21,"rate":29},{"position":"90度（トップミドル）","type":"2P","made":6,"attempts":17,"rate":35},{"position":"右0度（コーナーミドル）","type":"2P","made":2,"attempts":6,"rate":33}]},"agility":[]},"sample-11":{"growth":[{"date":"2026-06-01","height":144.5,"weight":33},{"date":"2026-07-01","height":145.3,"weight":34}],"shoot":{"total":{"made":0,"attempts":0,"rate":0,"records":0},"byType":[],"byPosition":[]},"agility":[{"date":"2026-07-01","type":"シャトルラン","value":83.0,"unit":"回"},{"date":"2026-07-01","type":"反復横跳び","value":48.0,"unit":"回"},{"date":"2026-07-01","type":"L字コーンドリル","value":8.83,"unit":"秒"},{"date":"2026-07-01","type":"垂直跳び","value":44.0,"unit":"cm"}]},"sample-12":{"growth":[{"date":"2026-06-01","height":155.6,"weight":45},{"date":"2026-07-01","height":156.6,"weight":45}],"shoot":{"total":{"made":47,"attempts":124,"rate":38,"records":12},"byType":[{"type":"2P","made":12,"attempts":20,"rate":60},{"type":"3P","made":35,"attempts":104,"rate":34}],"byPosition":[{"position":"右45度（ウィング）","type":"3P","made":11,"attempts":29,"rate":38},{"position":"右0度（コーナー）","type":"3P","made":7,"attempts":20,"rate":35},{"position":"左45度（ウィング）","type":"3P","made":7,"attempts":20,"rate":35},{"position":"左0度（コーナー）","type":"3P","made":6,"attempts":19,"rate":32},{"position":"90度（トップ）","type":"3P","made":4,"attempts":16,"rate":25},{"position":"90度（トップミドル）","type":"2P","made":5,"attempts":10,"rate":50},{"position":"左エルボー","type":"2P","made":7,"attempts":10,"rate":70}]},"agility":[]},"sample-13":{"growth":[{"date":"2026-06-01","height":148.5,"weight":39.4},{"date":"2026-07-01","height":150,"weight":38.9}],"shoot":{"total":{"made":116,"attempts":259,"rate":45,"records":15},"byType":[{"type":"2P","made":106,"attempts":210,"rate":50},{"type":"3P","made":10,"attempts":49,"rate":20}],"byPosition":[{"position":"右0度（コーナーミドル）","type":"2P","made":18,"attempts":30,"rate":60},{"position":"左0度（コーナーミドル）","type":"2P","made":12,"attempts":30,"rate":40},{"position":"右45度（ウィングミドル）","type":"2P","made":15,"attempts":30,"rate":50},{"position":"左45度（ウィングミドル）","type":"2P","made":13,"attempts":30,"rate":43},{"position":"90度（トップミドル）","type":"2P","made":20,"attempts":30,"rate":67},{"position":"右エルボー","type":"2P","made":15,"attempts":30,"rate":50},{"position":"左エルボー","type":"2P","made":13,"attempts":30,"rate":43},{"position":"90度（トップ）","type":"3P","made":6,"attempts":15,"rate":40},{"position":"右0度（コーナー）","type":"3P","made":1,"attempts":12,"rate":8},{"position":"右45度（ウィング）","type":"3P","made":1,"attempts":12,"rate":8},{"position":"左0度（コーナー）","type":"3P","made":1,"attempts":5,"rate":20},{"position":"左45度（ウィング）","type":"3P","made":1,"attempts":5,"rate":20}]},"agility":[{"date":"2026-06-01","type":"シャトルラン","value":87.0,"unit":"回"},{"date":"2026-07-01","type":"シャトルラン","value":87.0,"unit":"回"},{"date":"2026-06-01","type":"反復横跳び","value":51.0,"unit":"回"},{"date":"2026-07-01","type":"反復横跳び","value":51.0,"unit":"回"},{"date":"2026-06-01","type":"L字コーンドリル","value":9.02,"unit":"秒"},{"date":"2026-07-01","type":"L字コーンドリル","value":8.62,"unit":"秒"},{"date":"2026-06-01","type":"垂直跳び","value":35.0,"unit":"cm"},{"date":"2026-07-01","type":"垂直跳び","value":35.0,"unit":"cm"}]},"sample-14":{"growth":[{"date":"2026-07-01","height":152.2,"weight":44}],"shoot":{"total":{"made":23,"attempts":80,"rate":29,"records":2},"byType":[{"type":"3P","made":23,"attempts":80,"rate":29}],"byPosition":[{"position":"90度（トップ）","type":"3P","made":11,"attempts":50,"rate":22},{"position":"左0度（コーナー）","type":"3P","made":12,"attempts":30,"rate":40}]},"agility":[{"date":"2026-07-01","type":"シャトルラン","value":75.0,"unit":"回"},{"date":"2026-07-01","type":"反復横跳び","value":53.0,"unit":"回"},{"date":"2026-07-01","type":"L字コーンドリル","value":8.15,"unit":"秒"},{"date":"2026-07-01","type":"垂直跳び","value":40.0,"unit":"cm"}]},"sample-15":{"growth":[{"date":"2026-07-01","height":150.5,"weight":39.2}],"shoot":{"total":{"made":0,"attempts":0,"rate":0,"records":0},"byType":[],"byPosition":[]},"agility":[{"date":"2026-07-01","type":"シャトルラン","value":74.0,"unit":"回"},{"date":"2026-07-01","type":"反復横跳び","value":52.0,"unit":"回"},{"date":"2026-07-01","type":"L字コーンドリル","value":8.77,"unit":"秒"},{"date":"2026-07-01","type":"垂直跳び","value":40.0,"unit":"cm"}]},"sample-16":{"growth":[{"date":"2026-06-01","height":142,"weight":33.3},{"date":"2026-07-01","height":143,"weight":32.7}],"shoot":{"total":{"made":275,"attempts":1193,"rate":23,"records":33},"byType":[{"type":"2P","made":155,"attempts":342,"rate":45},{"type":"3P","made":71,"attempts":741,"rate":10},{"type":"FT","made":49,"attempts":110,"rate":45}],"byPosition":[{"position":"左0度（コーナー）","type":"3P","made":39,"attempts":259,"rate":15},{"position":"右エルボー","type":"2P","made":81,"attempts":176,"rate":46},{"position":"右0度（コーナー）","type":"3P","made":22,"attempts":172,"rate":13},{"position":"左エルボー","type":"2P","made":74,"attempts":166,"rate":45},{"position":"90度（トップ）","type":"3P","made":6,"attempts":140,"rate":4},{"position":"フリースロー","type":"FT","made":49,"attempts":110,"rate":45},{"position":"右45度（ウィング）","type":"3P","made":3,"attempts":100,"rate":3},{"position":"左45度（ウィング）","type":"3P","made":1,"attempts":70,"rate":1}]},"agility":[{"date":"2026-07-01","type":"シャトルラン","value":77.0,"unit":"回"},{"date":"2026-07-01","type":"反復横跳び","value":51.0,"unit":"回"},{"date":"2026-07-01","type":"L字コーンドリル","value":8.95,"unit":"秒"},{"date":"2026-07-01","type":"垂直跳び","value":34.0,"unit":"cm"}]},"sample-17":{"growth":[{"date":"2026-07-01","height":166.5,"weight":59}],"shoot":{"total":{"made":5,"attempts":19,"rate":26,"records":1},"byType":[{"type":"3P","made":5,"attempts":19,"rate":26}],"byPosition":[{"position":"右45度（ウィング）","type":"3P","made":5,"attempts":19,"rate":26}]},"agility":[{"date":"2026-07-01","type":"シャトルラン","value":109.0,"unit":"回"},{"date":"2026-07-01","type":"反復横跳び","value":53.0,"unit":"回"},{"date":"2026-07-01","type":"L字コーンドリル","value":8.72,"unit":"秒"},{"date":"2026-07-01","type":"垂直跳び","value":45.0,"unit":"cm"}]},"sample-18":{"growth":[{"date":"2025-04-01","height":144,"weight":32},{"date":"2025-05-01","height":145,"weight":32},{"date":"2025-06-01","height":145.4,"weight":32.4},{"date":"2025-07-01","height":147,"weight":33},{"date":"2025-08-01","height":147,"weight":34},{"date":"2025-09-01","height":146,"weight":34.2},{"date":"2025-10-01","height":147,"weight":34.5},{"date":"2025-11-01","height":147.5,"weight":35.6},{"date":"2025-12-01","height":148.1,"weight":38},{"date":"2026-01-01","height":149.5,"weight":36.2},{"date":"2026-02-01","height":149.6,"weight":37.5},{"date":"2026-03-01","height":151.5,"weight":39.8},{"date":"2026-04-01","height":153.5,"weight":39.8},{"date":"2026-05-01","height":153.5,"weight":41.1},{"date":"2026-06-01","height":154.6,"weight":42.1},{"date":"2026-07-01","height":155.5,"weight":null}],"shoot":{"total":{"made":0,"attempts":0,"rate":0,"records":0},"byType":[],"byPosition":[]},"agility":[{"date":"2026-07-01","type":"シャトルラン","value":85.0,"unit":"回"},{"date":"2026-07-01","type":"反復横跳び","value":64.0,"unit":"回"},{"date":"2026-07-01","type":"L字コーンドリル","value":7.84,"unit":"秒"},{"date":"2026-07-01","type":"垂直跳び","value":50.0,"unit":"cm"}]},"sample-19":{"growth":[{"date":"2026-06-01","height":161.8,"weight":44.4},{"date":"2026-07-01","height":163.1,"weight":47.2}],"shoot":{"total":{"made":1072,"attempts":1470,"rate":73,"records":48},"byType":[{"type":"2P","made":144,"attempts":190,"rate":76},{"type":"3P","made":388,"attempts":700,"rate":55},{"type":"FT","made":540,"attempts":580,"rate":93}],"byPosition":[{"position":"フリースロー","type":"FT","made":540,"attempts":580,"rate":93},{"position":"右0度（コーナー）","type":"3P","made":184,"attempts":340,"rate":54},{"position":"90度（トップ）","type":"3P","made":124,"attempts":240,"rate":52},{"position":"左0度（コーナー）","type":"3P","made":24,"attempts":40,"rate":60},{"position":"右45度（ウィング）","type":"3P","made":24,"attempts":40,"rate":60},{"position":"左45度（ウィング）","type":"3P","made":32,"attempts":40,"rate":80},{"position":"90度（トップミドル）","type":"2P","made":29,"attempts":40,"rate":72},{"position":"右0度（コーナーミドル）","type":"2P","made":24,"attempts":30,"rate":80},{"position":"左0度（コーナーミドル）","type":"2P","made":20,"attempts":30,"rate":67},{"position":"右45度（ウィングミドル）","type":"2P","made":25,"attempts":30,"rate":83},{"position":"左45度（ウィングミドル）","type":"2P","made":14,"attempts":20,"rate":70},{"position":"右エルボー","type":"2P","made":15,"attempts":20,"rate":75},{"position":"左エルボー","type":"2P","made":17,"attempts":20,"rate":85}]},"agility":[{"date":"2026-07-01","type":"シャトルラン","value":143.0,"unit":"回"},{"date":"2026-07-01","type":"反復横跳び","value":60.0,"unit":"回"},{"date":"2026-07-01","type":"L字コーンドリル","value":7.69,"unit":"秒"},{"date":"2026-07-01","type":"垂直跳び","value":48.0,"unit":"cm"}]},"sample-20":{"growth":[{"date":"2025-04-01","height":151,"weight":41},{"date":"2025-05-01","height":152,"weight":41},{"date":"2025-06-01","height":153,"weight":42},{"date":"2025-07-01","height":153.5,"weight":43},{"date":"2025-08-01","height":153.8,"weight":43.3},{"date":"2025-09-01","height":154.2,"weight":45},{"date":"2025-10-01","height":155,"weight":46},{"date":"2025-11-01","height":155.8,"weight":46.4},{"date":"2025-12-01","height":156,"weight":45.7},{"date":"2026-01-01","height":156.5,"weight":46.3},{"date":"2026-02-01","height":157.1,"weight":46.9},{"date":"2026-03-01","height":157.4,"weight":47.3},{"date":"2026-04-01","height":157.7,"weight":49.2},{"date":"2026-05-01","height":158,"weight":49.8},{"date":"2026-06-01","height":159,"weight":50}],"shoot":{"total":{"made":5,"attempts":17,"rate":29,"records":2},"byType":[{"type":"3P","made":5,"attempts":17,"rate":29}],"byPosition":[{"position":"右0度（コーナー）","type":"3P","made":3,"attempts":10,"rate":30},{"position":"90度（トップ）","type":"3P","made":2,"attempts":7,"rate":29}]},"agility":[{"date":"2026-07-01","type":"シャトルラン","value":82.0,"unit":"回"},{"date":"2026-07-01","type":"反復横跳び","value":55.0,"unit":"回"},{"date":"2026-07-01","type":"L字コーンドリル","value":8.76,"unit":"秒"},{"date":"2026-07-01","type":"垂直跳び","value":46.0,"unit":"cm"}]},"sample-21":{"growth":[{"date":"2025-04-01","height":157.4,"weight":44},{"date":"2025-05-01","height":158,"weight":44.5},{"date":"2025-06-01","height":158.3,"weight":45},{"date":"2025-07-01","height":158.5,"weight":46},{"date":"2025-08-01","height":159,"weight":46.5},{"date":"2025-09-01","height":161,"weight":47},{"date":"2025-10-01","height":162.3,"weight":48.9},{"date":"2025-11-01","height":164,"weight":49.3},{"date":"2025-12-01","height":165,"weight":50.7},{"date":"2026-01-01","height":165.2,"weight":52},{"date":"2026-02-01","height":165.3,"weight":53},{"date":"2026-03-01","height":165.4,"weight":53.5},{"date":"2026-04-01","height":166.7,"weight":54},{"date":"2026-05-01","height":167.5,"weight":49.9},{"date":"2026-06-01","height":167,"weight":49}],"shoot":{"total":{"made":9,"attempts":60,"rate":15,"records":3},"byType":[{"type":"2P","made":2,"attempts":5,"rate":40},{"type":"3P","made":7,"attempts":55,"rate":13}],"byPosition":[{"position":"右0度（コーナー）","type":"3P","made":7,"attempts":55,"rate":13},{"position":"右45度（ウィングミドル）","type":"2P","made":2,"attempts":5,"rate":40}]},"agility":[]},"sample-22":{"growth":[{"date":"2025-04-01","height":145.2,"weight":33.4},{"date":"2025-05-01","height":145.3,"weight":34},{"date":"2025-06-01","height":146.2,"weight":35.6},{"date":"2025-07-01","height":146.8,"weight":36},{"date":"2025-08-01","height":147,"weight":36.2},{"date":"2025-09-01","height":148.5,"weight":37},{"date":"2025-10-01","height":149,"weight":38.2},{"date":"2025-11-01","height":150,"weight":38.2},{"date":"2025-12-01","height":152.7,"weight":39.8},{"date":"2026-01-01","height":152.7,"weight":39.8},{"date":"2026-02-01","height":153.2,"weight":39.9},{"date":"2026-03-01","height":153,"weight":39.2}],"shoot":{"total":{"made":220,"attempts":642,"rate":34,"records":58},"byType":[{"type":"2P","made":79,"attempts":216,"rate":37},{"type":"3P","made":141,"attempts":426,"rate":33}],"byPosition":[{"position":"90度（トップ）","type":"3P","made":47,"attempts":125,"rate":38},{"position":"右0度（コーナー）","type":"3P","made":33,"attempts":87,"rate":38},{"position":"右45度（ウィング）","type":"3P","made":22,"attempts":83,"rate":27},{"position":"左0度（コーナーミドル）","type":"2P","made":20,"attempts":80,"rate":25},{"position":"左0度（コーナー）","type":"3P","made":20,"attempts":73,"rate":27},{"position":"左45度（ウィング）","type":"3P","made":19,"attempts":58,"rate":33},{"position":"90度（トップミドル）","type":"2P","made":21,"attempts":43,"rate":49},{"position":"右0度（コーナーミドル）","type":"2P","made":13,"attempts":35,"rate":37},{"position":"左45度（ウィングミドル）","type":"2P","made":11,"attempts":33,"rate":33},{"position":"右45度（ウィングミドル）","type":"2P","made":14,"attempts":25,"rate":56}]},"agility":[{"date":"2026-07-01","type":"シャトルラン","value":118.0,"unit":"回"},{"date":"2026-07-01","type":"反復横跳び","value":55.0,"unit":"回"},{"date":"2026-07-01","type":"L字コーンドリル","value":8.4,"unit":"秒"},{"date":"2026-07-01","type":"垂直跳び","value":42.0,"unit":"cm"}]},"sample-23":{"growth":[{"date":"2025-04-01","height":167,"weight":45},{"date":"2025-05-01","height":167.5,"weight":47},{"date":"2025-06-01","height":167.5,"weight":47},{"date":"2025-07-01","height":169,"weight":48},{"date":"2025-08-01","height":170,"weight":48.1},{"date":"2025-09-01","height":171.5,"weight":49.5},{"date":"2025-10-01","height":171.8,"weight":50.2},{"date":"2025-11-01","height":172.5,"weight":51.5},{"date":"2025-12-01","height":173.5,"weight":53.2},{"date":"2026-01-01","height":173.5,"weight":54.8},{"date":"2026-02-01","height":174,"weight":53.6},{"date":"2026-03-01","height":175,"weight":54},{"date":"2026-04-01","height":176.1,"weight":56},{"date":"2026-05-01","height":175.7,"weight":55.8},{"date":"2026-06-01","height":176,"weight":55.7}],"shoot":{"total":{"made":29,"attempts":125,"rate":23,"records":14},"byType":[{"type":"3P","made":29,"attempts":125,"rate":23}],"byPosition":[{"position":"90度（トップ）","type":"3P","made":9,"attempts":53,"rate":17},{"position":"右45度（ウィング）","type":"3P","made":7,"attempts":21,"rate":33},{"position":"右0度（コーナー）","type":"3P","made":6,"attempts":19,"rate":32},{"position":"左45度（ウィング）","type":"3P","made":2,"attempts":18,"rate":11},{"position":"左0度（コーナー）","type":"3P","made":5,"attempts":14,"rate":36}]},"agility":[{"date":"2026-07-01","type":"シャトルラン","value":125.0,"unit":"回"},{"date":"2026-07-01","type":"反復横跳び","value":57.0,"unit":"回"},{"date":"2026-07-01","type":"L字コーンドリル","value":8.3,"unit":"秒"},{"date":"2026-07-01","type":"垂直跳び","value":45.0,"unit":"cm"}]},"sample-24":{"growth":[{"date":"2025-04-01","height":158.3,"weight":46.2},{"date":"2025-05-01","height":158.6,"weight":45.1},{"date":"2025-06-01","height":159.7,"weight":47.2},{"date":"2025-07-01","height":160.1,"weight":45.5},{"date":"2025-08-01","height":161.3,"weight":48.2},{"date":"2025-09-01","height":161,"weight":47.6},{"date":"2025-10-01","height":161.1,"weight":48.3},{"date":"2025-11-01","height":162.5,"weight":49.4},{"date":"2025-12-01","height":162.8,"weight":50.3},{"date":"2026-01-01","height":164.9,"weight":51},{"date":"2026-02-01","height":164.9,"weight":50.2},{"date":"2026-03-01","height":165,"weight":51.5},{"date":"2026-04-01","height":167,"weight":52.6},{"date":"2026-05-01","height":168,"weight":53.2},{"date":"2026-06-01","height":168,"weight":54.5},{"date":"2026-07-01","height":168.5,"weight":null}],"shoot":{"total":{"made":127,"attempts":415,"rate":31,"records":29},"byType":[{"type":"2P","made":44,"attempts":123,"rate":36},{"type":"3P","made":83,"attempts":292,"rate":28}],"byPosition":[{"position":"90度（トップ）","type":"3P","made":40,"attempts":102,"rate":39},{"position":"右45度（ウィング）","type":"3P","made":11,"attempts":60,"rate":18},{"position":"左0度（コーナーミドル）","type":"2P","made":32,"attempts":56,"rate":57},{"position":"右0度（コーナー）","type":"3P","made":14,"attempts":55,"rate":25},{"position":"左45度（ウィング）","type":"3P","made":9,"attempts":38,"rate":24},{"position":"左0度（コーナー）","type":"3P","made":9,"attempts":37,"rate":24},{"position":"右45度（ウィングミドル）","type":"2P","made":2,"attempts":20,"rate":10},{"position":"90度（トップミドル）","type":"2P","made":6,"attempts":18,"rate":33},{"position":"右0度（コーナーミドル）","type":"2P","made":3,"attempts":17,"rate":18},{"position":"左45度（ウィングミドル）","type":"2P","made":1,"attempts":12,"rate":8}]},"agility":[{"date":"2026-07-01","type":"シャトルラン","value":101.0,"unit":"回"},{"date":"2026-07-01","type":"反復横跳び","value":49.0,"unit":"回"},{"date":"2026-07-01","type":"L字コーンドリル","value":8.46,"unit":"秒"},{"date":"2026-07-01","type":"垂直跳び","value":51.0,"unit":"cm"}]},"sample-25":{"growth":[{"date":"2025-04-01","height":142,"weight":40.5},{"date":"2025-05-01","height":142,"weight":41},{"date":"2025-06-01","height":144,"weight":40},{"date":"2025-07-01","height":144,"weight":40},{"date":"2025-08-01","height":145,"weight":39.8},{"date":"2025-09-01","height":144,"weight":38},{"date":"2025-10-01","height":145,"weight":39},{"date":"2025-11-01","height":145,"weight":41.2},{"date":"2025-12-01","height":146,"weight":40.6},{"date":"2026-01-01","height":146,"weight":38.7},{"date":"2026-02-01","height":146.5,"weight":41.2},{"date":"2026-03-01","height":147,"weight":41.2},{"date":"2026-04-01","height":147,"weight":40.6},{"date":"2026-05-01","height":148,"weight":41.8},{"date":"2026-06-01","height":149,"weight":43}],"shoot":{"total":{"made":47,"attempts":131,"rate":36,"records":7},"byType":[{"type":"3P","made":36,"attempts":111,"rate":32},{"type":"FT","made":11,"attempts":20,"rate":55}],"byPosition":[{"position":"右0度（コーナー）","type":"3P","made":24,"attempts":83,"rate":29},{"position":"フリースロー","type":"FT","made":11,"attempts":20,"rate":55},{"position":"90度（トップ）","type":"3P","made":10,"attempts":20,"rate":50},{"position":"左45度（ウィング）","type":"3P","made":2,"attempts":8,"rate":25}]},"agility":[{"date":"2026-07-01","type":"シャトルラン","value":115.0,"unit":"回"},{"date":"2026-07-01","type":"反復横跳び","value":54.0,"unit":"回"},{"date":"2026-07-01","type":"L字コーンドリル","value":8.16,"unit":"秒"},{"date":"2026-07-01","type":"垂直跳び","value":44.0,"unit":"cm"}]},"sample-26":{"growth":[{"date":"2025-04-01","height":164,"weight":43},{"date":"2025-05-01","height":164,"weight":44},{"date":"2025-06-01","height":166,"weight":43.6},{"date":"2025-07-01","height":166,"weight":44.7},{"date":"2025-08-01","height":166,"weight":44.1},{"date":"2025-09-01","height":168,"weight":45},{"date":"2025-10-01","height":168.8,"weight":47},{"date":"2025-11-01","height":170,"weight":47.5},{"date":"2025-12-01","height":170.5,"weight":48.3},{"date":"2026-01-01","height":170.5,"weight":49.1},{"date":"2026-02-01","height":171.1,"weight":50.2},{"date":"2026-03-01","height":172,"weight":49.9},{"date":"2026-04-01","height":173,"weight":51.9},{"date":"2026-05-01","height":174.5,"weight":51.9},{"date":"2026-06-01","height":175,"weight":51.5}],"shoot":{"total":{"made":75,"attempts":238,"rate":32,"records":29},"byType":[{"type":"2P","made":8,"attempts":10,"rate":80},{"type":"3P","made":67,"attempts":228,"rate":29}],"byPosition":[{"position":"90度（トップ）","type":"3P","made":30,"attempts":89,"rate":34},{"position":"右0度（コーナー）","type":"3P","made":7,"attempts":46,"rate":15},{"position":"右45度（ウィング）","type":"3P","made":6,"attempts":37,"rate":16},{"position":"左45度（ウィング）","type":"3P","made":12,"attempts":29,"rate":41},{"position":"左0度（コーナー）","type":"3P","made":12,"attempts":27,"rate":44},{"position":"左45度（ウィングミドル）","type":"2P","made":5,"attempts":5,"rate":100},{"position":"右45度（ウィングミドル）","type":"2P","made":3,"attempts":5,"rate":60}]},"agility":[{"date":"2026-07-01","type":"シャトルラン","value":101.0,"unit":"回"},{"date":"2026-07-01","type":"反復横跳び","value":49.0,"unit":"回"},{"date":"2026-07-01","type":"L字コーンドリル","value":8.2,"unit":"秒"},{"date":"2026-07-01","type":"垂直跳び","value":43.0,"unit":"cm"}]},"sample-27":{"growth":[{"date":"2025-04-01","height":149,"weight":39},{"date":"2025-05-01","height":149.2,"weight":39},{"date":"2025-06-01","height":149.2,"weight":39},{"date":"2025-07-01","height":150.5,"weight":39.3},{"date":"2025-08-01","height":151,"weight":40},{"date":"2025-09-01","height":152.5,"weight":40},{"date":"2025-10-01","height":153.5,"weight":41},{"date":"2025-11-01","height":154,"weight":43},{"date":"2025-12-01","height":155,"weight":43.2},{"date":"2026-01-01","height":156,"weight":44},{"date":"2026-02-01","height":157.5,"weight":46},{"date":"2026-03-01","height":158.5,"weight":46.7},{"date":"2026-04-01","height":159.3,"weight":46},{"date":"2026-05-01","height":162,"weight":48},{"date":"2026-06-01","height":162.3,"weight":48}],"shoot":{"total":{"made":9,"attempts":38,"rate":24,"records":5},"byType":[{"type":"3P","made":9,"attempts":38,"rate":24}],"byPosition":[{"position":"右45度（ウィング）","type":"3P","made":2,"attempts":8,"rate":25},{"position":"左45度（ウィング）","type":"3P","made":3,"attempts":8,"rate":38},{"position":"90度（トップ）","type":"3P","made":2,"attempts":8,"rate":25},{"position":"右0度（コーナー）","type":"3P","made":1,"attempts":7,"rate":14},{"position":"左0度（コーナー）","type":"3P","made":1,"attempts":7,"rate":14}]},"agility":[{"date":"2026-07-01","type":"シャトルラン","value":105.0,"unit":"回"},{"date":"2026-07-01","type":"反復横跳び","value":61.0,"unit":"回"},{"date":"2026-07-01","type":"L字コーンドリル","value":8.08,"unit":"秒"},{"date":"2026-07-01","type":"垂直跳び","value":41.0,"unit":"cm"}]},"sample-28":{"growth":[{"date":"2025-04-01","height":161,"weight":62},{"date":"2025-05-01","height":162,"weight":62},{"date":"2025-06-01","height":162,"weight":62},{"date":"2025-07-01","height":162.5,"weight":62},{"date":"2025-08-01","height":164,"weight":62},{"date":"2025-09-01","height":164,"weight":60.8},{"date":"2025-10-01","height":165.5,"weight":61},{"date":"2025-11-01","height":165.5,"weight":60.9},{"date":"2025-12-01","height":167.5,"weight":60.2},{"date":"2026-01-01","height":167.5,"weight":61},{"date":"2026-02-01","height":169,"weight":60.8},{"date":"2026-03-01","height":169,"weight":59.7},{"date":"2026-04-01","height":170.4,"weight":60},{"date":"2026-05-01","height":171,"weight":62.8}],"shoot":{"total":{"made":148,"attempts":266,"rate":56,"records":16},"byType":[{"type":"2P","made":131,"attempts":214,"rate":61},{"type":"3P","made":17,"attempts":52,"rate":33}],"byPosition":[{"position":"右0度（コーナーミドル）","type":"2P","made":28,"attempts":54,"rate":52},{"position":"90度（トップミドル）","type":"2P","made":32,"attempts":53,"rate":60},{"position":"左0度（コーナーミドル）","type":"2P","made":30,"attempts":50,"rate":60},{"position":"左45度（ウィングミドル）","type":"2P","made":36,"attempts":50,"rate":72},{"position":"90度（トップ）","type":"3P","made":6,"attempts":15,"rate":40},{"position":"左45度（ウィング）","type":"3P","made":3,"attempts":13,"rate":23},{"position":"右45度（ウィング）","type":"3P","made":5,"attempts":12,"rate":42},{"position":"右45度（ウィングミドル）","type":"2P","made":5,"attempts":7,"rate":71},{"position":"右0度（コーナー）","type":"3P","made":2,"attempts":6,"rate":33},{"position":"左0度（コーナー）","type":"3P","made":1,"attempts":6,"rate":17}]},"agility":[{"date":"2026-07-01","type":"シャトルラン","value":98.0,"unit":"回"},{"date":"2026-07-01","type":"反復横跳び","value":51.0,"unit":"回"},{"date":"2026-07-01","type":"L字コーンドリル","value":9.12,"unit":"秒"},{"date":"2026-07-01","type":"垂直跳び","value":41.0,"unit":"cm"}]},"sample-29":{"growth":[{"date":"2025-04-01","height":158,"weight":42},{"date":"2025-05-01","height":158,"weight":45},{"date":"2025-06-01","height":158,"weight":47},{"date":"2025-07-01","height":158,"weight":47.5},{"date":"2025-08-01","height":158,"weight":47.8},{"date":"2025-09-01","height":158,"weight":48},{"date":"2025-10-01","height":158,"weight":48.2},{"date":"2025-11-01","height":158,"weight":48.5},{"date":"2025-12-01","height":158,"weight":48.2},{"date":"2026-01-01","height":158.2,"weight":48.6},{"date":"2026-02-01","height":158.3,"weight":49.2},{"date":"2026-03-01","height":158.5,"weight":49.3},{"date":"2026-04-01","height":158.6,"weight":49.5},{"date":"2026-05-01","height":160,"weight":50.5},{"date":"2026-06-01","height":160,"weight":51.2}],"shoot":{"total":{"made":0,"attempts":0,"rate":0,"records":0},"byType":[],"byPosition":[]},"agility":[{"date":"2026-07-01","type":"シャトルラン","value":91.0,"unit":"回"},{"date":"2026-07-01","type":"反復横跳び","value":61.0,"unit":"回"},{"date":"2026-07-01","type":"L字コーンドリル","value":7.74,"unit":"秒"},{"date":"2026-07-01","type":"垂直跳び","value":60.0,"unit":"cm"}]}};
 
@@ -648,46 +560,8 @@ function renderAgility(records){
  }
 }
 
-function buildAiPayload(){
- if(!state.selected||!state.currentData)return null;
- const config=loadAiConfig();
- const refs=config.references||{};
- const g=(state.currentData.growth||[]).slice().sort((a,b)=>dateKey(a).localeCompare(dateKey(b)));
- const first=g[0]||{},last=g[g.length-1]||{};
- const recent=lastThreeMonths(g);
- const s=state.currentData.shooting||{};
- const a=state.currentData.agility||[];
- const payload={
-  player:{name:state.selected.name,category:state.selected.category||''},
-  tone:$('#commentTone').value,
-  aiConfig:config
- };
- if(refs.physical)payload.physical={
-  first:{date:dateKey(first),height:first.height??null,weight:first.weight??null},
-  latest:{date:dateKey(last),height:last.height??null,weight:last.weight??null}
- };
- if(refs.recent)payload.recent3Months=recent;
- if(refs.shooting)payload.shooting={total:s.total||{},byType:s.byType||[]};
- if(refs.positions)payload.shootingPositions=(s.byPosition||[]).slice(0,12);
- if(refs.agility)payload.agilityLatest=latestAgilityValues(a);
- if(refs.existing)payload.existingComment=$('#coachComment').value.trim();
- return payload;
-}
-async function generateAiComment(){
- if(!state.selected)return;
- const btn=$('#generateAiCommentBtn'),btn2=$('#regenerateAiCommentBtn');
- btn.disabled=btn2.disabled=true;$('#aiStatus').textContent='AIが所見を作成しています…';
- try{
-  if(!state.apiUrl)throw new Error('Apps Scriptに接続してください');
-  const payload=buildAiPayload();
-  const r=await api('generateCoachComment',{payload:JSON.stringify(payload)});
-  if(r.status!=='ok')throw new Error(r.message||'AI生成に失敗しました');
-  $('#coachComment').value=r.comment||'';
-  $('#aiStatus').textContent='AI下書きを作成しました。内容を確認・修正してください。';
- }catch(e){
-  $('#aiStatus').textContent='生成できませんでした：'+e.message;
- }finally{btn.disabled=btn2.disabled=false}
-}
+
+
 async function copyComment(){
  try{await navigator.clipboard.writeText($('#coachComment').value);$('#commentSaved').textContent='コピーしました';setTimeout(()=>$('#commentSaved').textContent='',1800)}
  catch(e){$('#coachComment').select();document.execCommand('copy')}
@@ -696,12 +570,8 @@ function loadComment(){const key='coachComment:'+state.selected.playerId;$('#coa
 function saveComment(){if(!state.selected)return;localStorage.setItem('coachComment:'+state.selected.playerId,$('#coachComment').value);$('#commentSaved').textContent='保存しました';setTimeout(()=>$('#commentSaved').textContent='',1800)}
 function dateKey(r){return String(r.date||r.measuredAtIso||r.createdAt||'').slice(0,10)}function num(v){return Number(v||0).toLocaleString('ja-JP',{maximumFractionDigits:2})}function signed(v){v=Number(v||0);return (v>0?'+':'')+num(v)}function fmtDate(v){if(!v)return'';const [y,m,d]=v.split('-');return `${y}/${Number(m)}/${Number(d)}`}function fmtMonth(v){if(!v)return'';const [y,m]=v.split('-');return `${y}/${Number(m)}`}function setText(s,v){$(s).textContent=v}function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab,.tabview').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('#'+b.dataset.tab).classList.add('active')});
-$('#generateAiCommentBtn').onclick=generateAiComment;$('#regenerateAiCommentBtn').onclick=generateAiComment;$('#copyCommentBtn').onclick=copyComment;
+$('#copyCommentBtn').onclick=copyComment;
 $('#searchInput').oninput=renderPlayers;$('#categoryFilter').onchange=renderPlayers;$('#reloadBtn').onclick=loadPlayers;$('#saveCommentBtn').onclick=saveComment;
-$('#aiSettingsBtn').onclick=()=>{fillAiSettings();$('#aiSettingsSaved').textContent='';$('#aiSettingsModal').classList.add('open')};
-$('#closeAiSettingsBtn').onclick=()=>$('#aiSettingsModal').classList.remove('open');
-$('#saveAiSettingsBtn').onclick=()=>{saveAiConfig(readAiSettingsForm());$('#aiSettingsSaved').textContent='AI設定を保存しました';setTimeout(()=>$('#aiSettingsSaved').textContent='',1800)};
-$('#resetAiSettingsBtn').onclick=()=>{localStorage.removeItem('ninjaAiProjectConfig');fillAiSettings();updateAiConfigBadge();$('#aiSettingsSaved').textContent='標準設定に戻しました';setTimeout(()=>$('#aiSettingsSaved').textContent='',1800)};
 $('#settingsBtn').onclick=()=>{$('#apiUrlInput').value=state.apiUrl;$('#settingsModal').classList.add('open')};$('#closeSettingsBtn').onclick=()=>$('#settingsModal').classList.remove('open');
 $('#saveSettingsBtn').onclick=()=>{state.apiUrl=$('#apiUrlInput').value.trim().replace(/\/$/,'');localStorage.setItem('ninjaPlayerApiUrl',state.apiUrl);$('#settingsModal').classList.remove('open');state.selected=null;$('#detail').hidden=true;$('#emptyState').hidden=false;loadPlayers()};
 $('#demoBtn').onclick=()=>{state.apiUrl='';localStorage.removeItem('ninjaPlayerApiUrl');$('#settingsModal').classList.remove('open');state.selected=null;$('#detail').hidden=true;$('#emptyState').hidden=false;loadPlayers()};
@@ -937,38 +807,12 @@ function savePlayerFeedback(){
  $('#feedbackSaved').textContent='いいところ・改善点・方向性を保存しました';
  setTimeout(()=>$('#feedbackSaved').textContent='',1800);
 }
-async function generateAiFeedback(){
- if(!state.selected){alert('選手を選択してください');return}
- if(!state.apiUrl){alert('接続設定からApps Script URLを登録してください');return}
- const btn=$('#generateFeedbackBtn');
- const old=btn.textContent;btn.disabled=true;btn.textContent='生成中...';
- try{
-  const payload=buildAiPayload();
-  payload.currentFeedback={
-   goodPoints:$('#goodPoints').value.trim(),
-   improvementPoints:$('#improvementPoints').value.trim(),
-   futureDirection:$('#futureDirection').value.trim()
-  };
-  const result=await api('generatePlayerFeedback',{payload:JSON.stringify(payload)});
-  if(!result||result.status!=='ok')throw new Error(result?.message||'AI生成に失敗しました');
-  $('#goodPoints').value=result.goodPoints||'';
-  $('#improvementPoints').value=result.improvementPoints||'';
-  $('#futureDirection').value=result.futureDirection||'';
-  refreshDataSummary();
-  $('#feedbackSaved').textContent='AIが3項目の下書きを作成しました。確認後に保存してください。';
- }catch(e){
-  alert(e.message||String(e));
- }finally{
-  btn.disabled=false;btn.textContent=old;
- }
-}
+
 $('#refreshDataSummaryBtn').onclick=refreshDataSummary;
 $('#copyChatGptPromptBtn').onclick=copyChatGptPrompt;
 $('#openChatGptBtn').onclick=()=>window.open('https://chatgpt.com/','_blank','noopener');
-$('#generateFeedbackBtn').onclick=generateAiFeedback;
 $('#saveFeedbackBtn').onclick=savePlayerFeedback;
 
-updateAiConfigBadge();
 loadPlayers();
 </script>
 </body></html>
