@@ -131,13 +131,17 @@
     .growth-delta small{display:block;color:var(--muted);margin-bottom:3px}
     .growth-delta strong{font-size:14px}
     @media(max-width:700px){.prompt-grid,.prompt-checks,.growth-delta-grid{grid-template-columns:1fr}}
+
+    #prompt .prompt-settings{margin:0;background:#0b1525}
+    #prompt .prompt-settings>h4{display:none}
+    #prompt .section{max-width:920px}
 </style>
 </head>
 <body>
 <div class="app">
   <header class="topbar">
     <div class="brand"><h1>NINJA PLAYER DATA</h1><p>全選手｜成長・シューティング・アジリティ</p></div>
-    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><button class="btn secondary" id="settingsBtn">接続設定</button></div>
+    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
   </header>
 
   <main class="layout">
@@ -165,6 +169,7 @@
           <button class="tab" data-tab="shooting">シューティング</button>
           <button class="tab" data-tab="agility">アジリティ</button>
           <button class="tab" data-tab="comment">コーチ所見</button>
+          <button class="tab" data-tab="prompt">プロンプト設定</button>
         </div>
 
         <div id="growth" class="tabview active">
@@ -288,22 +293,12 @@
           </div>
           <div class="notice section">数値データだけでは練習態度や試合中の判断を十分に把握できません。必要な内容はコーチが追記・修正してください。所見とフィードバックはこの端末に保存されます。</div>
         </div>
-      </div>
-    </section>
-  </main>
-</div>
-
-
-
-<section class="card">
-  <div class="section-title">
-    <div>
-      <h2>データまとめ</h2>
-      <p>選択中の選手データを1つに集約します。コピーしてChatGPTへ貼り付けると、そのままコーチ所見の作成に利用できます。</p>
-    </div>
-  </div>
-  
-    <div class="prompt-settings">
+        <div id="prompt" class="tabview">
+          <div class="section">
+            <h3>ChatGPTプロンプト設定</h3>
+            <div class="notice">ChatGPT用データをコピーするときに使用する設定です。保存した内容は選手ごとのコピー時に自動反映されます。</div>
+            <div style="height:12px"></div>
+            <div class="prompt-settings">
       <h4>ChatGPTプロンプト設定</h4>
       <div class="prompt-grid">
         <div class="prompt-field full">
@@ -340,6 +335,25 @@
       <button id="savePromptSettingsBtn" class="btn secondary">プロンプト設定を保存</button>
       <span id="promptSettingsSaved" class="comment-saved"></span>
     </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+</div>
+
+
+
+<section class="card">
+  <div class="section-title">
+    <div>
+      <h2>データまとめ</h2>
+      <p>選択中の選手データを1つに集約します。コピーしてChatGPTへ貼り付けると、そのままコーチ所見の作成に利用できます。</p>
+    </div>
+  </div>
+  
+    
 
 <div class="data-summary-box">
     <div class="data-summary-actions">
@@ -719,6 +733,16 @@ function agilityGrowthSummaryHtml(records){
 const defaultPromptSettings={outputRules:'出力は必ず「いいところ」「改善点」「方向性」「総合所見」の4項目に分けてください。事実と推測を分け、データがない内容は作らないでください。',audience:'both',length:'standard',teamPolicy:'選手の主体性を重視し、メンタル、ファンダメンタル、判断、技術、戦術の順で段階的に成長させます。',additional:'',checkHeightGap:true,checkShootingGap:true,includeGrowth:true,avoidOldData:true};
 function loadPromptSettings(){try{return {...defaultPromptSettings,...JSON.parse(localStorage.getItem('ninjaPromptSettings')||'{}')}}catch(e){return {...defaultPromptSettings}}}
 function fillPromptSettings(){const s=loadPromptSettings();$('#promptOutputRules').value=s.outputRules;$('#promptAudience').value=s.audience;$('#promptLength').value=s.length;$('#promptTeamPolicy').value=s.teamPolicy;$('#promptAdditional').value=s.additional||'';$('#promptCheckHeightGap').checked=s.checkHeightGap!==false;$('#promptCheckShootingGap').checked=s.checkShootingGap!==false;$('#promptIncludeGrowth').checked=s.includeGrowth!==false;$('#promptAvoidOldData').checked=s.avoidOldData!==false}
+
+function openPromptSettingsTab(){
+ const detail=$('#detail');
+ const empty=$('#emptyState');
+ if(detail)detail.hidden=false;
+ if(empty&&!state.selected)empty.style.display='none';
+ document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab==='prompt'));
+ document.querySelectorAll('.tabview').forEach(x=>x.classList.toggle('active',x.id==='prompt'));
+ document.querySelector('.panel')?.scrollIntoView({behavior:'smooth',block:'start'});
+}
 function savePromptSettings(){const s={outputRules:$('#promptOutputRules').value.trim(),audience:$('#promptAudience').value,length:$('#promptLength').value,teamPolicy:$('#promptTeamPolicy').value.trim(),additional:$('#promptAdditional').value.trim(),checkHeightGap:$('#promptCheckHeightGap').checked,checkShootingGap:$('#promptCheckShootingGap').checked,includeGrowth:$('#promptIncludeGrowth').checked,avoidOldData:$('#promptAvoidOldData').checked};localStorage.setItem('ninjaPromptSettings',JSON.stringify(s));$('#promptSettingsSaved').textContent='保存しました';setTimeout(()=>$('#promptSettingsSaved').textContent='',1500)}
 function promptAudienceText(v){return {both:'中学生本人と保護者の双方',player:'中学生本人',parent:'保護者',coach:'コーチ'}[v]||'中学生本人と保護者の双方'}
 function promptLengthText(v){return {short:'簡潔に',standard:'標準的な文章量で',detailed:'根拠を含めて詳しく'}[v]||'標準的な文章量で'}
@@ -1077,6 +1101,7 @@ function savePlayerFeedback(){
  setTimeout(()=>$('#feedbackSaved').textContent='',1800);
 }
 
+$('#openPromptTabBtn').onclick=openPromptSettingsTab;
 $('#savePromptSettingsBtn').onclick=savePromptSettings;
 $('#refreshDataSummaryBtn').onclick=refreshDataSummary;
 $('#copyChatGptPromptBtn').onclick=copyChatGptPrompt;
