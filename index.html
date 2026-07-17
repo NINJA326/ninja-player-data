@@ -75,6 +75,49 @@
     .last-record-box strong{color:var(--text);font-size:13px}
     .last-record-box.warning{border-color:#8a5b12;background:#241a08}
     .last-record-box.warning strong{color:#ffd166}
+
+    .parent-report-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    .parent-report-modal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:none;z-index:1000;padding:20px;overflow:auto}
+    .parent-report-modal.open{display:block}
+    .parent-report-shell{width:min(980px,100%);margin:0 auto;background:#e8edf3;border-radius:18px;padding:18px}
+    .parent-report-toolbar{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+    .parent-report-toolbar h3{margin:0;color:#101827}
+    .parent-report-paper{width:min(794px,100%);min-height:1123px;margin:0 auto;background:#fff;color:#172033;
+      box-shadow:0 8px 30px rgba(0,0,0,.25);padding:42px 46px;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif}
+    .report-header{border-bottom:3px solid #172033;padding-bottom:14px;margin-bottom:20px}
+    .report-brand{font-size:13px;font-weight:800;letter-spacing:.14em;color:#52708f}
+    .report-title{font-size:28px;font-weight:900;margin:4px 0 12px}
+    .report-meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;font-size:13px}
+    .report-meta div{border:1px solid #d6dde7;border-radius:9px;padding:9px 11px}
+    .report-meta small{display:block;color:#68768a;margin-bottom:3px}
+    .report-summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0}
+    .report-box{border:1px solid #d6dde7;border-radius:11px;padding:13px;break-inside:avoid}
+    .report-box h4{margin:0 0 9px;font-size:15px;border-left:4px solid #2f9e66;padding-left:8px}
+    .report-box p,.report-box li{font-size:12.5px;line-height:1.65}
+    .report-box ul{margin:0;padding-left:19px}
+    .report-section{margin-top:16px;break-inside:avoid}
+    .report-section h3{font-size:17px;margin:0 0 8px;padding:7px 10px;background:#edf3f8;border-left:5px solid #1f6fb2}
+    .report-text{font-size:13.5px;line-height:1.85;white-space:pre-wrap;word-break:break-word;min-height:36px}
+    .report-section.good h3{border-left-color:#2f9e66}
+    .report-section.improve h3{border-left-color:#d89000}
+    .report-section.direction h3{border-left-color:#3c7fd1}
+    .report-section.overall h3{border-left-color:#7653b7}
+    .report-alert{margin-top:16px;border:1px solid #e0a83b;background:#fff8e8;border-radius:10px;padding:11px 13px;font-size:12px;line-height:1.65}
+    .report-footer{margin-top:24px;padding-top:12px;border-top:1px solid #d6dde7;text-align:right;font-size:11px;color:#718096}
+    .parent-report-note{font-size:12px;color:#516174;line-height:1.6}
+    @media(max-width:700px){
+      .parent-report-modal{padding:6px}.parent-report-shell{padding:10px;border-radius:10px}
+      .parent-report-paper{padding:24px 20px;min-height:auto}
+      .report-meta,.report-summary-grid{grid-template-columns:1fr}
+    }
+    @media print{
+      body{background:#fff!important}
+      body>*:not(#printReportRoot){display:none!important}
+      #printReportRoot{display:block!important}
+      #printReportRoot .parent-report-paper{box-shadow:none;width:auto;min-height:auto;padding:10mm 12mm}
+      @page{size:A4 portrait;margin:0}
+    }
+
 </style>
 </head>
 <body>
@@ -224,10 +267,13 @@
             <div class="row" style="flex-wrap:wrap">
               <button id="saveCommentBtn" class="btn">修正内容を保存</button>
               <button id="copyCommentBtn" class="btn secondary">コピー</button>
+              <button id="previewParentPdfBtn" class="btn secondary">PDFプレビュー</button>
+              <button id="saveParentPdfBtn" class="btn secondary">PDF保存</button>
+              <button id="copyLineMessageBtn" class="btn secondary">LINE文章コピー</button>
             </div>
             <div id="commentSaved" class="comment-saved"></div>
           </div>
-          <div class="notice section">AIは数値データだけでは練習態度や試合中の判断を把握できません。必要な部分はコーチが追記・修正してください。試作版の保存先はこの端末です。</div>
+          <div class="notice section">数値データだけでは練習態度や試合中の判断を十分に把握できません。必要な内容はコーチが追記・修正してください。所見とフィードバックはこの端末に保存されます。</div>
         </div>
       </div>
     </section>
@@ -286,6 +332,25 @@
   </div>
   <div id="feedbackSaved" class="comment-saved"></div>
 </section>
+
+
+<div id="parentReportModal" class="parent-report-modal" aria-hidden="true">
+  <div class="parent-report-shell">
+    <div class="parent-report-toolbar">
+      <div>
+        <h3>保護者配信用PDFプレビュー</h3>
+        <div class="parent-report-note">全文を確認できます。「PDF保存」を押した後、保存先で「デスクトップ → NINJA U15」を選択してください。</div>
+      </div>
+      <div class="row" style="flex-wrap:wrap">
+        <button id="modalSavePdfBtn" class="btn">PDF保存</button>
+        <button id="closeParentReportBtn" class="btn secondary">閉じる</button>
+      </div>
+    </div>
+    <div id="parentReportPreview"></div>
+  </div>
+</div>
+
+<div id="printReportRoot" style="display:none"></div>
 
 <div id="settingsModal" class="modal">
   <div class="modal-card">
@@ -766,8 +831,140 @@ async function copyChatGptPrompt(){
   $('#dataSummaryText').select();
   document.execCommand('copy');
  }
- $('#dataSummaryCopyStatus').textContent='ChatGPT用のデータをコピーしました。次に「」を押してください。';
+ $('#dataSummaryCopyStatus').textContent='ChatGPT用のデータをコピーしました。ChatGPTへ貼り付けてください。';
  setTimeout(()=>$('#dataSummaryCopyStatus').textContent='',2500);
+}
+
+
+function reportEsc(value){
+ return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+function reportDateJa(value){
+ const d=parseRecordDate(value);
+ if(!d)return value||'記録なし';
+ return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+}
+function reportCreatedDate(){
+ const d=new Date();
+ return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+}
+function reportLatestGrowth(){
+ const records=(state.currentData&&state.currentData.growth||[]).slice().sort((a,b)=>dateKey(b).localeCompare(dateKey(a)));
+ return records[0]||null;
+}
+function reportGrowthHtml(){
+ const latest=reportLatestGrowth();
+ if(!latest)return '<p>身体測定の記録はありません。</p>';
+ const height=latest.height!=null&&latest.height!==''?`${reportEsc(latest.height)} cm`:'記録なし';
+ const weight=latest.weight!=null&&latest.weight!==''?`${reportEsc(latest.weight)} kg`:'記録なし';
+ return `<ul><li>測定日：${reportEsc(reportDateJa(dateKey(latest)))}</li><li>身長：${height}</li><li>体重：${weight}</li></ul>`;
+}
+function reportAgilityHtml(){
+ const latest=latestAgilityValues(state.currentData&&state.currentData.agility||[]);
+ const rows=Object.values(latest);
+ if(!rows.length)return '<p>アジリティの記録はありません。</p>';
+ return `<ul>${rows.map(x=>`<li>${reportEsc(x.label)}：${reportEsc(x.value)}${reportEsc(x.unit)}（${reportEsc(reportDateJa(x.date))}）</li>`).join('')}</ul>`;
+}
+function reportShootingHtml(){
+ const s=state.currentData&&state.currentData.shooting||{};
+ const t=s.total||{};
+ const latest=latestShootingDate(s);
+ const totalAttempts=t.attempts??0,totalMade=t.made??0,totalRate=t.rate??0;
+ const types=(s.byType||[]).map(x=>`<li>${reportEsc(x.type||x.name||'種目')}：${reportEsc(x.made??0)}本成功／${reportEsc(x.attempts??0)}本試投／${reportEsc(x.rate??0)}%</li>`).join('');
+ return `<ul>
+  <li>最終記入日：${reportEsc(latest?reportDateJa(latest):'確認できません')}</li>
+  <li>合計：${reportEsc(totalMade)}本成功／${reportEsc(totalAttempts)}本試投／成功率 ${reportEsc(totalRate)}%</li>
+  ${types}
+ </ul>`;
+}
+function reportAlertsHtml(){
+ const alerts=buildRecordGapAlerts();
+ const warnings=alerts.filter(x=>String(x).includes('入力されていません')||String(x).includes('記録がありません')||String(x).includes('確認できません'));
+ if(!warnings.length)return '';
+ return `<div class="report-alert"><strong>記録について</strong><br>${warnings.map(x=>reportEsc(String(x).replace(/^・/,'')).replace(/\n/g,'<br>')).join('<br>')}</div>`;
+}
+function buildParentReportHtml(){
+ if(!state.selected||!state.currentData)return '';
+ const p=state.selected;
+ const good=$('#goodPoints')?.value.trim()||'未記入';
+ const improve=$('#improvementPoints')?.value.trim()||'未記入';
+ const direction=$('#futureDirection')?.value.trim()||'未記入';
+ const overall=$('#coachComment')?.value.trim()||'未記入';
+ return `<article class="parent-report-paper">
+  <header class="report-header">
+    <div class="report-brand">NINJA AIRS U15</div>
+    <div class="report-title">選手カルテ</div>
+    <div class="report-meta">
+      <div><small>選手名</small><strong>${reportEsc(p.name||'')}</strong></div>
+      <div><small>カテゴリー</small><strong>${reportEsc(p.category||'未設定')}</strong></div>
+      <div><small>作成日</small><strong>${reportEsc(reportCreatedDate())}</strong></div>
+    </div>
+  </header>
+  <div class="report-summary-grid">
+    <div class="report-box"><h4>身体測定</h4>${reportGrowthHtml()}</div>
+    <div class="report-box"><h4>アジリティ</h4>${reportAgilityHtml()}</div>
+    <div class="report-box" style="grid-column:1/-1"><h4>シューティング</h4>${reportShootingHtml()}</div>
+  </div>
+  <section class="report-section good"><h3>いいところ</h3><div class="report-text">${reportEsc(good)}</div></section>
+  <section class="report-section improve"><h3>改善点</h3><div class="report-text">${reportEsc(improve)}</div></section>
+  <section class="report-section direction"><h3>方向性</h3><div class="report-text">${reportEsc(direction)}</div></section>
+  <section class="report-section overall"><h3>総合所見</h3><div class="report-text">${reportEsc(overall)}</div></section>
+  ${reportAlertsHtml()}
+  <footer class="report-footer">NINJA AIRS U15</footer>
+ </article>`;
+}
+function previewParentReport(){
+ const report=buildParentReportHtml();
+ if(!report){alert('選手データが読み込まれていません');return}
+ $('#parentReportPreview').innerHTML=report;
+ $('#parentReportModal').classList.add('open');
+ $('#parentReportModal').setAttribute('aria-hidden','false');
+}
+function closeParentReport(){
+ $('#parentReportModal').classList.remove('open');
+ $('#parentReportModal').setAttribute('aria-hidden','true');
+}
+function saveParentReportPdf(){
+ const report=buildParentReportHtml();
+ if(!report){alert('選手データが読み込まれていません');return}
+ const root=$('#printReportRoot');
+ root.innerHTML=report;
+ root.style.display='block';
+ const oldTitle=document.title;
+ const date=new Date();
+ const ym=`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
+ document.title=`${state.selected.name||'選手'}_選手カルテ_${ym}`;
+ setTimeout(()=>{
+  window.print();
+  setTimeout(()=>{
+   root.style.display='none';
+   root.innerHTML='';
+   document.title=oldTitle;
+  },500);
+ },100);
+}
+async function copyParentLineMessage(){
+ if(!state.selected){alert('選手を選択してください');return}
+ const name=state.selected.name||'選手';
+ const text=`保護者様
+
+いつもNINJA AIRSの活動にご理解・ご協力いただき、ありがとうございます。
+
+${name}選手の選手カルテをお送りします。
+今回のカルテには、身体測定・アジリティ・シューティングの記録と、今後の成長に向けた所見をまとめています。
+
+ぜひお子様と一緒にご確認いただき、今後の目標について話し合う機会にしていただければと思います。
+
+よろしくお願いいたします。
+
+NINJA AIRS U15`;
+ try{
+  await navigator.clipboard.writeText(text);
+ }catch(e){
+  const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();
+ }
+ $('#commentSaved').textContent='LINE配信用文章をコピーしました';
+ setTimeout(()=>$('#commentSaved').textContent='',2200);
 }
 
 function feedbackStorageKey(){
@@ -799,6 +996,12 @@ function savePlayerFeedback(){
 
 $('#refreshDataSummaryBtn').onclick=refreshDataSummary;
 $('#copyChatGptPromptBtn').onclick=copyChatGptPrompt;
+$('#previewParentPdfBtn').onclick=previewParentReport;
+$('#saveParentPdfBtn').onclick=saveParentReportPdf;
+$('#modalSavePdfBtn').onclick=saveParentReportPdf;
+$('#closeParentReportBtn').onclick=closeParentReport;
+$('#copyLineMessageBtn').onclick=copyParentLineMessage;
+$('#parentReportModal').onclick=e=>{if(e.target===$('#parentReportModal'))closeParentReport()};
 $('#saveFeedbackBtn').onclick=savePlayerFeedback;
 
 loadPlayers();
