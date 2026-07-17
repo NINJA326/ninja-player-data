@@ -145,7 +145,7 @@
 <div class="app">
   <header class="topbar">
     <div class="brand"><h1>NINJA PLAYER DATA</h1><p>全選手｜成長・シューティング・アジリティ</p></div>
-    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v25 一括取得・ボタン修正版</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
+    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v26 データ反映・互換取得対応</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
   </header>
 
   <main class="layout">
@@ -165,7 +165,7 @@
       <div id="detail" hidden>
         <div class="hero">
           <div><h2 id="playerName"></h2><span id="playerCategory" class="category"></span></div>
-          <div class="small" id="updatedAt"></div>
+          <div class="row" style="justify-content:flex-end;flex-wrap:wrap"><div class="small" id="updatedAt"></div><button id="refreshSelectedPlayerBtn" class="btn secondary" style="padding:6px 9px">選手データ再取得</button></div>
         </div>
 
         <div class="tabs">
@@ -513,17 +513,57 @@ function renderPlayers(){
 function emptyShooting(){
  return {status:'ok',total:{made:0,attempts:0,rate:0,records:0},byType:[],byPosition:[],recent:[]};
 }
+
+function normalizeGrowthRecords(rows){
+ return (rows||[]).map(row=>({
+  ...row,
+  date:row.date||row.recordDate||row.measurementDate||row['測定日']||row['日付']||row.createdAt||'',
+  height:row.height??row.heightCm??row['身長']??row['身長(cm)']??row['身長（cm）']??null,
+  weight:row.weight??row.weightKg??row['体重']??row['体重(kg)']??row['体重（kg）']??null
+ })).filter(row=>row.date||row.height!==null||row.weight!==null);
+}
+function normalizeShootingResponse(source,id){
+ const s=source&&source.shooting?source.shooting:source;
+ if(!s||typeof s!=='object')return emptyShooting();
+ if(s.status&&s.status!=='ok')throw new Error(s.message||'シューティングデータ取得失敗');
+ if(s.playerId!=null&&String(s.playerId)!==String(id))throw new Error('シューティングの選手IDが一致しません');
+ const total=s.total||s.summary||{};
+ const records=Array.isArray(s.records)?s.records:[];
+ const byType=Array.isArray(s.byType)?s.byType:(Array.isArray(s.types)?s.types:[]);
+ const byPosition=Array.isArray(s.byPosition)?s.byPosition:(Array.isArray(s.positions)?s.positions:[]);
+ return {
+  ...emptyShooting(),
+  ...s,
+  total:{
+   made:Number(total.made??total.success??total.makes??0),
+   attempts:Number(total.attempts??total.trials??total.shots??0),
+   rate:Number(total.rate??total.percentage??0),
+   records:Number(total.records??records.length??0)
+  },
+  records,
+  byType,
+  byPosition
+ };
+}
+function hasBundlePayload(bundle){
+ return Boolean(bundle&&(
+  bundle.shooting||bundle.playerDetail||
+  bundle.growth||bundle.growthRecords||
+  bundle.agility||bundle.agilityRecords
+ ));
+}
 function normalizePlayerBundle(bundle,id){
  if(!bundle||bundle.status!=='ok')throw new Error(bundle&&bundle.message||'選手データ取得失敗');
  if(bundle.playerId!=null&&String(bundle.playerId)!==String(id))throw new Error('取得データの選手IDが一致しません');
- const shooting=bundle.shooting||bundle.playerDetail||emptyShooting();
+ if(!hasBundlePayload(bundle))throw new Error('一括取得APIが未対応です');
  const growthSource=bundle.growth||bundle.growthRecords||{};
  const agilitySource=bundle.agility||bundle.agilityRecords||{};
  return {
-  growth:Array.isArray(growthSource)?growthSource:(growthSource.records||[]),
-  shooting:{...emptyShooting(),...shooting},
+  growth:normalizeGrowthRecords(Array.isArray(growthSource)?growthSource:(growthSource.records||[])),
+  shooting:normalizeShootingResponse(bundle.shooting||bundle.playerDetail,id),
   agility:normalizeAgilityApiRecords(Array.isArray(agilitySource)?agilitySource:(agilitySource.records||[])),
-  fetchedAt:bundle.generatedAt||new Date().toISOString()
+  fetchedAt:bundle.generatedAt||new Date().toISOString(),
+  source:'bundle'
  };
 }
 function getCachedPlayerData(id){
@@ -535,6 +575,41 @@ function getCachedPlayerData(id){
 function cachePlayerData(id,data){
  state.playerCache.set(String(id),{savedAt:Date.now(),data});
 }
+async function fetchLegacyPlayerData(id){
+ const requests=[
+  apiWithRetry('growthRecords',{playerId:id},{timeoutMs:45000,retries:1}),
+  apiWithRetry('playerDetail',{playerId:id},{timeoutMs:45000,retries:1}),
+  apiWithRetry('agilityRecords',{playerId:id},{timeoutMs:45000,retries:1})
+ ];
+ const [growthResult,shootingResult,agilityResult]=await Promise.allSettled(requests);
+ const errors=[];
+ let growth=[],shooting=emptyShooting(),agility=[];
+
+ if(growthResult.status==='fulfilled'){
+  const g=growthResult.value;
+  if(g&&g.status==='ok')growth=normalizeGrowthRecords(g.records||g.growth||[]);
+  else errors.push(g&&g.message||'身体測定取得失敗');
+ }else errors.push('身体測定: '+(growthResult.reason?.message||growthResult.reason));
+
+ if(shootingResult.status==='fulfilled'){
+  try{shooting=normalizeShootingResponse(shootingResult.value,id)}
+  catch(e){errors.push('シューティング: '+e.message)}
+ }else errors.push('シューティング: '+(shootingResult.reason?.message||shootingResult.reason));
+
+ if(agilityResult.status==='fulfilled'){
+  const a=agilityResult.value;
+  if(a&&a.status==='ok')agility=normalizeAgilityApiRecords(a.records||a.agility||[]);
+  else errors.push(a&&a.message||'アジリティ取得失敗');
+ }else errors.push('アジリティ: '+(agilityResult.reason?.message||agilityResult.reason));
+
+ const hasAny=growth.length||agility.length||
+  Number(shooting.total?.attempts||0)>0||
+  (shooting.byType||[]).length||
+  (shooting.byPosition||[]).length||
+  (shooting.records||[]).length;
+ if(!hasAny&&errors.length)throw new Error(errors.join('\n'));
+ return {growth,shooting,agility,fetchedAt:new Date().toISOString(),source:'legacy',warnings:errors};
+}
 async function fetchPlayerData(id,{force=false}={}){
  id=String(id);
  if(!force){
@@ -544,15 +619,28 @@ async function fetchPlayerData(id,{force=false}={}){
  if(!state.apiUrl){
   const d=demo[id];
   if(!d)throw new Error('選手データが見つかりません');
-  const data={growth:d.growth||[],shooting:{...emptyShooting(),...(d.shoot||{})},agility:normalizeAgilityApiRecords(d.agility||[]),fetchedAt:new Date().toISOString()};
+  const data={
+   growth:normalizeGrowthRecords(d.growth||[]),
+   shooting:normalizeShootingResponse(d.shoot||{},id),
+   agility:normalizeAgilityApiRecords(d.agility||[]),
+   fetchedAt:new Date().toISOString(),source:'demo'
+  };
   cachePlayerData(id,data);
   return data;
  }
- const bundle=await apiWithRetry('playerBundle',{playerId:id},{timeoutMs:45000,retries:1});
- const data=normalizePlayerBundle(bundle,id);
+
+ let data;
+ try{
+  const bundle=await apiWithRetry('playerBundle',{playerId:id},{timeoutMs:45000,retries:0});
+  data=normalizePlayerBundle(bundle,id);
+ }catch(bundleError){
+  console.warn('playerBundle fallback:',bundleError);
+  data=await fetchLegacyPlayerData(id);
+ }
  cachePlayerData(id,data);
  return data;
 }
+
 function renderPlayerData(data){
  state.currentData=data;
  renderGrowth(data.growth||[]);
@@ -617,7 +705,9 @@ async function selectPlayer(id,options={}){
   if(requestSeq!==state.playerRequestSeq||!state.selected||String(state.selected.playerId)!==id)return;
   renderPlayerData(data);
   const time=data.fetchedAt?new Date(data.fetchedAt):null;
-  $('#updatedAt').textContent=data.fromCache?'キャッシュから表示':(time&&!Number.isNaN(time.getTime())?'取得完了 '+time.toLocaleString('ja-JP'):'取得完了');
+  const sourceLabel=data.source==='bundle'?'一括取得':data.source==='legacy'?'互換取得':data.source==='demo'?'デモ':'取得';
+  $('#updatedAt').textContent=data.fromCache?'キャッシュから表示':`${sourceLabel}完了${time&&!Number.isNaN(time.getTime())?' '+time.toLocaleString('ja-JP'):''}`;
+  if(data.warnings&&data.warnings.length)console.warn('一部データ取得警告',data.warnings);
  }catch(e){
   if(requestSeq!==state.playerRequestSeq)return;
   if(cached){
@@ -778,7 +868,8 @@ $('#searchInput').oninput=renderPlayers;$('#categoryFilter').onchange=renderPlay
  state.playerCache.clear();
  await loadPlayers();
  if(state.selected)selectPlayer(state.selected.playerId,{force:true});
-};$('#saveCommentBtn').onclick=saveComment;
+};$('#refreshSelectedPlayerBtn').onclick=()=>{if(state.selected){state.playerCache.delete(String(state.selected.playerId));selectPlayer(state.selected.playerId,{force:true})}};
+$('#saveCommentBtn').onclick=saveComment;
 $('#settingsBtn').onclick=()=>{$('#apiUrlInput').value=state.apiUrl;$('#settingsModal').classList.add('open')};$('#closeSettingsBtn').onclick=()=>$('#settingsModal').classList.remove('open');
 $('#saveSettingsBtn').onclick=()=>{state.apiUrl=$('#apiUrlInput').value.trim().replace(/\/$/,'');state.playerCache.clear();state.inflight.clear();localStorage.setItem('ninjaPlayerApiUrl',state.apiUrl);$('#settingsModal').classList.remove('open');state.selected=null;$('#detail').hidden=true;$('#emptyState').hidden=false;loadPlayers()};
 $('#demoBtn').onclick=()=>{state.apiUrl='';state.playerCache.clear();state.inflight.clear();localStorage.removeItem('ninjaPlayerApiUrl');$('#settingsModal').classList.remove('open');state.selected=null;$('#detail').hidden=true;$('#emptyState').hidden=false;loadPlayers()};

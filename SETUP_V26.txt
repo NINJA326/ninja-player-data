@@ -1,0 +1,16 @@
+NINJA PLAYER DATA v26
+
+今回の修正は主にindex.htmlです。
+
+【更新方法】
+1. GitHubへ index.html / manifest.json / sw.js / icon.svg を上書き
+2. GitHub Pages反映後、Command + Shift + R
+3. 選手を選択
+4. 右上の「選手データ再取得」を押す
+
+【表示の見方】
+・一括取得完了：v24のplayerBundleで取得
+・互換取得完了：従来のgrowthRecords / playerDetail / agilityRecordsで取得
+・キャッシュから表示：直前に取得したデータを表示
+
+v26はApps Scriptがv24未対応でも、従来APIが残っていれば身長・シューティング・アジリティを取得します。
