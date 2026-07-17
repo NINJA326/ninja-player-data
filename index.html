@@ -34,6 +34,10 @@
     .ai-feedback-card.improve h4{color:#ffd166}
     .ai-feedback-card.direction h4{color:#7cb7ff}
     .ai-feedback-card textarea{min-height:150px}
+    .data-summary-box{background:#09111d;border:1px solid var(--line);border-radius:14px;padding:14px}
+    .data-summary-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+    .data-summary-text{width:100%;min-height:320px;resize:vertical;white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px;line-height:1.65}
+    .copy-success{color:#65d394;font-size:12px;min-height:18px;margin-top:8px}
     @media(max-width:850px){.ai-feedback-grid{grid-template-columns:1fr}}
     @media(max-width:680px){.ai-settings-grid{grid-template-columns:1fr}.check-grid{grid-template-columns:1fr}}
 
@@ -228,6 +232,24 @@
   </main>
 </div>
 
+
+
+<section class="card">
+  <div class="section-title">
+    <div>
+      <h2>データまとめ</h2>
+      <p>選択中の選手データを1つに集約します。コピーしてChatGPTへ貼り付けると、そのままAI所見の作成に利用できます。</p>
+    </div>
+  </div>
+  <div class="data-summary-box">
+    <div class="data-summary-actions">
+      <button id="refreshDataSummaryBtn" class="btn secondary">まとめを更新</button>
+      <button id="copyDataSummaryBtn" class="btn">データまとめをコピー</button>
+    </div>
+    <textarea id="dataSummaryText" class="input data-summary-text" readonly placeholder="選手を選択するとデータまとめが表示されます。"></textarea>
+    <div id="dataSummaryCopyStatus" class="copy-success"></div>
+  </div>
+</section>
 
 <section class="card">
   <div class="section-title">
@@ -445,6 +467,7 @@ async function selectPlayer(id){
   renderAgility(agility);
   loadComment();
   loadPlayerFeedback();
+  refreshDataSummary();
   $('#updatedAt').textContent=p.updatedAt?'最終更新 '+p.updatedAt:'取得完了';
  }catch(e){
   if(requestSeq!==state.playerRequestSeq)return;
@@ -605,6 +628,109 @@ $('#saveSettingsBtn').onclick=()=>{state.apiUrl=$('#apiUrlInput').value.trim().r
 $('#demoBtn').onclick=()=>{state.apiUrl='';localStorage.removeItem('ninjaPlayerApiUrl');$('#settingsModal').classList.remove('open');state.selected=null;$('#detail').hidden=true;$('#emptyState').hidden=false;loadPlayers()};
 if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 
+
+function fmtSummaryNumber(v,unit=''){
+ if(v===null||v===undefined||v==='')return '記録なし';
+ const n=Number(v);
+ return Number.isFinite(n)?`${n}${unit}`:`${v}${unit}`;
+}
+function summarizeGrowth(records){
+ const rows=(records||[]).slice().sort((a,b)=>dateKey(a).localeCompare(dateKey(b)));
+ if(!rows.length)return ['【身体測定】','記録なし'];
+ const first=rows[0],last=rows[rows.length-1];
+ const lines=['【身体測定】'];
+ lines.push(`初回：${dateKey(first)||'日付不明'}／身長 ${fmtSummaryNumber(first.height,'cm')}／体重 ${fmtSummaryNumber(first.weight,'kg')}`);
+ lines.push(`最新：${dateKey(last)||'日付不明'}／身長 ${fmtSummaryNumber(last.height,'cm')}／体重 ${fmtSummaryNumber(last.weight,'kg')}`);
+ if(Number.isFinite(Number(first.height))&&Number.isFinite(Number(last.height))){
+  lines.push(`身長変化：${(Number(last.height)-Number(first.height)).toFixed(1)}cm`);
+ }
+ if(Number.isFinite(Number(first.weight))&&Number.isFinite(Number(last.weight))){
+  lines.push(`体重変化：${(Number(last.weight)-Number(first.weight)).toFixed(1)}kg`);
+ }
+ const recent=lastThreeMonths(rows);
+ if(recent.length){
+  lines.push('直近3か月：');
+  recent.forEach(r=>lines.push(`・${dateKey(r)||'日付不明'}　身長 ${fmtSummaryNumber(r.height,'cm')}／体重 ${fmtSummaryNumber(r.weight,'kg')}`));
+ }
+ return lines;
+}
+function summarizeShooting(s){
+ const lines=['【シューティング】'];
+ if(!s||!s.total){lines.push('記録なし');return lines}
+ const t=s.total||{};
+ lines.push(`合計：${fmtSummaryNumber(t.made,'本')}成功／${fmtSummaryNumber(t.attempts,'本')}試投／成功率 ${fmtSummaryNumber(t.rate,'%')}`);
+ if((s.byType||[]).length){
+  lines.push('種目別：');
+  s.byType.forEach(x=>lines.push(`・${x.type||x.name||'不明'}：${fmtSummaryNumber(x.made,'本')}／${fmtSummaryNumber(x.attempts,'本')}／${fmtSummaryNumber(x.rate,'%')}`));
+ }
+ if((s.byPosition||[]).length){
+  lines.push('ポジション別：');
+  s.byPosition.forEach(x=>lines.push(`・${x.position||'位置不明'} ${x.type||''}：${fmtSummaryNumber(x.made,'本')}／${fmtSummaryNumber(x.attempts,'本')}／${fmtSummaryNumber(x.rate,'%')}`));
+ }
+ return lines;
+}
+function summarizeAgility(records){
+ const lines=['【アジリティ】'];
+ if(!(records||[]).length){lines.push('記録なし');return lines}
+ records.forEach(r=>{
+  const parts=[];
+  if(r.shuttleRun!=null)parts.push(`シャトルラン ${r.shuttleRun}`);
+  if(r.sideSteps!=null)parts.push(`反復横跳び ${r.sideSteps}`);
+  if(r.lCone!=null)parts.push(`L字コーン ${r.lCone}`);
+  if(r.verticalJump!=null)parts.push(`垂直跳び ${r.verticalJump}`);
+  lines.push(`・${dateKey(r)||'日付不明'}：${parts.length?parts.join('／'):'記録なし'}`);
+ });
+ return lines;
+}
+function buildDataSummaryText(){
+ if(!state.selected||!state.currentData)return '';
+ const p=state.selected;
+ const lines=[
+  '以下の選手データを基に、事実と推測を分けてAI所見を作成してください。',
+  '出力は「いいところ」「改善点」「方向性」「総合所見」の4項目に分けてください。',
+  '中学生本人にも伝わる具体的で前向きな表現にしてください。',
+  '',
+  '【選手基本情報】',
+  `氏名：${p.name||''}`,
+  `カテゴリー：${p.category||'未設定'}`,
+  p.grade?`学年：${p.grade}`:'',
+  '',
+  ...summarizeGrowth(state.currentData.growth||[]),
+  '',
+  ...summarizeShooting(state.currentData.shooting||{}),
+  '',
+  ...summarizeAgility(state.currentData.agility||[]),
+  '',
+  '【現在のコーチ所見】',
+  ($('#coachComment')&&$('#coachComment').value.trim())||'未記入',
+  '',
+  '【既存フィードバック】',
+  `いいところ：${($('#goodPoints')&&$('#goodPoints').value.trim())||'未記入'}`,
+  `改善点：${($('#improvementPoints')&&$('#improvementPoints').value.trim())||'未記入'}`,
+  `方向性：${($('#futureDirection')&&$('#futureDirection').value.trim())||'未記入'}`
+ ].filter(v=>v!==null&&v!==undefined);
+ return lines.join('\n');
+}
+function refreshDataSummary(){
+ const el=$('#dataSummaryText');
+ if(!el)return;
+ el.value=buildDataSummaryText();
+}
+async function copyDataSummary(){
+ const text=buildDataSummaryText();
+ if(!text){alert('選手データがまだ読み込まれていません');return}
+ $('#dataSummaryText').value=text;
+ try{
+  await navigator.clipboard.writeText(text);
+ }catch(e){
+  $('#dataSummaryText').focus();
+  $('#dataSummaryText').select();
+  document.execCommand('copy');
+ }
+ $('#dataSummaryCopyStatus').textContent='データまとめをコピーしました。ChatGPTへそのまま貼り付けできます。';
+ setTimeout(()=>$('#dataSummaryCopyStatus').textContent='',2500);
+}
+
 function feedbackStorageKey(){
  return state.selected ? `ninjaPlayerFeedback:${state.selected.playerId||state.selected.name}` : '';
 }
@@ -627,6 +753,7 @@ function savePlayerFeedback(){
   futureDirection:$('#futureDirection').value.trim()
  };
  localStorage.setItem(key,JSON.stringify(data));
+ refreshDataSummary();
  $('#feedbackSaved').textContent='いいところ・改善点・方向性を保存しました';
  setTimeout(()=>$('#feedbackSaved').textContent='',1800);
 }
@@ -647,6 +774,7 @@ async function generateAiFeedback(){
   $('#goodPoints').value=result.goodPoints||'';
   $('#improvementPoints').value=result.improvementPoints||'';
   $('#futureDirection').value=result.futureDirection||'';
+  refreshDataSummary();
   $('#feedbackSaved').textContent='AIが3項目の下書きを作成しました。確認後に保存してください。';
  }catch(e){
   alert(e.message||String(e));
@@ -654,6 +782,8 @@ async function generateAiFeedback(){
   btn.disabled=false;btn.textContent=old;
  }
 }
+$('#refreshDataSummaryBtn').onclick=refreshDataSummary;
+$('#copyDataSummaryBtn').onclick=copyDataSummary;
 $('#generateFeedbackBtn').onclick=generateAiFeedback;
 $('#saveFeedbackBtn').onclick=savePlayerFeedback;
 
