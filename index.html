@@ -329,7 +329,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script>
 const $=s=>document.querySelector(s);
-const state={currentData:null,apiUrl:localStorage.getItem('ninjaPlayerApiUrl')||'',players:[],selected:null,heightChart:null,weightChart:null};
+const state={currentData:null,apiUrl:localStorage.getItem('ninjaPlayerApiUrl')||'',players:[],selected:null,heightChart:null,weightChart:null,playerRequestSeq:0};
 const defaultAiConfig={
  teamPolicy:'NINJA AIRSでは、選手の主体性を重視する。メンタル、ファンダメンタル、判断、技術、戦術の順で段階的に育成し、試合で自分で考えて行動できる選手を目指す。',
  evaluationRules:'数値の上下だけで断定せず、記録期間、試投数、継続性、左右差、得意位置、改善余地を総合的に見る。データが少ない項目は参考値として扱う。',
@@ -370,9 +370,19 @@ function api(action,params={}){return new Promise((resolve,reject)=>{if(!state.a
 async function loadPlayers(){
  $('#connectionStatus').textContent=state.apiUrl?'接続中':'デモデータ';
  try{
-  if(state.apiUrl){const r=await api('listPlayers');if(r.status!=='ok')throw new Error(r.message||'取得失敗');state.players=r.players;$('#connectionStatus').textContent='スプレッドシート接続済み'}
-  else state.players=demoPlayers;
- }catch(e){state.players=demoPlayers;$('#connectionStatus').textContent='接続失敗・デモ表示';}
+  if(state.apiUrl){
+   const r=await api('listPlayers');
+   if(!r||r.status!=='ok')throw new Error(r&&r.message||'取得失敗');
+   state.players=(r.players||[]).map(p=>({...p,playerId:String(p.playerId??p.id??'')}));
+   $('#connectionStatus').textContent='スプレッドシート接続済み';
+  }else{
+   state.players=demoPlayers.map(p=>({...p,playerId:String(p.playerId)}));
+  }
+ }catch(e){
+  state.players=[];
+  $('#connectionStatus').textContent='接続失敗';
+  alert('スプレッドシートとの接続に失敗しました。デモデータには自動で切り替えません。\n'+(e.message||e));
+ }
  fillFilters();renderPlayers();
 }
 function fillFilters(){const cats=[...new Set(state.players.map(p=>p.category).filter(Boolean))];$('#categoryFilter').innerHTML='<option value="">全カテゴリー</option>'+cats.map(c=>`<option>${esc(c)}</option>`).join('')}
@@ -383,14 +393,68 @@ function renderPlayers(){
  document.querySelectorAll('.player').forEach(x=>x.onclick=()=>selectPlayer(x.dataset.id));
 }
 async function selectPlayer(id){
- const p=state.players.find(x=>x.playerId===id);if(!p)return;state.selected=p;renderPlayers();$('#emptyState').hidden=true;$('#detail').hidden=false;$('#playerName').textContent=p.name;$('#playerCategory').textContent=p.category||'未設定';$('#updatedAt').textContent=p.updatedAt?'最終更新 '+p.updatedAt:'';
+ id=String(id);
+ const p=state.players.find(x=>String(x.playerId)===id);
+ if(!p)return;
+
+ const requestSeq=++state.playerRequestSeq;
+ state.selected=p;
+ state.currentData=null;
+ renderPlayers();
+
+ $('#emptyState').hidden=true;
+ $('#detail').hidden=false;
+ $('#playerName').textContent=p.name;
+ $('#playerCategory').textContent=p.category||'未設定';
+ $('#updatedAt').textContent='データ取得中...';
+
+ renderGrowth([]);
+ renderShooting({status:'ok',total:{made:0,attempts:0,rate:0,records:0},byType:[],byPosition:[]});
+ renderAgility([]);
+ $('#coachComment').value='';
+ loadPlayerFeedback();
+
  try{
   let g,s,a;
-  if(state.apiUrl){[g,s,a]=await Promise.all([api('growthRecords',{playerId:id}),api('playerDetail',{playerId:id}),api('agilityRecords',{playerId:id})]);}
-  else {const d=demo[id];g={status:'ok',records:d.growth};s={status:'ok',...d.shoot};a={status:'ok',records:d.agility};}
-  state.currentData={growth:g.records||[],shooting:s,agility:a.records||[]};renderGrowth(g.records||[]);renderShooting(s);renderAgility(a.records||[]);loadComment();
- }catch(e){alert('データ取得に失敗しました: '+e.message)}
- setTimeout(loadPlayerFeedback,0);
+  if(state.apiUrl){
+   [g,s,a]=await Promise.all([
+    api('growthRecords',{playerId:id}),
+    api('playerDetail',{playerId:id}),
+    api('agilityRecords',{playerId:id})
+   ]);
+  }else{
+   const d=demo[id];
+   if(!d)throw new Error('選手データが見つかりません');
+   g={status:'ok',playerId:id,records:d.growth};
+   s={status:'ok',playerId:id,...d.shoot};
+   a={status:'ok',playerId:id,records:d.agility};
+  }
+
+  if(requestSeq!==state.playerRequestSeq || !state.selected || String(state.selected.playerId)!==id)return;
+
+  for(const result of [g,s,a]){
+   if(!result||result.status!=='ok')throw new Error(result&&result.message||'選手データ取得失敗');
+   if(result.playerId!=null && String(result.playerId)!==id)throw new Error('取得データの選手IDが一致しません');
+  }
+
+  const growth=g.records||[];
+  const agility=a.records||[];
+  state.currentData={growth,shooting:s,agility};
+  renderGrowth(growth);
+  renderShooting(s);
+  renderAgility(agility);
+  loadComment();
+  loadPlayerFeedback();
+  $('#updatedAt').textContent=p.updatedAt?'最終更新 '+p.updatedAt:'取得完了';
+ }catch(e){
+  if(requestSeq!==state.playerRequestSeq)return;
+  state.currentData={growth:[],shooting:{status:'ok',total:{made:0,attempts:0,rate:0,records:0},byType:[],byPosition:[]},agility:[]};
+  renderGrowth([]);
+  renderShooting(state.currentData.shooting);
+  renderAgility([]);
+  $('#updatedAt').textContent='取得エラー';
+  alert('「'+p.name+'」のデータ取得に失敗しました。\n'+(e.message||e));
+ }
 }
 function renderGrowth(records){
  const r=records.slice().filter(x=>Number(x.height)>0||Number(x.weight)>0).sort((a,b)=>dateKey(a).localeCompare(dateKey(b)));
@@ -542,7 +606,7 @@ $('#demoBtn').onclick=()=>{state.apiUrl='';localStorage.removeItem('ninjaPlayerA
 if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 
 function feedbackStorageKey(){
- return state.selected ? `ninjaPlayerFeedback:${state.selected.id||state.selected.name}` : '';
+ return state.selected ? `ninjaPlayerFeedback:${state.selected.playerId||state.selected.name}` : '';
 }
 function loadPlayerFeedback(){
  const key=feedbackStorageKey();

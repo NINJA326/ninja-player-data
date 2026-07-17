@@ -134,3 +134,15 @@ case 'generatePlayerFeedback':
   return jsonp_(e, generatePlayerFeedback_(e.parameter.payload));
 
 google_apps_script_ai_addon.js の generatePlayerFeedback_ もApps Scriptへ追加してください。
+
+
+【v11 選手データ表示安定化】
+・選手切替時に前のデータを即時消去
+・古い通信結果を破棄し、現在選択中の選手だけ表示
+・playerIdを文字列へ統一
+・接続失敗時にデモデータへ自動切替しない
+・Apps ScriptがplayerIdを返した場合は一致確認
+・AIフィードバック保存キーをplayerIdへ統一
+
+Apps Scriptの各返却値には playerId を含めることを推奨します。
+例：{status:'ok', playerId:String(playerId), records:[...]}
