@@ -70,7 +70,12 @@
 
     @media(max-width:980px){.layout{grid-template-columns:1fr}.sidebar{min-height:auto}.player-list{max-height:300px}.grid4{grid-template-columns:repeat(2,1fr)}.cards2{grid-template-columns:1fr}}
     @media(max-width:560px){.app{padding:9px}.topbar{top:4px}.grid4{grid-template-columns:1fr 1fr}.hero h2{font-size:23px}.metric-value{font-size:21px}}
-  </style>
+  
+    .last-record-box{display:inline-flex;align-items:center;gap:8px;border:1px solid #3c516d;background:#0b1525;border-radius:12px;padding:9px 12px;font-size:12px;color:var(--muted);margin:10px 0 14px}
+    .last-record-box strong{color:var(--text);font-size:13px}
+    .last-record-box.warning{border-color:#8a5b12;background:#241a08}
+    .last-record-box.warning strong{color:#ffd166}
+</style>
 </head>
 <body>
 <div class="app">
@@ -139,6 +144,10 @@
             <div class="metric"><div class="metric-label">総成功率</div><div id="totalRate" class="metric-value">0%</div></div>
             <div class="metric"><div class="metric-label">記録件数</div><div id="recordCount" class="metric-value">0</div></div>
           </div>
+          <div id="lastShootingDateBox" class="last-record-box">
+            最終シューティング記入日：<strong id="lastShootingDate">記録なし</strong>
+          </div>
+
           <div class="section cards2">
             <div><h3>種目別</h3><div style="overflow:auto"><table><thead><tr><th>種目</th><th>成功</th><th>試投</th><th>成功率</th></tr></thead><tbody id="typeTable"></tbody></table></div></div>
             <div style="grid-column:1/-1">
@@ -255,7 +264,7 @@
         <button id="openChatGptBtn" class="btn secondary">② ChatGPTを開く</button>
       </div>
       <div class="chatgpt-note">
-        ①で選手データと所見作成指示をコピーし、②でChatGPTを開きます。身長が30日以上、シューティングが14日以上未入力の場合は、入力間隔への注意もプロンプトへ自動追加されます。
+        ①で選手データと所見作成指示をコピーし、②でChatGPTを開きます。身長が30日以上、シューティングが7日以上未入力の場合は、入力間隔への注意もプロンプトへ自動追加されます。
       </div>
     </div>
     <textarea id="dataSummaryText" class="input data-summary-text" readonly placeholder="選手を選択するとデータまとめが表示されます。"></textarea>
@@ -534,7 +543,8 @@ function renderShooting(r){
  const positions=r.byPosition||[];
  $('#positionTable').innerHTML=positions.map(x=>`<tr><td>${esc(x.position)}</td><td>${esc(x.type)}</td><td>${x.made??'-'}</td><td>${x.attempts}</td><td class="rate ${x.rate>=50?'good':x.rate<25?'warn':''}">${x.rate}%</td></tr>`).join('')||'<tr><td colspan="5">データなし</td></tr>';
  renderShotCourt(positions);
-}
+
+ updateLastShootingDateDisplay(r);}
 function normalizePositionName(name){
  return String(name||'').normalize('NFKC').replace(/\s+/g,'').replace(/[（(].*?[）)]/g,'');
 }
@@ -786,16 +796,31 @@ function latestShootingDate(shooting){
  const candidates=[];
  const collect=x=>{
   if(!x)return;
-  const value=x.date||x.recordDate||x.updatedAt||x.latestDate||x.lastDate;
+  const value=x.date||x.recordDate||x.updatedAt||x.latestDate||x.lastDate||x.createdAt;
   if(parseRecordDate(value))candidates.push(value);
  };
  collect(shooting);
  collect(shooting&&shooting.total);
  (shooting&&shooting.records||[]).forEach(collect);
+ (shooting&&shooting.recent||[]).forEach(collect);
  (shooting&&shooting.byType||[]).forEach(collect);
  (shooting&&shooting.byPosition||[]).forEach(collect);
  if(!candidates.length)return null;
  return candidates.sort((a,b)=>parseRecordDate(b)-parseRecordDate(a))[0];
+}
+function updateLastShootingDateDisplay(shooting){
+ const box=$('#lastShootingDateBox');
+ const label=$('#lastShootingDate');
+ if(!box||!label)return;
+ const latest=latestShootingDate(shooting||{});
+ if(!latest){
+  label.textContent='記録なし';
+  box.classList.add('warning');
+  return;
+ }
+ const days=daysSinceRecord(latest);
+ label.textContent=days===null?latest:`${latest}（${days}日前）`;
+ box.classList.toggle('warning',days!==null&&days>=7);
 }
 function buildRecordGapAlerts(){
  const alerts=[];
@@ -815,8 +840,8 @@ function buildRecordGapAlerts(){
  const shootingDate=latestShootingDate(state.currentData&&state.currentData.shooting||{});
  if(shootingDate){
   const days=daysSinceRecord(shootingDate);
-  if(days!==null&&days>=14){
-   alerts.push(`・シューティング：最新入力は${shootingDate}で、${days}日間記録がありません。2週間以上期間が空いており、入力間隔が空きすぎていることを忠告してください。`);
+  if(days!==null&&days>=7){
+   alerts.push(`・シューティング：最新入力は${shootingDate}で、${days}日間記録がありません。1週間以上記録が空いています。継続してシューティング記録を入力する必要があることを伝え、次回練習後の入力を促してください。`);
   }else if(days!==null){
    alerts.push(`・シューティング：最新入力は${shootingDate}（${days}日前）です。`);
   }
@@ -849,6 +874,7 @@ function buildDataSummaryText(){
   ...summarizeGrowth(state.currentData.growth||[]),
   '',
   ...summarizeShooting(state.currentData.shooting||{}),
+  `最終シューティング記入日：${latestShootingDate(state.currentData.shooting||{})||'確認できません'}`,
   '',
   ...summarizeAgility(state.currentData.agility||[]),
   '',
