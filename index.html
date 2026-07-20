@@ -95,9 +95,12 @@
     .report-box h4{margin:0 0 9px;font-size:15px;border-left:4px solid #2f9e66;padding-left:8px}
     .report-box p,.report-box li{font-size:12.5px;line-height:1.65}
     .report-box ul{margin:0;padding-left:19px}
-    .report-section{margin-top:16px;break-inside:avoid}
-    .report-section h3{font-size:17px;margin:0 0 8px;padding:7px 10px;background:#edf3f8;border-left:5px solid #1f6fb2}
-    .report-text{font-size:13.5px;line-height:1.85;white-space:pre-wrap;word-break:break-word;min-height:36px}
+    .report-coach-title{margin-top:24px;padding:12px 14px;border-top:2px solid #172033;border-bottom:1px solid #d6dde7;display:flex;align-items:baseline;justify-content:space-between;gap:12px;break-after:avoid;page-break-after:avoid}
+    .report-coach-title strong{font-size:20px}
+    .report-coach-title span{font-size:11.5px;color:#68768a}
+    .report-section{margin-top:18px;break-inside:auto;page-break-inside:auto}
+    .report-section h3{font-size:17px;margin:0 0 10px;padding:8px 11px;background:#edf3f8;border-left:5px solid #1f6fb2;break-after:avoid;page-break-after:avoid}
+    .report-text{font-size:13.5px;line-height:1.9;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;min-height:36px;padding:0 2px}
     .report-section.good h3{border-left-color:#2f9e66}
     .report-section.improve h3{border-left-color:#d89000}
     .report-section.direction h3{border-left-color:#3c7fd1}
@@ -114,7 +117,12 @@
       body{background:#fff!important}
       body>*:not(#printReportRoot){display:none!important}
       #printReportRoot{display:block!important}
-      #printReportRoot .parent-report-paper{box-shadow:none;width:auto;min-height:auto;padding:10mm 12mm}
+      #printReportRoot .parent-report-paper{box-shadow:none;width:auto;min-height:auto;padding:10mm 12mm;overflow:visible}
+      #printReportRoot .report-summary-grid{break-after:auto;page-break-after:auto}
+      #printReportRoot .report-section{break-inside:auto!important;page-break-inside:auto!important;overflow:visible}
+      #printReportRoot .report-section h3{break-after:avoid;page-break-after:avoid}
+      #printReportRoot .report-text{overflow:visible;max-height:none}
+      #printReportRoot .report-footer{break-before:avoid;page-break-before:avoid}
       @page{size:A4 portrait;margin:0}
     }
 
@@ -301,7 +309,7 @@
 <div class="app">
   <header class="topbar">
     <div class="brand"><h1>NINJA PLAYER DATA</h1><p>全選手｜成長・シューティング・アジリティ</p></div>
-    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v40 項目反映修正</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
+    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v41 コーチ所見PDF完全反映</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
   </header>
 
   <main class="layout">
@@ -1548,12 +1556,49 @@ function reportShotChartHtml(){
  return `<div class="report-shot-chart-wrap">${clone.outerHTML}</div>`;
 }
 
+
+function feedbackSectionScore(sections){
+ return ['good','improve','direction','summary']
+  .reduce((score,key)=>score+(String(sections[key]||'').trim()?1:0),0);
+}
+function buildCompleteCoachReportSections(){
+ const feedbackText=$('#feedbackText')?.value.trim()||'';
+ const coachComment=$('#coachComment')?.value.trim()||'';
+ const feedback=extractFeedbackSections(feedbackText);
+ const coach=extractFeedbackSections(coachComment);
+
+ // 各項目は、内容が存在する方を採用する。
+ // 両方にある場合は、全文入力として使用されるコーチ所見を優先する。
+ const merged={
+  good:coach.good||feedback.good||'',
+  improve:coach.improve||feedback.improve||'',
+  direction:coach.direction||feedback.direction||'',
+  summary:coach.summary||feedback.summary||'',
+  raw:coachComment||feedbackText||''
+ };
+
+ // コーチ所見が見出しなしの全文だった場合も、総合所見として必ず保持する。
+ if(!merged.summary){
+  if(coachComment&&feedbackSectionScore(coach)===0)merged.summary=stripMarkdownDecorations(coachComment);
+  else if(feedbackText&&feedbackSectionScore(feedback)===0)merged.summary=stripMarkdownDecorations(feedbackText);
+ }
+
+ // 総合所見だけに4項目全文が残っている古いデータも再解析する。
+ if((!merged.good||!merged.improve||!merged.direction)&&merged.summary){
+  const reparsed=extractFeedbackSections(merged.summary);
+  merged.good=merged.good||reparsed.good;
+  merged.improve=merged.improve||reparsed.improve;
+  merged.direction=merged.direction||reparsed.direction;
+  if(reparsed.summary)merged.summary=reparsed.summary;
+ }
+
+ return merged;
+}
+
 function buildParentReportHtml(){
  if(!state.selected||!state.currentData)return '';
  const p=state.selected;
- // AI所見欄を優先し、従来どおりコーチ所見欄へ貼り付けた文章も自動抽出する。
- const feedbackSource=$('#feedbackText')?.value.trim()||$('#coachComment')?.value.trim()||'';
- const sections=extractFeedbackSections(feedbackSource);
+ const sections=buildCompleteCoachReportSections();
  const good=sections.good||'未記入';
  const improve=sections.improve||'未記入';
  const direction=sections.direction||'未記入';
@@ -1573,6 +1618,10 @@ function buildParentReportHtml(){
     <div class="report-box"><h4>アジリティ</h4>${reportAgilityHtml()}</div>
     <div class="report-box" style="grid-column:1/-1"><h4>シューティング</h4>${reportShootingHtml()}</div>
     <div class="report-box report-shot-chart-box" style="grid-column:1/-1"><h4>シュートチャート</h4>${reportShotChartHtml()}</div>
+  </div>
+  <div class="report-coach-title">
+    <strong>コーチ所見</strong>
+    <span>現在の成長と次の取り組み</span>
   </div>
   <section class="report-section good"><h3>いいところ</h3><div class="report-text">${reportEsc(good).replace(/\n/g,'<br>')}</div></section>
   <section class="report-section improve"><h3>改善点</h3><div class="report-text">${reportEsc(improve).replace(/\n/g,'<br>')}</div></section>
