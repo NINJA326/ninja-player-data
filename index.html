@@ -301,7 +301,7 @@
 <div class="app">
   <header class="topbar">
     <div class="brand"><h1>NINJA PLAYER DATA</h1><p>全選手｜成長・シューティング・アジリティ</p></div>
-    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v32 シュートチャート位置修正</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
+    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v33 まとめ更新・保存強化</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
   </header>
 
   <main class="layout">
@@ -547,7 +547,7 @@
   <div class="section-title">
     <div>
       <h2>選手フィードバック</h2>
-      <p>選手へ伝える「いいところ・改善点・方向性」を整理して保存します。ChatGPTボタンでは選手データをコピーしてChatGPTを開きます。</p>
+      <p>選手へ伝える「いいところ・改善点・方向性」を整理して保存します。内容は同じ端末・同じGitHub Pages URLで更新後も保持されます。</p>
     </div>
     <div class="row" style="flex-wrap:wrap">
       
@@ -1345,10 +1345,33 @@ function buildDataSummaryText(){
  }
  return `${template}\n\n${dataBlock}`;
 }
-function refreshDataSummary(){
+async function refreshDataSummary(){
  const el=$('#dataSummaryText');
+ const status=$('#dataSummaryCopyStatus');
  if(!el)return;
- el.value=buildDataSummaryText();
+ if(!state.selected){
+  el.value='';
+  if(status)status.textContent='選手を選択してください。';
+  setTimeout(()=>{if(status)status.textContent=''},1800);
+  return;
+ }
+ if(status)status.textContent='最新データを取得しています...';
+ try{
+  state.playerCache.delete(String(state.selected.playerId));
+  const data=await fetchPlayerData(String(state.selected.playerId),{force:true});
+  if(!state.selected||String(state.selected.playerId)!==String(data.playerId||state.selected.playerId)){
+   // selected player changed while fetching
+  }else{
+   renderPlayerData(data);
+  }
+  el.value=buildDataSummaryText();
+  if(status)status.textContent='最新データでまとめを更新しました。';
+ }catch(e){
+  el.value=buildDataSummaryText();
+  if(status)status.textContent='通信に失敗したため、現在表示中のデータで更新しました。';
+  console.warn('summary refresh failed',e);
+ }
+ setTimeout(()=>{if(status)status.textContent=''},2600);
 }
 async function copyChatGptPrompt(){
  const text=buildDataSummaryText();
@@ -1586,31 +1609,99 @@ NINJA AIRS U15`;
  setTimeout(()=>$('#commentSaved').textContent='',2200);
 }
 
-function feedbackStorageKey(){
- return state.selected ? `ninjaPlayerFeedback:${state.selected.playerId||state.selected.name}` : '';
+const FEEDBACK_STORE_KEY='ninjaPlayerFeedbackStoreV1';
+
+function feedbackIdentity(){
+ if(!state.selected)return null;
+ const id=String(state.selected.playerId||'').trim();
+ const name=String(state.selected.name||'').trim();
+ const category=String(state.selected.category||'').trim();
+ return {
+  primary:id||`${name}|${category}`,
+  legacy:`ninjaPlayerFeedback:${id||name}`,
+  nameKey:`${name}|${category}`
+ };
+}
+function readFeedbackStore(){
+ try{
+  const parsed=JSON.parse(localStorage.getItem(FEEDBACK_STORE_KEY)||'{}');
+  return parsed&&typeof parsed==='object'?parsed:{};
+ }catch(e){
+  return {};
+ }
+}
+function writeFeedbackStore(store){
+ localStorage.setItem(FEEDBACK_STORE_KEY,JSON.stringify(store));
 }
 function loadPlayerFeedback(){
- const key=feedbackStorageKey();
- let data={goodPoints:'',improvementPoints:'',futureDirection:''};
- if(key){
-  try{data={...data,...JSON.parse(localStorage.getItem(key)||'{}')}}catch(e){}
+ const ident=feedbackIdentity();
+ let data={goodPoints:'',improvementPoints:'',futureDirection:'',savedAt:''};
+ if(ident){
+  const store=readFeedbackStore();
+  data={...data,...(store[ident.primary]||store[ident.nameKey]||{})};
+
+  // v32以前の選手別キーから自動移行
+  if(!data.goodPoints&&!data.improvementPoints&&!data.futureDirection){
+   try{
+    const legacy=JSON.parse(localStorage.getItem(ident.legacy)||'{}');
+    if(legacy&&typeof legacy==='object'){
+     data={...data,...legacy};
+     store[ident.primary]=data;
+     store[ident.nameKey]=data;
+     writeFeedbackStore(store);
+    }
+   }catch(e){}
+  }
  }
  $('#goodPoints').value=data.goodPoints||'';
  $('#improvementPoints').value=data.improvementPoints||'';
  $('#futureDirection').value=data.futureDirection||'';
+ const saved=$('#feedbackSaved');
+ if(saved&&data.savedAt){
+  const d=new Date(data.savedAt);
+  saved.textContent=Number.isNaN(d.getTime())?'保存済み':`保存済み：${d.toLocaleString('ja-JP')}`;
+ }
 }
-function savePlayerFeedback(){
- const key=feedbackStorageKey();
- if(!key)return;
+function savePlayerFeedback(showMessage=true){
+ const ident=feedbackIdentity();
+ if(!ident){
+  alert('選手を選択してください');
+  return;
+ }
  const data={
   goodPoints:$('#goodPoints').value.trim(),
   improvementPoints:$('#improvementPoints').value.trim(),
-  futureDirection:$('#futureDirection').value.trim()
+  futureDirection:$('#futureDirection').value.trim(),
+  playerId:String(state.selected.playerId||''),
+  playerName:String(state.selected.name||''),
+  category:String(state.selected.category||''),
+  savedAt:new Date().toISOString()
  };
- localStorage.setItem(key,JSON.stringify(data));
- refreshDataSummary();
- $('#feedbackSaved').textContent='いいところ・改善点・方向性を保存しました';
- setTimeout(()=>$('#feedbackSaved').textContent='',1800);
+ const store=readFeedbackStore();
+ store[ident.primary]=data;
+ store[ident.nameKey]=data;
+ writeFeedbackStore(store);
+
+ // 旧キーにも保存して既存版との互換性を維持
+ localStorage.setItem(ident.legacy,JSON.stringify(data));
+
+ const el=$('#dataSummaryText');
+ if(el)el.value=buildDataSummaryText();
+ if(showMessage){
+  $('#feedbackSaved').textContent='選手フィードバックを端末に保存しました。GitHub更新後も保持されます。';
+  setTimeout(()=>{
+   const d=new Date(data.savedAt);
+   $('#feedbackSaved').textContent=`保存済み：${d.toLocaleString('ja-JP')}`;
+  },2200);
+ }
+}
+function enableFeedbackAutoSave(){
+ ['goodPoints','improvementPoints','futureDirection'].forEach(id=>{
+  const el=$('#'+id);
+  if(!el)return;
+  el.addEventListener('change',()=>savePlayerFeedback(false));
+  el.addEventListener('blur',()=>savePlayerFeedback(false));
+ });
 }
 
 $('#openPromptTabBtn').onclick=openPromptSettingsTab;
@@ -1637,6 +1728,7 @@ $('#settingsModal')?.addEventListener('click',e=>{
 });
 
 fillPromptSettings();
+enableFeedbackAutoSave();
 loadPlayers();
 </script>
 </body></html>

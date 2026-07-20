@@ -357,3 +357,6 @@ v31: Compact PDF agility layout and live shot chart embedded in player report.
 
 
 v32: Preserved shot marker inline positions in PDF clone.
+
+
+v33: Summary force refresh and stable feedback persistence with migration and autosave.
