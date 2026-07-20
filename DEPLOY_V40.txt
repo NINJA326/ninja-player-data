@@ -1,0 +1,18 @@
+NINJA PLAYER DATA v40
+
+修正:
+・「##いいところ」のように見出し後の空白がない形式を認識
+・「## 改善点」「【方向性】」「総合所見：」にも対応
+・抽出した内容をPDF上部の
+  いいところ / 改善点 / 方向性
+  に正しく反映
+・総合所見には総合所見本文を表示
+・PDFの表示デザインは変更なし
+・その他の機能は維持
+
+更新:
+1. Apps ScriptのCode.gsを全置換
+2. Apps Scriptを新しいデプロイとして再公開
+3. 新しい /exec URLを接続設定へ入力
+4. GitHubへ index.html / manifest.json / sw.js / icon.svg を上書き
+5. Command + Shift + R

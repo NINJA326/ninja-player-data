@@ -55,8 +55,8 @@ function doGet(e) {
     else if (action === 'savePlayerFeedback') result = savePlayerFeedback_(p);
     else if (action === 'updatePlayerCategory') result = updatePlayerCategory_(p);
     else if (action === 'dashboard') result = dashboard_();
-    else if (action === 'setup') { setupSheets_(); clearAppCaches_(); result = {status:'ok',app:'NINJA PLAYER DATA v39',setup:true}; }
-    else result = {status:'ok',app:'NINJA PLAYER DATA v39'};
+    else if (action === 'setup') { setupSheets_(); clearAppCaches_(); result = {status:'ok',app:'NINJA PLAYER DATA v40',setup:true}; }
+    else result = {status:'ok',app:'NINJA PLAYER DATA v40'};
   } catch (err) {
     log_('GET_ERROR', String(err));
     result = {status:'error',message:String(err && err.message || err)};

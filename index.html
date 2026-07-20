@@ -301,7 +301,7 @@
 <div class="app">
   <header class="topbar">
     <div class="brand"><h1>NINJA PLAYER DATA</h1><p>全選手｜成長・シューティング・アジリティ</p></div>
-    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v39 所見自動抽出</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
+    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v40 項目反映修正</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
   </header>
 
   <main class="layout">
@@ -1551,10 +1551,13 @@ function reportShotChartHtml(){
 function buildParentReportHtml(){
  if(!state.selected||!state.currentData)return '';
  const p=state.selected;
- const good=$('#goodPoints')?.value.trim()||'未記入';
- const improve=$('#improvementPoints')?.value.trim()||'未記入';
- const direction=$('#futureDirection')?.value.trim()||'未記入';
- const overall=$('#coachComment')?.value.trim()||'未記入';
+ // AI所見欄を優先し、従来どおりコーチ所見欄へ貼り付けた文章も自動抽出する。
+ const feedbackSource=$('#feedbackText')?.value.trim()||$('#coachComment')?.value.trim()||'';
+ const sections=extractFeedbackSections(feedbackSource);
+ const good=sections.good||'未記入';
+ const improve=sections.improve||'未記入';
+ const direction=sections.direction||'未記入';
+ const overall=sections.summary||sections.raw||'未記入';
  return `<article class="parent-report-paper">
   <header class="report-header">
     <div class="report-brand">NINJA AIRS U15</div>
@@ -1571,10 +1574,10 @@ function buildParentReportHtml(){
     <div class="report-box" style="grid-column:1/-1"><h4>シューティング</h4>${reportShootingHtml()}</div>
     <div class="report-box report-shot-chart-box" style="grid-column:1/-1"><h4>シュートチャート</h4>${reportShotChartHtml()}</div>
   </div>
-  <section class="report-section good"><h3>いいところ</h3><div class="report-text">${reportEsc(good)}</div></section>
-  <section class="report-section improve"><h3>改善点</h3><div class="report-text">${reportEsc(improve)}</div></section>
-  <section class="report-section direction"><h3>方向性</h3><div class="report-text">${reportEsc(direction)}</div></section>
-  <section class="report-section overall"><h3>総合所見</h3><div class="report-text">${reportEsc(overall)}</div></section>
+  <section class="report-section good"><h3>いいところ</h3><div class="report-text">${reportEsc(good).replace(/\n/g,'<br>')}</div></section>
+  <section class="report-section improve"><h3>改善点</h3><div class="report-text">${reportEsc(improve).replace(/\n/g,'<br>')}</div></section>
+  <section class="report-section direction"><h3>方向性</h3><div class="report-text">${reportEsc(direction).replace(/\n/g,'<br>')}</div></section>
+  <section class="report-section overall"><h3>総合所見</h3><div class="report-text">${reportEsc(overall).replace(/\n/g,'<br>')}</div></section>
   ${reportAlertsHtml()}
   <footer class="report-footer">NINJA AIRS U15</footer>
  </article>`;
@@ -1645,9 +1648,10 @@ function normalizeSectionHeading(line){
  return String(line||'')
   .replace(/^\s*#{1,6}\s*/,'')
   .replace(/\*\*/g,'')
-  .replace(/[：:]\s*$/,'')
   .replace(/^\s*[【\[]?/,'')
   .replace(/[】\]]?\s*$/,'')
+  .replace(/[：:]\s*$/,'')
+  .replace(/\s+/g,'')
   .trim();
 }
 function extractFeedbackSections(text){
@@ -1676,7 +1680,7 @@ function extractFeedbackSections(text){
    continue;
   }
 
-  const inline=line.match(/^\s*(?:#{1,6}\s*)?(いいところ|良いところ|強み|評価できる点|改善点|課題|今後の課題|方向性|今後の方向性|取り組み方|総合所見|総評|まとめ)\s*[：:]\s*(.*)$/);
+  const inline=line.match(/^\s*(?:#{1,6}\s*)?(いいところ|良いところ|強み|評価できる点|改善点|課題|今後の課題|方向性|今後の方向性|取り組み方|総合所見|総評|まとめ)\s*[：:]?\s*(.*)$/);
   if(inline){
    current=lookup[inline[1]];
    if(inline[2])buckets[current].push(inline[2]);
