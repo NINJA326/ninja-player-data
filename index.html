@@ -301,7 +301,7 @@
 <div class="app">
   <header class="topbar">
     <div class="brand"><h1>NINJA PLAYER DATA</h1><p>全選手｜成長・シューティング・アジリティ</p></div>
-    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v34 自動更新停止</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
+    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v35 循環更新修正</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
   </header>
 
   <main class="layout">
@@ -817,7 +817,6 @@ function renderPlayerData(data){
  renderAgility(data.agility||[]);
  loadComment();
  loadPlayerFeedback();
- refreshDataSummary();
 }
 function clearPlayerDisplay(){
  state.currentData=null;
@@ -859,6 +858,8 @@ async function selectPlayer(id,options={}){
  $('#detail').hidden=false;
  $('#playerName').textContent=player.name;
  $('#playerCategory').textContent=player.category||'未設定';
+ const summaryEl=$('#dataSummaryText');
+ if(summaryEl)summaryEl.value='';
 
  const cached=!options.force&&getCachedPlayerData(id);
  if(cached){

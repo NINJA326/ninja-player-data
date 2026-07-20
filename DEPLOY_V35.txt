@@ -1,0 +1,18 @@
+NINJA PLAYER DATA v35
+
+原因:
+・refreshDataSummary
+  → renderPlayerData
+  → refreshDataSummary
+の循環呼び出しが残っていました。
+
+修正:
+・renderPlayerDataからrefreshDataSummary呼び出しを削除
+・数秒ごとの自動更新と再取得ループを完全停止
+・選手切替時は古いまとめ表示だけ空にする
+・「まとめを更新」ボタンを押した時だけまとめを生成
+・選手フィードバック保存は維持
+・Apps Script変更不要
+
+GitHubへ index.html / manifest.json / sw.js / icon.svg を上書き。
+反映後 Command + Shift + R。

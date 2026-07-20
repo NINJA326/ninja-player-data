@@ -363,3 +363,6 @@ v33: Summary force refresh and stable feedback persistence with migration and au
 
 
 v34: Disabled automatic data-summary refresh.
+
+
+v35: Removed recursive refreshDataSummary call from renderPlayerData.
