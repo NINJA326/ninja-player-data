@@ -139,13 +139,85 @@
     .architecture-badge{display:inline-flex;align-items:center;gap:6px;border:1px solid #31506f;border-radius:999px;padding:5px 9px;font-size:11px;color:#9fb5cc;background:#0b1525}
     .architecture-badge::before{content:'●';color:#65d394}
 
+
+.report-agility-grid{
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:12px;
+ margin-top:8px;
+}
+.report-agility-card{
+ border:1px solid #d7e0ea;
+ border-radius:12px;
+ padding:14px;
+ background:#f8fafc;
+ break-inside:avoid;
+}
+.report-agility-title{
+ font-size:15px;
+ font-weight:800;
+ color:#142238;
+ margin-bottom:8px;
+ padding-bottom:7px;
+ border-bottom:2px solid #31b66a;
+}
+.report-agility-main{
+ display:flex;
+ align-items:flex-end;
+ justify-content:space-between;
+ gap:10px;
+ margin-bottom:10px;
+}
+.report-agility-value{
+ font-size:22px;
+ line-height:1;
+ font-weight:900;
+ color:#10213a;
+}
+.report-agility-date{
+ font-size:11px;
+ color:#65758a;
+ text-align:right;
+ white-space:nowrap;
+}
+.report-agility-deltas{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:8px;
+}
+.report-agility-deltas>div{
+ background:#fff;
+ border:1px solid #e1e7ef;
+ border-radius:8px;
+ padding:8px 9px;
+}
+.report-agility-deltas span{
+ display:block;
+ font-size:10px;
+ color:#718096;
+ margin-bottom:3px;
+}
+.report-agility-deltas strong{
+ display:block;
+ font-size:13px;
+ color:#1a2a42;
+}
+@media(max-width:720px){
+ .report-agility-grid{grid-template-columns:1fr}
+}
+@media print{
+ .report-agility-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+ .report-agility-card{padding:10px}
+ .report-agility-value{font-size:18px}
+}
+
 </style>
 </head>
 <body>
 <div class="app">
   <header class="topbar">
     <div class="brand"><h1>NINJA PLAYER DATA</h1><p>全選手｜成長・シューティング・アジリティ</p></div>
-    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v27 完成版・一括取得対応</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
+    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v29 アジリティPDF見やすさ改善</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
   </header>
 
   <main class="layout">
@@ -366,6 +438,7 @@
     <div class="chatgpt-flow">
       <div class="chatgpt-flow-main">
         <button id="copyChatGptPromptBtn" class="btn">ChatGPT用データをコピー</button>
+        <button id="openChatGptSummaryBtn" class="btn blue">コピーしてChatGPTを開く</button>
         
       </div>
       <div class="chatgpt-note">選手データと所見作成指示をコピーします。ChatGPTへ貼り付けて所見を作成してください。</div>
@@ -379,10 +452,11 @@
   <div class="section-title">
     <div>
       <h2>選手フィードバック</h2>
-      <p>選手へ伝える「いいところ・改善点・方向性」を整理して保存します。</p>
+      <p>選手へ伝える「いいところ・改善点・方向性」を整理して保存します。ChatGPTボタンでは選手データをコピーしてChatGPTを開きます。</p>
     </div>
     <div class="row" style="flex-wrap:wrap">
       
+      <button id="openChatGptFeedbackBtn" class="btn blue">ChatGPTでフィードバック作成</button>
       <button id="saveFeedbackBtn" class="btn secondary">3項目を保存</button>
     </div>
   </div>
@@ -1113,6 +1187,53 @@ async function copyChatGptPrompt(){
  setTimeout(()=>$('#dataSummaryCopyStatus').textContent='',2500);
 }
 
+async function copyTextSafely(text,fallbackElement){
+ try{
+  await navigator.clipboard.writeText(text);
+  return true;
+ }catch(e){
+  if(fallbackElement){
+   fallbackElement.value=text;
+   fallbackElement.focus();
+   fallbackElement.select();
+   return document.execCommand('copy');
+  }
+  return false;
+ }
+}
+function buildFeedbackChatGptPrompt(){
+ const base=buildDataSummaryText();
+ if(!base)return '';
+ return [
+  '以下の選手データを基に、選手フィードバックを作成してください。',
+  '出力は必ず「いいところ」「改善点」「方向性」の3項目に分けてください。',
+  '各項目は中学生本人と保護者に伝わる、具体的で前向きな文章にしてください。',
+  '改善点は否定ではなく、次の練習行動へつながる表現にしてください。',
+  'データにない内容は作らず、事実と推測を混同しないでください。',
+  '',
+  base
+ ].join('\n');
+}
+async function openChatGptWithPrompt(text,statusElement){
+ if(!text){alert('選手データがまだ読み込まれていません');return}
+ const chatWindow=window.open('https://chatgpt.com/','_blank','noopener,noreferrer');
+ const copied=await copyTextSafely(text,$('#dataSummaryText'));
+ if(statusElement){
+  statusElement.textContent=copied?'内容をコピーしてChatGPTを開きました。入力欄へ貼り付けてください。':'ChatGPTを開きました。コピーできなかったため、画面の内容を手動でコピーしてください。';
+  setTimeout(()=>statusElement.textContent='',4000);
+ }
+ if(!chatWindow)alert('ポップアップがブロックされました。ブラウザの設定でChatGPTを開く操作を許可してください。');
+}
+function openChatGptSummary(){
+ const text=buildDataSummaryText();
+ if(text)$('#dataSummaryText').value=text;
+ return openChatGptWithPrompt(text,$('#dataSummaryCopyStatus'));
+}
+function openChatGptFeedback(){
+ const text=buildFeedbackChatGptPrompt();
+ return openChatGptWithPrompt(text,$('#feedbackSaved'));
+}
+
 
 function reportEsc(value){
  return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -1144,7 +1265,22 @@ function reportAgilityHtml(){
  const rows=Object.values(latest);
  if(!rows.length)return '<p>アジリティの記録はありません。</p>';
  const growth=agilityGrowthComparisons(state.currentData&&state.currentData.agility||[]);
- return `<ul>${rows.map(x=>{const g=growth.find(y=>y.key===x.key);return `<li>${reportEsc(x.label)}：${reportEsc(x.value)}${reportEsc(x.unit)}（${reportEsc(reportDateJa(x.date))}）<br>初回→現在：${reportEsc(deltaText(g?g.firstDelta:null,x.unit))}／前回→現在：${reportEsc(deltaText(g?g.previousDelta:null,x.unit))}</li>`}).join('')}</ul>`;
+ return `<div class="report-agility-grid">${rows.map(x=>{
+  const g=growth.find(y=>y.key===x.key);
+  const firstText=deltaText(g?g.firstDelta:null,x.unit);
+  const previousText=deltaText(g?g.previousDelta:null,x.unit);
+  return `<div class="report-agility-card">
+    <div class="report-agility-title">${reportEsc(x.label)}</div>
+    <div class="report-agility-main">
+      <span class="report-agility-value">${reportEsc(x.value)}${reportEsc(x.unit)}</span>
+      <span class="report-agility-date">${reportEsc(reportDateJa(x.date))}</span>
+    </div>
+    <div class="report-agility-deltas">
+      <div><span>初回比</span><strong>${reportEsc(firstText)}</strong></div>
+      <div><span>前回比</span><strong>${reportEsc(previousText)}</strong></div>
+    </div>
+  </div>`;
+ }).join('')}</div>`;
 }
 function reportShootingHtml(){
  const s=state.currentData&&state.currentData.shooting||{};
@@ -1279,6 +1415,8 @@ $('#openPromptTabBtn').onclick=openPromptSettingsTab;
 $('#savePromptSettingsBtn').onclick=savePromptSettings;
 $('#refreshDataSummaryBtn').onclick=refreshDataSummary;
 $('#copyChatGptPromptBtn').onclick=copyChatGptPrompt;
+$('#openChatGptSummaryBtn').onclick=openChatGptSummary;
+$('#openChatGptFeedbackBtn').onclick=openChatGptFeedback;
 $('#previewParentPdfBtn').onclick=previewParentReport;
 $('#saveParentPdfBtn').onclick=saveParentReportPdf;
 $('#modalSavePdfBtn').onclick=saveParentReportPdf;

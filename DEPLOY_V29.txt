@@ -1,0 +1,11 @@
+NINJA PLAYER DATA v29
+
+変更内容:
+・保護者配信用PDFのアジリティ表示をカード形式へ変更
+・種目ごとに最新記録、測定日、初回比、前回比を分離表示
+・機能変更なし
+・Apps Script変更なし
+
+更新方法:
+GitHubへ index.html / manifest.json / sw.js / icon.svg を上書き。
+反映後 Command + Shift + R。

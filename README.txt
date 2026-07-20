@@ -342,3 +342,9 @@ PDF保存を押した後、印刷画面で
 
 
 v27 complete backend/frontend package.
+
+
+v28: ChatGPT open-and-copy buttons added to data summary and player feedback.
+
+
+v29: PDF agility section redesigned into readable metric cards. No functional changes.
