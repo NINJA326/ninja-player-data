@@ -1,0 +1,20 @@
+NINJA PLAYER DATA v27 完成版
+
+GitHub:
+index.html / manifest.json / sw.js / icon.svg を上書き。
+
+Apps Script:
+1. 既存Code.gsを全削除
+2. このZIPのCode.gsを貼り付け
+3. 保存
+4. setupSheets_を1回実行して承認
+5. デプロイを管理 → 編集 → 新しいバージョン → デプロイ
+6. WebアプリURLをアプリの接続設定へ入力
+7. Command + Shift + R
+
+v27:
+・playerBundleで身長、体重、シューティング、アジリティを一括取得
+・GETのたびに移行処理を実行しない
+・選手一覧を5分キャッシュ
+・旧API互換あり
+・OpenAI API処理なし
