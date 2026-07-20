@@ -301,7 +301,7 @@
 <div class="app">
   <header class="topbar">
     <div class="brand"><h1>NINJA PLAYER DATA</h1><p>全選手｜成長・シューティング・アジリティ</p></div>
-    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v37 高速一括取得</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
+    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v38 フィードバック統合</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
   </header>
 
   <main class="layout">
@@ -445,13 +445,14 @@
             <div class="row" style="flex-wrap:wrap">
               <button id="saveCommentBtn" class="btn">修正内容を保存</button>
               <button id="copyCommentBtn" class="btn secondary">コピー</button>
+<button id="clearAllCommentsBtn" class="btn secondary">コーチ所見を一括消去</button>
               <button id="previewParentPdfBtn" class="btn secondary">PDFプレビュー</button>
               <button id="saveParentPdfBtn" class="btn secondary">PDF保存</button>
               <button id="copyLineMessageBtn" class="btn secondary">LINE文章コピー</button>
             </div>
             <div id="commentSaved" class="comment-saved"></div>
           </div>
-          <div class="notice section">数値データだけでは練習態度や試合中の判断を十分に把握できません。必要な内容はコーチが追記・修正してください。所見とフィードバックはこの端末に保存されます。</div>
+          <div class="notice section">数値データだけでは練習態度や試合中の判断を十分に把握できません。必要な内容はコーチが追記・修正してください。コーチ所見はこの端末、選手フィードバックはスプレッドシートに保存されます。</div>
         </div>
         <div id="prompt" class="tabview">
           <div class="section">
@@ -547,27 +548,16 @@
   <div class="section-title">
     <div>
       <h2>選手フィードバック</h2>
-      <p>選手へ伝える「いいところ・改善点・方向性」を整理して保存します。内容は同じ端末・同じGitHub Pages URLで更新後も保持されます。</p>
+      <p>「いいところ・改善点・方向性」を1つの文章としてスプレッドシートへ保存します。</p>
     </div>
     <div class="row" style="flex-wrap:wrap">
-      
       <button id="openChatGptFeedbackBtn" class="btn blue">ChatGPTでフィードバック作成</button>
-      <button id="saveFeedbackBtn" class="btn secondary">3項目を保存</button>
+      <button id="saveFeedbackBtn" class="btn secondary">フィードバックを保存</button>
     </div>
   </div>
-  <div class="ai-feedback-grid">
-    <div class="ai-feedback-card good">
-      <h4>いいところ</h4>
-      <textarea id="goodPoints" class="input" placeholder="選手の強み、成長、評価できる行動を記載"></textarea>
-    </div>
-    <div class="ai-feedback-card improve">
-      <h4>改善点</h4>
-      <textarea id="improvementPoints" class="input" placeholder="次に改善したい具体的な課題を記載"></textarea>
-    </div>
-    <div class="ai-feedback-card direction">
-      <h4>方向性</h4>
-      <textarea id="futureDirection" class="input" placeholder="今後の取り組み方や目標への道筋を記載"></textarea>
-    </div>
+  <div class="ai-feedback-card">
+    <h4>いいところ・改善点・方向性</h4>
+    <textarea id="feedbackText" class="input" style="min-height:240px" placeholder="いいところ、改善点、方向性をまとめて記載してください。"></textarea>
   </div>
   <div id="feedbackSaved" class="comment-saved"></div>
 </section>
@@ -1040,9 +1030,27 @@ async function copyComment(){
 }
 function loadComment(){const key='coachComment:'+state.selected.playerId;$('#coachComment').value=localStorage.getItem(key)||'';$('#commentSaved').textContent=''}
 function saveComment(){if(!state.selected)return;localStorage.setItem('coachComment:'+state.selected.playerId,$('#coachComment').value);$('#commentSaved').textContent='保存しました';setTimeout(()=>$('#commentSaved').textContent='',1800)}
+function clearAllCoachComments(){
+ const keys=[];
+ for(let i=0;i<localStorage.length;i++){
+  const key=localStorage.key(i);
+  if(key&&key.startsWith('coachComment:'))keys.push(key);
+ }
+ if(!keys.length){
+  $('#commentSaved').textContent='保存されているコーチ所見はありません';
+  setTimeout(()=>$('#commentSaved').textContent='',1800);
+  return;
+ }
+ if(!confirm(`全選手のコーチ所見 ${keys.length}件を一括消去します。元に戻せません。よろしいですか？`))return;
+ keys.forEach(key=>localStorage.removeItem(key));
+ $('#coachComment').value='';
+ $('#commentSaved').textContent=`コーチ所見 ${keys.length}件を一括消去しました`;
+ setTimeout(()=>$('#commentSaved').textContent='',2500);
+}
 function dateKey(r){return String(r.date||r.measuredAtIso||r.createdAt||'').slice(0,10)}function num(v){return Number(v||0).toLocaleString('ja-JP',{maximumFractionDigits:2})}function signed(v){v=Number(v||0);return (v>0?'+':'')+num(v)}function fmtDate(v){if(!v)return'';const [y,m,d]=v.split('-');return `${y}/${Number(m)}/${Number(d)}`}function fmtMonth(v){if(!v)return'';const [y,m]=v.split('-');return `${y}/${Number(m)}`}function setText(s,v){$(s).textContent=v}function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab,.tabview').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('#'+b.dataset.tab).classList.add('active')});
 $('#copyCommentBtn').onclick=copyComment;
+$('#clearAllCommentsBtn').onclick=clearAllCoachComments;
 $('#searchInput').oninput=renderPlayers;$('#categoryFilter').onchange=renderPlayers;$('#reloadBtn').onclick=async()=>{
  state.playerCache.clear();
  await loadPlayers();
@@ -1337,9 +1345,7 @@ function buildPlayerDataBlock(){
   ($('#coachComment')&&$('#coachComment').value.trim())||'未記入',
   '',
   '【既存フィードバック】',
-  `いいところ：${($('#goodPoints')&&$('#goodPoints').value.trim())||'未記入'}`,
-  `改善点：${($('#improvementPoints')&&$('#improvementPoints').value.trim())||'未記入'}`,
-  `方向性：${($('#futureDirection')&&$('#futureDirection').value.trim())||'未記入'}`
+  `選手フィードバック：${($('#feedbackText')&&$('#feedbackText').value.trim())||'未記入'}`
  ].filter(v=>v!==null&&v!==undefined&&v!=='');
  return lines.join('\n');
 }
@@ -1416,7 +1422,7 @@ function buildFeedbackChatGptPrompt(){
  if(!base)return '';
  return [
   '以下の選手データを基に、選手フィードバックを作成してください。',
-  '出力は必ず「いいところ」「改善点」「方向性」の3項目に分けてください。',
+  '「いいところ・改善点・方向性」の内容を含め、1つのまとまったフィードバック文章として出力してください。',
   '各項目は中学生本人と保護者に伝わる、具体的で前向きな文章にしてください。',
   '改善点は否定ではなく、次の練習行動へつながる表現にしてください。',
   'データにない内容は作らず、事実と推測を混同しないでください。',
@@ -1618,6 +1624,16 @@ NINJA AIRS U15`;
  setTimeout(()=>$('#commentSaved').textContent='',2200);
 }
 
+function normalizeUnifiedFeedback(data){
+ data=data||{};
+ if(String(data.feedbackText||'').trim())return String(data.feedbackText).trim();
+ const parts=[];
+ if(String(data.goodPoints||'').trim())parts.push(`【いいところ】\n${String(data.goodPoints).trim()}`);
+ if(String(data.improvementPoints||'').trim())parts.push(`【改善点】\n${String(data.improvementPoints).trim()}`);
+ if(String(data.futureDirection||'').trim())parts.push(`【方向性】\n${String(data.futureDirection).trim()}`);
+ return parts.join('\n\n');
+}
+
 const FEEDBACK_STORE_KEY='ninjaPlayerFeedbackStoreV1';
 let feedbackSaveTimer=null;
 let feedbackRequestSeq=0;
@@ -1646,7 +1662,7 @@ function writeFeedbackStore(store){
 }
 function getLocalFeedback(){
  const ident=feedbackIdentity();
- let data={goodPoints:'',improvementPoints:'',futureDirection:'',savedAt:''};
+ let data={feedbackText:'',goodPoints:'',improvementPoints:'',futureDirection:'',savedAt:''};
  if(!ident)return data;
  const store=readFeedbackStore();
  data={...data,...(store[ident.primary]||store[ident.nameKey]||{})};
@@ -1669,9 +1685,7 @@ function cacheFeedbackLocally(data){
 }
 function applyFeedbackToForm(data,sourceLabel=''){
  data=data||{};
- $('#goodPoints').value=data.goodPoints||'';
- $('#improvementPoints').value=data.improvementPoints||'';
- $('#futureDirection').value=data.futureDirection||'';
+ $('#feedbackText').value=normalizeUnifiedFeedback(data);
  const saved=$('#feedbackSaved');
  if(!saved)return;
  if(data.savedAt){
@@ -1710,7 +1724,7 @@ async function loadPlayerFeedback(bundleFeedback=null){
    applyFeedbackToForm(result.feedback,'スプレッドシート');
   }else{
    // スプレッドシート未登録の場合は、既存の端末データを表示したまま移行可能にする
-   applyFeedbackToForm(local, (local.goodPoints||local.improvementPoints||local.futureDirection)?'端末データ・保存で移行':'スプレッドシート未登録');
+   applyFeedbackToForm(local, normalizeUnifiedFeedback(local)?'端末データ・保存で移行':'スプレッドシート未登録');
   }
  }catch(e){
   $('#feedbackSaved').textContent='スプレッドシート取得失敗・端末データを表示';
@@ -1722,9 +1736,7 @@ function feedbackFormData(){
   playerId:String(state.selected?.playerId||''),
   playerName:String(state.selected?.name||''),
   category:String(state.selected?.category||''),
-  goodPoints:$('#goodPoints').value.trim(),
-  improvementPoints:$('#improvementPoints').value.trim(),
-  futureDirection:$('#futureDirection').value.trim(),
+  feedbackText:$('#feedbackText').value.trim(),
   savedAt:new Date().toISOString()
  };
 }
@@ -1751,9 +1763,7 @@ async function savePlayerFeedback(showMessage=true){
    playerId:data.playerId,
    playerName:data.playerName,
    category:data.category,
-   goodPoints:data.goodPoints,
-   improvementPoints:data.improvementPoints,
-   futureDirection:data.futureDirection
+   feedbackText:data.feedbackText
   },{timeoutMs:45000,retries:1,dedupe:false});
 
   if(!result||result.status!=='ok')throw new Error(result&&result.message||'保存失敗');
@@ -1773,7 +1783,7 @@ function scheduleFeedbackSave(){
  feedbackSaveTimer=setTimeout(()=>savePlayerFeedback(false),700);
 }
 function enableFeedbackAutoSave(){
- ['goodPoints','improvementPoints','futureDirection'].forEach(id=>{
+ ['feedbackText'].forEach(id=>{
   const el=$('#'+id);
   if(!el)return;
   el.addEventListener('change',scheduleFeedbackSave);

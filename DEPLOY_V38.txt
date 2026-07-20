@@ -1,0 +1,15 @@
+NINJA PLAYER DATA v38
+
+・選手フィードバックを1つの記入欄に統合
+・既存の「いいところ・改善点・方向性」は1文章へ自動移行
+・スプレッドシート列を5列へ統合
+・コーチ所見の全選手一括消去ボタンを追加
+・削除前に確認表示
+・高速一括取得などその他機能は維持
+
+更新:
+1. Code.gsを全置換
+2. Apps Scriptを新しいデプロイで再公開
+3. 新しい/exec URLを接続設定へ入力
+4. GitHubへindex.html / manifest.json / sw.js / icon.svgを上書き
+5. Command + Shift + R

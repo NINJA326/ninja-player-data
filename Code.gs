@@ -55,8 +55,8 @@ function doGet(e) {
     else if (action === 'savePlayerFeedback') result = savePlayerFeedback_(p);
     else if (action === 'updatePlayerCategory') result = updatePlayerCategory_(p);
     else if (action === 'dashboard') result = dashboard_();
-    else if (action === 'setup') { setupSheets_(); clearAppCaches_(); result = {status:'ok',app:'NINJA PLAYER DATA v37',setup:true}; }
-    else result = {status:'ok',app:'NINJA PLAYER DATA v37'};
+    else if (action === 'setup') { setupSheets_(); clearAppCaches_(); result = {status:'ok',app:'NINJA PLAYER DATA v38',setup:true}; }
+    else result = {status:'ok',app:'NINJA PLAYER DATA v38'};
   } catch (err) {
     log_('GET_ERROR', String(err));
     result = {status:'error',message:String(err && err.message || err)};
@@ -241,25 +241,19 @@ function fastAgilityRecordsForPlayer_(player) {
 }
 
 function fastFeedbackForPlayer_(player) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_PLAYER_FEEDBACK);
-  if (!sheet || sheet.getLastRow() < 2) return null;
-
-  const lastRow = sheet.getLastRow();
-  const values = sheet.getRange(2, 1, lastRow - 1, 7).getValues();
-  const id = String(player.playerId || '').trim();
-
-  for (let i = values.length - 1; i >= 0; i--) {
-    const row = values[i];
-    if (String(row[0] || '').trim() !== id) continue;
-    return {
-      playerId:id,
-      playerName:String(row[1] || player.name || ''),
-      category:String(row[2] || player.category || ''),
-      goodPoints:String(row[3] || ''),
-      improvementPoints:String(row[4] || ''),
-      futureDirection:String(row[5] || ''),
-      savedAt:formatDateTime_(row[6])
-    };
+  const sheet=SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_PLAYER_FEEDBACK);
+  if(!sheet||sheet.getLastRow()<2)return null;
+  const lastCol=sheet.getLastColumn();
+  const headers=sheet.getRange(1,1,1,lastCol).getDisplayValues()[0];
+  const unified=headers.indexOf('選手フィードバック')>=0;
+  const values=sheet.getRange(2,1,sheet.getLastRow()-1,lastCol).getValues();
+  const id=String(player.playerId||'').trim();
+  for(let i=values.length-1;i>=0;i--){
+    const r=values[i];
+    if(String(r[0]||'').trim()!==id)continue;
+    return {playerId:id,playerName:String(r[1]||player.name||''),category:String(r[2]||player.category||''),
+      feedbackText:unified?String(r[3]||''):unifiedFeedbackText_(r[3],r[4],r[5]),
+      savedAt:formatDateTime_(unified?r[4]:r[6])};
   }
   return null;
 }
@@ -272,7 +266,7 @@ function setupSheets_() {
   ensureMatrixSheets_(ss);
   migrateLegacyGrowthSheets_(ss);
   migrateLegacyAgilitySheets_(ss);
-  ensureSheet_(ss, SHEET_PLAYER_FEEDBACK, ['選手ID','選手名','カテゴリー','いいところ','改善点','方向性','更新日時']);
+  ensureSheet_(ss, SHEET_PLAYER_FEEDBACK, ['選手ID','選手名','カテゴリー','選手フィードバック','更新日時']);
   ensureSheet_(ss, SHEET_LOGS, ['日時','種別','内容']);
 }
 function ensureSheet_(ss, name, header) {
@@ -472,102 +466,70 @@ function buildPlayerDetail_(player, records) {
   return { status:'ok', playerId:String(player.playerId||''), player, total, byType, byPosition, recent, latestShootingDate };
 }
 
-function getPlayerFeedback_(playerId) {
-  const id = String(playerId || '').trim();
-  if (!id) return {status:'error', message:'選手IDがありません。'};
-  const player = findPlayer_(id);
-  if (!player) return {status:'error', message:'選手が見つかりません。'};
-
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_PLAYER_FEEDBACK);
-  if (!sheet || sheet.getLastRow() < 2) {
-    return {status:'ok', feedback:null};
-  }
-
-  const values = sheet.getRange(2, 1, sheet.getLastRow() - 1, 7).getValues();
-  for (let i = values.length - 1; i >= 0; i--) {
-    const row = values[i];
-    if (String(row[0] || '').trim() === id) {
-      return {
-        status:'ok',
-        feedback:{
-          playerId:id,
-          playerName:String(row[1] || player.name || ''),
-          category:String(row[2] || player.category || ''),
-          goodPoints:String(row[3] || ''),
-          improvementPoints:String(row[4] || ''),
-          futureDirection:String(row[5] || ''),
-          savedAt:formatDateTime_(row[6])
-        }
-      };
-    }
-  }
-  return {status:'ok', feedback:null};
+function unifiedFeedbackText_(good, improvement, direction) {
+  const parts = [];
+  if (String(good || '').trim()) parts.push('【いいところ】\n' + String(good).trim());
+  if (String(improvement || '').trim()) parts.push('【改善点】\n' + String(improvement).trim());
+  if (String(direction || '').trim()) parts.push('【方向性】\n' + String(direction).trim());
+  return parts.join('\n\n');
 }
-
-function savePlayerFeedback_(p) {
-  const id = String(p.playerId || '').trim();
-  if (!id) return {status:'error', message:'選手IDがありません。'};
-  const player = findPlayer_(id);
-  if (!player) return {status:'error', message:'選手が見つかりません。'};
-
-  const data = {
-    playerId:id,
-    playerName:String(player.name || p.playerName || ''),
-    category:String(player.category || p.category || ''),
-    goodPoints:String(p.goodPoints || ''),
-    improvementPoints:String(p.improvementPoints || ''),
-    futureDirection:String(p.futureDirection || ''),
-    savedAt:new Date()
-  };
-
-  const lock = LockService.getScriptLock();
-  lock.waitLock(10000);
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let sheet = ss.getSheetByName(SHEET_PLAYER_FEEDBACK);
-    if (!sheet) {
-      sheet = ensureSheet_(ss, SHEET_PLAYER_FEEDBACK, ['選手ID','選手名','カテゴリー','いいところ','改善点','方向性','更新日時']);
-    }
-
-    let targetRow = 0;
-    if (sheet.getLastRow() >= 2) {
-      const ids = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getDisplayValues();
-      for (let i = 0; i < ids.length; i++) {
-        if (String(ids[i][0] || '').trim() === id) {
-          targetRow = i + 2;
-          break;
-        }
-      }
-    }
-
-    const row = [[
-      data.playerId,
-      data.playerName,
-      data.category,
-      data.goodPoints,
-      data.improvementPoints,
-      data.futureDirection,
-      data.savedAt
-    ]];
-
-    if (targetRow) sheet.getRange(targetRow, 1, 1, 7).setValues(row);
-    else sheet.getRange(sheet.getLastRow() + 1, 1, 1, 7).setValues(row);
-
-    return {
-      status:'ok',
-      feedback:{
-        playerId:data.playerId,
-        playerName:data.playerName,
-        category:data.category,
-        goodPoints:data.goodPoints,
-        improvementPoints:data.improvementPoints,
-        futureDirection:data.futureDirection,
-        savedAt:data.savedAt.toISOString()
-      }
-    };
-  } finally {
-    lock.releaseLock();
+function ensureFeedbackSheetV38_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SHEET_PLAYER_FEEDBACK);
+  if (!sheet) return ensureSheet_(ss,SHEET_PLAYER_FEEDBACK,['選手ID','選手名','カテゴリー','選手フィードバック','更新日時']);
+  const lastCol=Math.max(sheet.getLastColumn(),1);
+  const headers=sheet.getRange(1,1,1,lastCol).getDisplayValues()[0];
+  if(headers.indexOf('選手フィードバック')>=0)return sheet;
+  const rows=sheet.getLastRow()>=2?sheet.getRange(2,1,sheet.getLastRow()-1,Math.max(lastCol,7)).getValues():[];
+  const converted=rows.map(r=>[String(r[0]||''),String(r[1]||''),String(r[2]||''),unifiedFeedbackText_(r[3],r[4],r[5]),r[6]||'']);
+  sheet.clearContents();
+  sheet.getRange(1,1,1,5).setValues([['選手ID','選手名','カテゴリー','選手フィードバック','更新日時']]);
+  if(converted.length)sheet.getRange(2,1,converted.length,5).setValues(converted);
+  sheet.setFrozenRows(1);
+  return sheet;
+}
+function getPlayerFeedback_(playerId) {
+  const id=String(playerId||'').trim();
+  if(!id)return {status:'error',message:'選手IDがありません。'};
+  const player=findPlayer_(id);
+  if(!player)return {status:'error',message:'選手が見つかりません。'};
+  const sheet=SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_PLAYER_FEEDBACK);
+  if(!sheet||sheet.getLastRow()<2)return {status:'ok',feedback:null};
+  const lastCol=sheet.getLastColumn();
+  const headers=sheet.getRange(1,1,1,lastCol).getDisplayValues()[0];
+  const unified=headers.indexOf('選手フィードバック')>=0;
+  const values=sheet.getRange(2,1,sheet.getLastRow()-1,lastCol).getValues();
+  for(let i=values.length-1;i>=0;i--){
+    const r=values[i];
+    if(String(r[0]||'').trim()!==id)continue;
+    return {status:'ok',feedback:{
+      playerId:id,playerName:String(r[1]||player.name||''),category:String(r[2]||player.category||''),
+      feedbackText:unified?String(r[3]||''):unifiedFeedbackText_(r[3],r[4],r[5]),
+      savedAt:formatDateTime_(unified?r[4]:r[6])
+    }};
   }
+  return {status:'ok',feedback:null};
+}
+function savePlayerFeedback_(p) {
+  const id=String(p.playerId||'').trim();
+  if(!id)return {status:'error',message:'選手IDがありません。'};
+  const player=findPlayer_(id);
+  if(!player)return {status:'error',message:'選手が見つかりません。'};
+  const feedbackText=String(p.feedbackText||unifiedFeedbackText_(p.goodPoints,p.improvementPoints,p.futureDirection)||'');
+  const savedAt=new Date();
+  const lock=LockService.getScriptLock(); lock.waitLock(10000);
+  try{
+    const sheet=ensureFeedbackSheetV38_();
+    let targetRow=0;
+    if(sheet.getLastRow()>=2){
+      const ids=sheet.getRange(2,1,sheet.getLastRow()-1,1).getDisplayValues();
+      for(let i=0;i<ids.length;i++)if(String(ids[i][0]||'').trim()===id){targetRow=i+2;break;}
+    }
+    const row=[[id,String(player.name||p.playerName||''),String(player.category||p.category||''),feedbackText,savedAt]];
+    if(targetRow)sheet.getRange(targetRow,1,1,5).setValues(row);
+    else sheet.getRange(sheet.getLastRow()+1,1,1,5).setValues(row);
+    return {status:'ok',feedback:{playerId:id,playerName:String(player.name||''),category:String(player.category||''),feedbackText,savedAt:savedAt.toISOString()}};
+  }finally{lock.releaseLock();}
 }
 
 function dashboard_() {
