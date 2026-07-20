@@ -366,3 +366,6 @@ v34: Disabled automatic data-summary refresh.
 
 
 v35: Removed recursive refreshDataSummary call from renderPlayerData.
+
+
+v36: Player feedback is stored in the Google Spreadsheet through Apps Script.

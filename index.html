@@ -301,7 +301,7 @@
 <div class="app">
   <header class="topbar">
     <div class="brand"><h1>NINJA PLAYER DATA</h1><p>全選手｜成長・シューティング・アジリティ</p></div>
-    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v35 循環更新修正</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
+    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v36 スプレッドシート保存</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
   </header>
 
   <main class="layout">
@@ -731,6 +731,7 @@ function normalizePlayerBundle(bundle,id){
   growth:normalizeGrowthRecords(Array.isArray(growthSource)?growthSource:(growthSource.records||[])),
   shooting:normalizeShootingResponse(bundle.shooting||bundle.playerDetail,id),
   agility:normalizeAgilityApiRecords(Array.isArray(agilitySource)?agilitySource:(agilitySource.records||[])),
+  feedback:bundle.feedback||null,
   fetchedAt:bundle.generatedAt||new Date().toISOString(),
   source:'bundle'
  };
@@ -748,11 +749,12 @@ async function fetchLegacyPlayerData(id){
  const requests=[
   apiWithRetry('growthRecords',{playerId:id},{timeoutMs:45000,retries:1}),
   apiWithRetry('playerDetail',{playerId:id},{timeoutMs:45000,retries:1}),
-  apiWithRetry('agilityRecords',{playerId:id},{timeoutMs:45000,retries:1})
+  apiWithRetry('agilityRecords',{playerId:id},{timeoutMs:45000,retries:1}),
+  apiWithRetry('getPlayerFeedback',{playerId:id},{timeoutMs:30000,retries:1})
  ];
- const [growthResult,shootingResult,agilityResult]=await Promise.allSettled(requests);
+ const [growthResult,shootingResult,agilityResult,feedbackResult]=await Promise.allSettled(requests);
  const errors=[];
- let growth=[],shooting=emptyShooting(),agility=[];
+ let growth=[],shooting=emptyShooting(),agility=[],feedback=null;
 
  if(growthResult.status==='fulfilled'){
   const g=growthResult.value;
@@ -771,13 +773,19 @@ async function fetchLegacyPlayerData(id){
   else errors.push(a&&a.message||'アジリティ取得失敗');
  }else errors.push('アジリティ: '+(agilityResult.reason?.message||agilityResult.reason));
 
+ if(feedbackResult.status==='fulfilled'){
+  const f=feedbackResult.value;
+  if(f&&f.status==='ok')feedback=f.feedback||null;
+  else errors.push(f&&f.message||'フィードバック取得失敗');
+ }else errors.push('フィードバック: '+(feedbackResult.reason?.message||feedbackResult.reason));
+
  const hasAny=growth.length||agility.length||
   Number(shooting.total?.attempts||0)>0||
   (shooting.byType||[]).length||
   (shooting.byPosition||[]).length||
   (shooting.records||[]).length;
  if(!hasAny&&errors.length)throw new Error(errors.join('\n'));
- return {growth,shooting,agility,fetchedAt:new Date().toISOString(),source:'legacy',warnings:errors};
+ return {growth,shooting,agility,feedback,fetchedAt:new Date().toISOString(),source:'legacy',warnings:errors};
 }
 async function fetchPlayerData(id,{force=false}={}){
  id=String(id);
@@ -792,6 +800,7 @@ async function fetchPlayerData(id,{force=false}={}){
    growth:normalizeGrowthRecords(d.growth||[]),
    shooting:normalizeShootingResponse(d.shoot||{},id),
    agility:normalizeAgilityApiRecords(d.agility||[]),
+   feedback:null,
    fetchedAt:new Date().toISOString(),source:'demo'
   };
   cachePlayerData(id,data);
@@ -816,7 +825,7 @@ function renderPlayerData(data){
  renderShooting(data.shooting||emptyShooting());
  renderAgility(data.agility||[]);
  loadComment();
- loadPlayerFeedback();
+ loadPlayerFeedback(data.feedback||null);
 }
 function clearPlayerDisplay(){
  state.currentData=null;
@@ -1610,6 +1619,8 @@ NINJA AIRS U15`;
 }
 
 const FEEDBACK_STORE_KEY='ninjaPlayerFeedbackStoreV1';
+let feedbackSaveTimer=null;
+let feedbackRequestSeq=0;
 
 function feedbackIdentity(){
  if(!state.selected)return null;
@@ -1633,73 +1644,140 @@ function readFeedbackStore(){
 function writeFeedbackStore(store){
  localStorage.setItem(FEEDBACK_STORE_KEY,JSON.stringify(store));
 }
-function loadPlayerFeedback(){
+function getLocalFeedback(){
  const ident=feedbackIdentity();
  let data={goodPoints:'',improvementPoints:'',futureDirection:'',savedAt:''};
- if(ident){
-  const store=readFeedbackStore();
-  data={...data,...(store[ident.primary]||store[ident.nameKey]||{})};
-
-  // v32以前の選手別キーから自動移行
-  if(!data.goodPoints&&!data.improvementPoints&&!data.futureDirection){
-   try{
-    const legacy=JSON.parse(localStorage.getItem(ident.legacy)||'{}');
-    if(legacy&&typeof legacy==='object'){
-     data={...data,...legacy};
-     store[ident.primary]=data;
-     store[ident.nameKey]=data;
-     writeFeedbackStore(store);
-    }
-   }catch(e){}
-  }
+ if(!ident)return data;
+ const store=readFeedbackStore();
+ data={...data,...(store[ident.primary]||store[ident.nameKey]||{})};
+ if(!data.goodPoints&&!data.improvementPoints&&!data.futureDirection){
+  try{
+   const legacy=JSON.parse(localStorage.getItem(ident.legacy)||'{}');
+   if(legacy&&typeof legacy==='object')data={...data,...legacy};
+  }catch(e){}
  }
- $('#goodPoints').value=data.goodPoints||'';
- $('#improvementPoints').value=data.improvementPoints||'';
- $('#futureDirection').value=data.futureDirection||'';
- const saved=$('#feedbackSaved');
- if(saved&&data.savedAt){
-  const d=new Date(data.savedAt);
-  saved.textContent=Number.isNaN(d.getTime())?'保存済み':`保存済み：${d.toLocaleString('ja-JP')}`;
- }
+ return data;
 }
-function savePlayerFeedback(showMessage=true){
+function cacheFeedbackLocally(data){
  const ident=feedbackIdentity();
- if(!ident){
-  alert('選手を選択してください');
-  return;
- }
- const data={
-  goodPoints:$('#goodPoints').value.trim(),
-  improvementPoints:$('#improvementPoints').value.trim(),
-  futureDirection:$('#futureDirection').value.trim(),
-  playerId:String(state.selected.playerId||''),
-  playerName:String(state.selected.name||''),
-  category:String(state.selected.category||''),
-  savedAt:new Date().toISOString()
- };
+ if(!ident)return;
  const store=readFeedbackStore();
  store[ident.primary]=data;
  store[ident.nameKey]=data;
  writeFeedbackStore(store);
-
- // 旧キーにも保存して既存版との互換性を維持
  localStorage.setItem(ident.legacy,JSON.stringify(data));
-
-
- if(showMessage){
-  $('#feedbackSaved').textContent='選手フィードバックを端末に保存しました。GitHub更新後も保持されます。';
-  setTimeout(()=>{
-   const d=new Date(data.savedAt);
-   $('#feedbackSaved').textContent=`保存済み：${d.toLocaleString('ja-JP')}`;
-  },2200);
+}
+function applyFeedbackToForm(data,sourceLabel=''){
+ data=data||{};
+ $('#goodPoints').value=data.goodPoints||'';
+ $('#improvementPoints').value=data.improvementPoints||'';
+ $('#futureDirection').value=data.futureDirection||'';
+ const saved=$('#feedbackSaved');
+ if(!saved)return;
+ if(data.savedAt){
+  const d=new Date(data.savedAt);
+  const when=Number.isNaN(d.getTime())?'保存済み':`保存済み：${d.toLocaleString('ja-JP')}`;
+  saved.textContent=sourceLabel?`${when}（${sourceLabel}）`:when;
+ }else{
+  saved.textContent=sourceLabel||'未保存';
  }
+}
+async function loadPlayerFeedback(bundleFeedback=null){
+ const selectedId=state.selected?String(state.selected.playerId||''):'';
+ const seq=++feedbackRequestSeq;
+ if(!selectedId){
+  applyFeedbackToForm(null,'');
+  return;
+ }
+
+ const local=getLocalFeedback();
+ if(bundleFeedback){
+  cacheFeedbackLocally(bundleFeedback);
+  applyFeedbackToForm(bundleFeedback,'スプレッドシート');
+  return;
+ }
+
+ // 接続前・通信失敗時の保険として端末保存を先に表示
+ applyFeedbackToForm(local, state.apiUrl?'端末の一時保存':'端末保存');
+
+ if(!state.apiUrl)return;
+ try{
+  const result=await apiWithRetry('getPlayerFeedback',{playerId:selectedId},{timeoutMs:30000,retries:1});
+  if(seq!==feedbackRequestSeq||!state.selected||String(state.selected.playerId||'')!==selectedId)return;
+  if(!result||result.status!=='ok')throw new Error(result&&result.message||'取得失敗');
+  if(result.feedback){
+   cacheFeedbackLocally(result.feedback);
+   applyFeedbackToForm(result.feedback,'スプレッドシート');
+  }else{
+   // スプレッドシート未登録の場合は、既存の端末データを表示したまま移行可能にする
+   applyFeedbackToForm(local, (local.goodPoints||local.improvementPoints||local.futureDirection)?'端末データ・保存で移行':'スプレッドシート未登録');
+  }
+ }catch(e){
+  $('#feedbackSaved').textContent='スプレッドシート取得失敗・端末データを表示';
+  console.warn('feedback load failed',e);
+ }
+}
+function feedbackFormData(){
+ return {
+  playerId:String(state.selected?.playerId||''),
+  playerName:String(state.selected?.name||''),
+  category:String(state.selected?.category||''),
+  goodPoints:$('#goodPoints').value.trim(),
+  improvementPoints:$('#improvementPoints').value.trim(),
+  futureDirection:$('#futureDirection').value.trim(),
+  savedAt:new Date().toISOString()
+ };
+}
+async function savePlayerFeedback(showMessage=true){
+ if(!state.selected){
+  alert('選手を選択してください');
+  return;
+ }
+ const selectedId=String(state.selected.playerId||'');
+ const data=feedbackFormData();
+
+ // 通信中でも入力内容を失わないよう端末にもバックアップ
+ cacheFeedbackLocally(data);
+
+ if(!state.apiUrl){
+  $('#feedbackSaved').textContent='接続設定がないため端末に一時保存しました。';
+  if(showMessage)alert('スプレッドシートへ保存するには、先に接続設定を行ってください。');
+  return;
+ }
+
+ if(showMessage)$('#feedbackSaved').textContent='スプレッドシートへ保存中...';
+ try{
+  const result=await apiWithRetry('savePlayerFeedback',{
+   playerId:data.playerId,
+   playerName:data.playerName,
+   category:data.category,
+   goodPoints:data.goodPoints,
+   improvementPoints:data.improvementPoints,
+   futureDirection:data.futureDirection
+  },{timeoutMs:45000,retries:1,dedupe:false});
+
+  if(!result||result.status!=='ok')throw new Error(result&&result.message||'保存失敗');
+  if(!state.selected||String(state.selected.playerId||'')!==selectedId)return;
+  const savedData={...data,...(result.feedback||{}),savedAt:(result.feedback&&result.feedback.savedAt)||data.savedAt};
+  cacheFeedbackLocally(savedData);
+  applyFeedbackToForm(savedData,'スプレッドシート');
+ }catch(e){
+  if(!state.selected||String(state.selected.playerId||'')!==selectedId)return;
+  $('#feedbackSaved').textContent='保存失敗・端末に一時保存済み';
+  console.error('feedback save failed',e);
+  if(showMessage)alert('スプレッドシートへの保存に失敗しました。\n'+(e.message||e));
+ }
+}
+function scheduleFeedbackSave(){
+ clearTimeout(feedbackSaveTimer);
+ feedbackSaveTimer=setTimeout(()=>savePlayerFeedback(false),700);
 }
 function enableFeedbackAutoSave(){
  ['goodPoints','improvementPoints','futureDirection'].forEach(id=>{
   const el=$('#'+id);
   if(!el)return;
-  el.addEventListener('change',()=>savePlayerFeedback(false));
-  el.addEventListener('blur',()=>savePlayerFeedback(false));
+  el.addEventListener('change',scheduleFeedbackSave);
+  el.addEventListener('blur',scheduleFeedbackSave);
  });
 }
 

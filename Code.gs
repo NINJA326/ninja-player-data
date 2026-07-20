@@ -4,6 +4,7 @@ const SHEET_LOGS = 'logs';
 const SHEET_SUMMARY = 'summary';
 const SHEET_BODY_MATRIX = '身体測定';
 const SHEET_AGILITY_MATRIX = 'アジリティ測定';
+const SHEET_PLAYER_FEEDBACK = '選手フィードバック';
 const RANK_MIN_ATTEMPTS = 500;
 
 function doPost(e) {
@@ -50,10 +51,12 @@ function doGet(e) {
     else if (action === 'agilityRecords') result = agilityRecords_(p.playerId);
     else if (action === 'agilityRankings') result = agilityRankings_();
     else if (action === 'agilitySummary') result = agilitySummary_();
+    else if (action === 'getPlayerFeedback') result = getPlayerFeedback_(p.playerId);
+    else if (action === 'savePlayerFeedback') result = savePlayerFeedback_(p);
     else if (action === 'updatePlayerCategory') result = updatePlayerCategory_(p);
     else if (action === 'dashboard') result = dashboard_();
-    else if (action === 'setup') { setupSheets_(); clearAppCaches_(); result = {status:'ok',app:'NINJA PLAYER DATA v27',setup:true}; }
-    else result = {status:'ok',app:'NINJA PLAYER DATA v27'};
+    else if (action === 'setup') { setupSheets_(); clearAppCaches_(); result = {status:'ok',app:'NINJA PLAYER DATA v36',setup:true}; }
+    else result = {status:'ok',app:'NINJA PLAYER DATA v36'};
   } catch (err) {
     log_('GET_ERROR', String(err));
     result = {status:'error',message:String(err && err.message || err)};
@@ -65,7 +68,7 @@ function doGet(e) {
 
 function prepareReadSheets_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const required = [SHEET_RECORDS,SHEET_PLAYERS,SHEET_SUMMARY,SHEET_BODY_MATRIX,SHEET_AGILITY_MATRIX,SHEET_LOGS];
+  const required = [SHEET_RECORDS,SHEET_PLAYERS,SHEET_SUMMARY,SHEET_BODY_MATRIX,SHEET_AGILITY_MATRIX,SHEET_PLAYER_FEEDBACK,SHEET_LOGS];
   if (required.some(name => !ss.getSheetByName(name))) setupSheets_();
 }
 function clearAppCaches_() {
@@ -90,6 +93,7 @@ function playerBundle_(playerId) {
   if (!growth || growth.status !== 'ok') return growth;
   const agility = agilityRecords_(id);
   if (!agility || agility.status !== 'ok') return agility;
+  const feedback = getPlayerFeedback_(id);
   return {
     status:'ok',
     playerId:id,
@@ -97,6 +101,7 @@ function playerBundle_(playerId) {
     shooting,
     growth:{records:growth.records || []},
     agility:{records:agility.records || []},
+    feedback:feedback && feedback.status === 'ok' ? feedback.feedback : null,
     generatedAt:new Date().toISOString()
   };
 }
@@ -109,6 +114,7 @@ function setupSheets_() {
   ensureMatrixSheets_(ss);
   migrateLegacyGrowthSheets_(ss);
   migrateLegacyAgilitySheets_(ss);
+  ensureSheet_(ss, SHEET_PLAYER_FEEDBACK, ['選手ID','選手名','カテゴリー','いいところ','改善点','方向性','更新日時']);
   ensureSheet_(ss, SHEET_LOGS, ['日時','種別','内容']);
 }
 function ensureSheet_(ss, name, header) {
@@ -306,6 +312,105 @@ function buildPlayerDetail_(player, records) {
   const latestShootingDate = recent.length ? String(recent[0].date || '') : '';
   return { status:'ok', playerId:String(player.playerId||''), player, total, byType, byPosition, recent, latestShootingDate };
 }
+
+function getPlayerFeedback_(playerId) {
+  const id = String(playerId || '').trim();
+  if (!id) return {status:'error', message:'選手IDがありません。'};
+  const player = findPlayer_(id);
+  if (!player) return {status:'error', message:'選手が見つかりません。'};
+
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_PLAYER_FEEDBACK);
+  if (!sheet || sheet.getLastRow() < 2) {
+    return {status:'ok', feedback:null};
+  }
+
+  const values = sheet.getRange(2, 1, sheet.getLastRow() - 1, 7).getValues();
+  for (let i = values.length - 1; i >= 0; i--) {
+    const row = values[i];
+    if (String(row[0] || '').trim() === id) {
+      return {
+        status:'ok',
+        feedback:{
+          playerId:id,
+          playerName:String(row[1] || player.name || ''),
+          category:String(row[2] || player.category || ''),
+          goodPoints:String(row[3] || ''),
+          improvementPoints:String(row[4] || ''),
+          futureDirection:String(row[5] || ''),
+          savedAt:formatDateTime_(row[6])
+        }
+      };
+    }
+  }
+  return {status:'ok', feedback:null};
+}
+
+function savePlayerFeedback_(p) {
+  const id = String(p.playerId || '').trim();
+  if (!id) return {status:'error', message:'選手IDがありません。'};
+  const player = findPlayer_(id);
+  if (!player) return {status:'error', message:'選手が見つかりません。'};
+
+  const data = {
+    playerId:id,
+    playerName:String(player.name || p.playerName || ''),
+    category:String(player.category || p.category || ''),
+    goodPoints:String(p.goodPoints || ''),
+    improvementPoints:String(p.improvementPoints || ''),
+    futureDirection:String(p.futureDirection || ''),
+    savedAt:new Date()
+  };
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName(SHEET_PLAYER_FEEDBACK);
+    if (!sheet) {
+      sheet = ensureSheet_(ss, SHEET_PLAYER_FEEDBACK, ['選手ID','選手名','カテゴリー','いいところ','改善点','方向性','更新日時']);
+    }
+
+    let targetRow = 0;
+    if (sheet.getLastRow() >= 2) {
+      const ids = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getDisplayValues();
+      for (let i = 0; i < ids.length; i++) {
+        if (String(ids[i][0] || '').trim() === id) {
+          targetRow = i + 2;
+          break;
+        }
+      }
+    }
+
+    const row = [[
+      data.playerId,
+      data.playerName,
+      data.category,
+      data.goodPoints,
+      data.improvementPoints,
+      data.futureDirection,
+      data.savedAt
+    ]];
+
+    if (targetRow) sheet.getRange(targetRow, 1, 1, 7).setValues(row);
+    else sheet.getRange(sheet.getLastRow() + 1, 1, 1, 7).setValues(row);
+
+    return {
+      status:'ok',
+      feedback:{
+        playerId:data.playerId,
+        playerName:data.playerName,
+        category:data.category,
+        goodPoints:data.goodPoints,
+        improvementPoints:data.improvementPoints,
+        futureDirection:data.futureDirection,
+        savedAt:data.savedAt.toISOString()
+      }
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function dashboard_() {
   const players = listPlayers_().players;
   const records = getActiveRecords_();
