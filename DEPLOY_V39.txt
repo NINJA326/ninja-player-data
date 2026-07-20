@@ -1,0 +1,18 @@
+NINJA PLAYER DATA v39
+
+変更:
+・AI所見全文は1つの欄へ貼り付け
+・「いいところ」「改善点」「方向性」「総合所見」を自動抽出
+・Markdown見出し、通常見出し、コロン付き見出しに対応
+・PDFの表示レイアウトは変更なし
+・総合所見がない古い文章は全文を総合所見として表示
+・ChatGPT用プロンプトは4項目固定
+・既存の高速一括取得、スプレッドシート保存、PDF、LINE、身体測定、アジリティ、シューティング機能は維持
+・コーチ所見一括消去機能も維持
+
+更新:
+1. Apps ScriptのCode.gsを全置換
+2. Apps Scriptを新しいデプロイとして再公開
+3. 新しい /exec URLを接続設定へ入力
+4. GitHubへ index.html / manifest.json / sw.js / icon.svg を上書き
+5. Command + Shift + R

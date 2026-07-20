@@ -372,3 +372,6 @@ v36: Player feedback is stored in the Google Spreadsheet through Apps Script.
 
 
 v37: Optimized playerBundle to avoid repeated full-sheet processing.
+
+
+v39: Automatically extracts good points, improvements, direction, and overall remarks from one feedback field.

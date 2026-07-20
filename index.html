@@ -301,7 +301,7 @@
 <div class="app">
   <header class="topbar">
     <div class="brand"><h1>NINJA PLAYER DATA</h1><p>全選手｜成長・シューティング・アジリティ</p></div>
-    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v38 フィードバック統合</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
+    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v39 所見自動抽出</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
   </header>
 
   <main class="layout">
@@ -548,7 +548,7 @@
   <div class="section-title">
     <div>
       <h2>選手フィードバック</h2>
-      <p>「いいところ・改善点・方向性」を1つの文章としてスプレッドシートへ保存します。</p>
+      <p>ChatGPTの所見全文を1つの欄へ貼り付けると、「いいところ・改善点・方向性・総合所見」を自動抽出してPDFへ反映します。</p>
     </div>
     <div class="row" style="flex-wrap:wrap">
       <button id="openChatGptFeedbackBtn" class="btn blue">ChatGPTでフィードバック作成</button>
@@ -556,8 +556,8 @@
     </div>
   </div>
   <div class="ai-feedback-card">
-    <h4>いいところ・改善点・方向性</h4>
-    <textarea id="feedbackText" class="input" style="min-height:240px" placeholder="いいところ、改善点、方向性をまとめて記載してください。"></textarea>
+    <h4>AI所見全文</h4>
+    <textarea id="feedbackText" class="input" style="min-height:240px" placeholder="ChatGPTで作成した「いいところ・改善点・方向性・総合所見」を含む全文を貼り付けてください。"></textarea>
   </div>
   <div id="feedbackSaved" class="comment-saved"></div>
 </section>
@@ -1345,7 +1345,10 @@ function buildPlayerDataBlock(){
   ($('#coachComment')&&$('#coachComment').value.trim())||'未記入',
   '',
   '【既存フィードバック】',
-  `選手フィードバック：${($('#feedbackText')&&$('#feedbackText').value.trim())||'未記入'}`
+  `いいところ：${currentFeedbackSections().good||'未記入'}`,
+  `改善点：${currentFeedbackSections().improve||'未記入'}`,
+  `方向性：${currentFeedbackSections().direction||'未記入'}`,
+  `総合所見：${currentFeedbackSections().summary||currentFeedbackSections().raw||'未記入'}`
  ].filter(v=>v!==null&&v!==undefined&&v!=='');
  return lines.join('\n');
 }
@@ -1422,7 +1425,8 @@ function buildFeedbackChatGptPrompt(){
  if(!base)return '';
  return [
   '以下の選手データを基に、選手フィードバックを作成してください。',
-  '「いいところ・改善点・方向性」の内容を含め、1つのまとまったフィードバック文章として出力してください。',
+  '出力は必ず「いいところ」「改善点」「方向性」「総合所見」の4項目に分けてください。',
+  '各見出しは「## いいところ」のようにMarkdown見出しで記載してください。',
   '各項目は中学生本人と保護者に伝わる、具体的で前向きな文章にしてください。',
   '改善点は否定ではなく、次の練習行動へつながる表現にしてください。',
   'データにない内容は作らず、事実と推測を混同しないでください。',
@@ -1450,6 +1454,11 @@ function openChatGptFeedback(){
  return openChatGptWithPrompt(text,$('#feedbackSaved'));
 }
 
+
+
+function currentFeedbackSections(){
+ return extractFeedbackSections($('#feedbackText')?$('#feedbackText').value:'');
+}
 
 function reportEsc(value){
  return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -1622,6 +1631,71 @@ NINJA AIRS U15`;
  }
  $('#commentSaved').textContent='LINE配信用文章をコピーしました';
  setTimeout(()=>$('#commentSaved').textContent='',2200);
+}
+
+
+function stripMarkdownDecorations(text){
+ return String(text||'')
+  .replace(/^\s*#{1,6}\s*/gm,'')
+  .replace(/^\s*[-*・]\s*/gm,'')
+  .replace(/\*\*/g,'')
+  .trim();
+}
+function normalizeSectionHeading(line){
+ return String(line||'')
+  .replace(/^\s*#{1,6}\s*/,'')
+  .replace(/\*\*/g,'')
+  .replace(/[：:]\s*$/,'')
+  .replace(/^\s*[【\[]?/,'')
+  .replace(/[】\]]?\s*$/,'')
+  .trim();
+}
+function extractFeedbackSections(text){
+ const raw=String(text||'').replace(/\r\n?/g,'\n').trim();
+ const result={good:'',improve:'',direction:'',summary:'',raw};
+ if(!raw)return result;
+
+ const aliases={
+  good:['いいところ','良いところ','強み','評価できる点'],
+  improve:['改善点','課題','今後の課題'],
+  direction:['方向性','今後の方向性','取り組み方'],
+  summary:['総合所見','総評','まとめ']
+ };
+ const lookup={};
+ Object.entries(aliases).forEach(([key,list])=>list.forEach(v=>lookup[v]=key));
+
+ const lines=raw.split('\n');
+ let current='';
+ const buckets={good:[],improve:[],direction:[],summary:[]};
+
+ for(const line of lines){
+  const heading=normalizeSectionHeading(line);
+  const exact=lookup[heading];
+  if(exact){
+   current=exact;
+   continue;
+  }
+
+  const inline=line.match(/^\s*(?:#{1,6}\s*)?(いいところ|良いところ|強み|評価できる点|改善点|課題|今後の課題|方向性|今後の方向性|取り組み方|総合所見|総評|まとめ)\s*[：:]\s*(.*)$/);
+  if(inline){
+   current=lookup[inline[1]];
+   if(inline[2])buckets[current].push(inline[2]);
+   continue;
+  }
+
+  if(current)buckets[current].push(line);
+ }
+
+ result.good=stripMarkdownDecorations(buckets.good.join('\n'));
+ result.improve=stripMarkdownDecorations(buckets.improve.join('\n'));
+ result.direction=stripMarkdownDecorations(buckets.direction.join('\n'));
+ result.summary=stripMarkdownDecorations(buckets.summary.join('\n'));
+
+ // 4項目が見つからない古い文章でも、全文は総合所見として保持。
+ if(!result.good&&!result.improve&&!result.direction&&!result.summary){
+  result.summary=stripMarkdownDecorations(raw);
+ }
+ return result;
 }
 
 function normalizeUnifiedFeedback(data){
