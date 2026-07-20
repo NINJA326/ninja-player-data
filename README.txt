@@ -360,3 +360,6 @@ v32: Preserved shot marker inline positions in PDF clone.
 
 
 v33: Summary force refresh and stable feedback persistence with migration and autosave.
+
+
+v34: Disabled automatic data-summary refresh.

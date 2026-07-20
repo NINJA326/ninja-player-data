@@ -1,0 +1,11 @@
+NINJA PLAYER DATA v34
+
+・データまとめの自動更新を停止
+・フィードバック保存時にまとめを自動更新しない
+・プロンプト保存時にまとめを自動更新しない
+・「まとめを更新」ボタンを押した時だけ更新
+・選手フィードバックの保存は維持
+・Apps Script変更不要
+
+GitHubへ index.html / manifest.json / sw.js / icon.svg を上書き。
+反映後 Command + Shift + R。

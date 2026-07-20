@@ -301,7 +301,7 @@
 <div class="app">
   <header class="topbar">
     <div class="brand"><h1>NINJA PLAYER DATA</h1><p>全選手｜成長・シューティング・アジリティ</p></div>
-    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v33 まとめ更新・保存強化</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
+    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v34 自動更新停止</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
   </header>
 
   <main class="layout">
@@ -1143,7 +1143,6 @@ function savePromptSettings(){
  };
  localStorage.setItem('ninjaPromptSettings',JSON.stringify(s));
  $('#promptMasterTemplate').value=masterTemplate;
- refreshDataSummary();
  $('#promptSettingsSaved').textContent='プロンプトを保存しました';
  setTimeout(()=>$('#promptSettingsSaved').textContent='',1800);
 }
@@ -1685,8 +1684,7 @@ function savePlayerFeedback(showMessage=true){
  // 旧キーにも保存して既存版との互換性を維持
  localStorage.setItem(ident.legacy,JSON.stringify(data));
 
- const el=$('#dataSummaryText');
- if(el)el.value=buildDataSummaryText();
+
  if(showMessage){
   $('#feedbackSaved').textContent='選手フィードバックを端末に保存しました。GitHub更新後も保持されます。';
   setTimeout(()=>{
