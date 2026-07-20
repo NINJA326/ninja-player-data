@@ -369,3 +369,6 @@ v35: Removed recursive refreshDataSummary call from renderPlayerData.
 
 
 v36: Player feedback is stored in the Google Spreadsheet through Apps Script.
+
+
+v37: Optimized playerBundle to avoid repeated full-sheet processing.
