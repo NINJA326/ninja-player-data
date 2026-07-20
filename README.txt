@@ -348,3 +348,6 @@ v28: ChatGPT open-and-copy buttons added to data summary and player feedback.
 
 
 v29: PDF agility section redesigned into readable metric cards. No functional changes.
+
+
+v30: Added fully editable master ChatGPT prompt template with {PLAYER_DATA} insertion and reset.

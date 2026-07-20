@@ -211,13 +211,30 @@
  .report-agility-value{font-size:18px}
 }
 
+
+.prompt-master-template{
+ min-height:360px;
+ line-height:1.75;
+ font-family:inherit;
+ resize:vertical;
+ white-space:pre-wrap;
+}
+.prompt-template-tag{
+ display:inline-block;
+ padding:2px 7px;
+ border-radius:6px;
+ background:#e8f2ff;
+ color:#174b80;
+ font-weight:800;
+}
+
 </style>
 </head>
 <body>
 <div class="app">
   <header class="topbar">
     <div class="brand"><h1>NINJA PLAYER DATA</h1><p>全選手｜成長・シューティング・アジリティ</p></div>
-    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v29 アジリティPDF見やすさ改善</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
+    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v30 プロンプト自由編集対応</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
   </header>
 
   <main class="layout">
@@ -377,6 +394,17 @@
             <div class="prompt-settings">
       <h4>ChatGPTプロンプト設定</h4>
       <div class="prompt-grid">
+        <div class="prompt-field full">
+          <label for="promptMasterTemplate">AI指示テンプレート（自由編集）</label>
+          <div class="notice" style="margin-bottom:8px">
+            この文章がChatGPTへ渡す指示文になります。<strong>{PLAYER_DATA}</strong> の位置に選手データが自動挿入されます。
+          </div>
+          <textarea id="promptMasterTemplate" class="input prompt-master-template"></textarea>
+          <div class="row" style="margin-top:8px;flex-wrap:wrap">
+            <button id="resetPromptTemplateBtn" type="button" class="btn secondary">初期プロンプトへ戻す</button>
+            <span class="small">変更後は「プロンプト設定を保存」を押してください。</span>
+          </div>
+        </div>
         <div class="prompt-field full">
           <label for="promptOutputRules">出力ルール</label>
           <textarea id="promptOutputRules" class="input">出力は必ず「いいところ」「改善点」「方向性」「総合所見」の4項目に分けてください。事実と推測を分け、データがない内容は作らないでください。</textarea>
@@ -978,10 +1006,49 @@ function agilityGrowthSummaryHtml(records){
  const rows=agilityGrowthComparisons(records).filter(x=>x.latest); if(!rows.length)return '<div class="empty">アジリティの記録はありません。</div>';
  return `<div class="growth-delta-grid">${rows.map(x=>`<div class="growth-delta"><small>${x.label}｜初回→現在</small><strong>${deltaText(x.firstDelta,x.unit)}</strong></div><div class="growth-delta"><small>${x.label}｜前回→現在</small><strong>${deltaText(x.previousDelta,x.unit)}</strong></div>`).join('')}</div>`;
 }
-const defaultPromptSettings={outputRules:'出力は必ず「いいところ」「改善点」「方向性」「総合所見」の4項目に分けてください。事実と推測を分け、データがない内容は作らないでください。',audience:'both',length:'standard',teamPolicy:'選手の主体性を重視し、メンタル、ファンダメンタル、判断、技術、戦術の順で段階的に成長させます。',additional:'',checkHeightGap:true,checkShootingGap:true,includeGrowth:true,avoidOldData:true};
-function loadPromptSettings(){try{return {...defaultPromptSettings,...JSON.parse(localStorage.getItem('ninjaPromptSettings')||'{}')}}catch(e){return {...defaultPromptSettings}}}
-function fillPromptSettings(){const s=loadPromptSettings();$('#promptOutputRules').value=s.outputRules;$('#promptAudience').value=s.audience;$('#promptLength').value=s.length;$('#promptTeamPolicy').value=s.teamPolicy;$('#promptAdditional').value=s.additional||'';$('#promptCheckHeightGap').checked=s.checkHeightGap!==false;$('#promptCheckShootingGap').checked=s.checkShootingGap!==false;$('#promptIncludeGrowth').checked=s.includeGrowth!==false;$('#promptAvoidOldData').checked=s.avoidOldData!==false}
+const DEFAULT_MASTER_PROMPT=`あなたは中学生バスケットボールの育成コーチです。
+出力は必ず「いいところ」「改善点」「方向性」「総合所見」の4項目に分けてください。事実と推測を分け、データがない内容は作らないでください。
+中学生本人と保護者の双方に伝わる文章にしてください。
+標準的な文章量で作成してください。
+【チーム育成方針】選手の主体性を重視し、メンタル、ファンダメンタル、判断、技術、戦術の順で段階的に成長させます。
+改善点は否定ではなく、次の練習行動へつながる表現にしてください。
+記録が古い場合、その古い数値だけで現在の状態を断定しないでください。
 
+{PLAYER_DATA}`;
+
+const defaultPromptSettings={
+ masterTemplate:DEFAULT_MASTER_PROMPT,
+ outputRules:'出力は必ず「いいところ」「改善点」「方向性」「総合所見」の4項目に分けてください。事実と推測を分け、データがない内容は作らないでください。',
+ audience:'both',
+ length:'standard',
+ teamPolicy:'選手の主体性を重視し、メンタル、ファンダメンタル、判断、技術、戦術の順で段階的に成長させます。',
+ additional:'',
+ checkHeightGap:true,
+ checkShootingGap:true,
+ includeGrowth:true,
+ avoidOldData:true
+};
+function loadPromptSettings(){
+ try{
+  const saved=JSON.parse(localStorage.getItem('ninjaPromptSettings')||'{}');
+  return {...defaultPromptSettings,...saved,masterTemplate:saved.masterTemplate||DEFAULT_MASTER_PROMPT};
+ }catch(e){
+  return {...defaultPromptSettings};
+ }
+}
+function fillPromptSettings(){
+ const s=loadPromptSettings();
+ $('#promptMasterTemplate').value=s.masterTemplate||DEFAULT_MASTER_PROMPT;
+ $('#promptOutputRules').value=s.outputRules;
+ $('#promptAudience').value=s.audience;
+ $('#promptLength').value=s.length;
+ $('#promptTeamPolicy').value=s.teamPolicy;
+ $('#promptAdditional').value=s.additional||'';
+ $('#promptCheckHeightGap').checked=s.checkHeightGap!==false;
+ $('#promptCheckShootingGap').checked=s.checkShootingGap!==false;
+ $('#promptIncludeGrowth').checked=s.includeGrowth!==false;
+ $('#promptAvoidOldData').checked=s.avoidOldData!==false;
+}
 function openPromptSettingsTab(){
  const detail=$('#detail');
  const empty=$('#emptyState');
@@ -991,7 +1058,34 @@ function openPromptSettingsTab(){
  document.querySelectorAll('.tabview').forEach(x=>x.classList.toggle('active',x.id==='prompt'));
  document.querySelector('.panel')?.scrollIntoView({behavior:'smooth',block:'start'});
 }
-function savePromptSettings(){const s={outputRules:$('#promptOutputRules').value.trim(),audience:$('#promptAudience').value,length:$('#promptLength').value,teamPolicy:$('#promptTeamPolicy').value.trim(),additional:$('#promptAdditional').value.trim(),checkHeightGap:$('#promptCheckHeightGap').checked,checkShootingGap:$('#promptCheckShootingGap').checked,includeGrowth:$('#promptIncludeGrowth').checked,avoidOldData:$('#promptAvoidOldData').checked};localStorage.setItem('ninjaPromptSettings',JSON.stringify(s));$('#promptSettingsSaved').textContent='保存しました';setTimeout(()=>$('#promptSettingsSaved').textContent='',1500)}
+function savePromptSettings(){
+ let masterTemplate=$('#promptMasterTemplate').value.trim();
+ if(!masterTemplate)masterTemplate=DEFAULT_MASTER_PROMPT;
+ if(!masterTemplate.includes('{PLAYER_DATA}'))masterTemplate += '\n\n{PLAYER_DATA}';
+ const s={
+  masterTemplate,
+  outputRules:$('#promptOutputRules').value.trim(),
+  audience:$('#promptAudience').value,
+  length:$('#promptLength').value,
+  teamPolicy:$('#promptTeamPolicy').value.trim(),
+  additional:$('#promptAdditional').value.trim(),
+  checkHeightGap:$('#promptCheckHeightGap').checked,
+  checkShootingGap:$('#promptCheckShootingGap').checked,
+  includeGrowth:$('#promptIncludeGrowth').checked,
+  avoidOldData:$('#promptAvoidOldData').checked
+ };
+ localStorage.setItem('ninjaPromptSettings',JSON.stringify(s));
+ $('#promptMasterTemplate').value=masterTemplate;
+ refreshDataSummary();
+ $('#promptSettingsSaved').textContent='プロンプトを保存しました';
+ setTimeout(()=>$('#promptSettingsSaved').textContent='',1800);
+}
+function resetPromptTemplate(){
+ if(!confirm('AI指示テンプレートを初期設定へ戻しますか？'))return;
+ $('#promptMasterTemplate').value=DEFAULT_MASTER_PROMPT;
+ $('#promptSettingsSaved').textContent='初期プロンプトに戻しました。保存ボタンを押してください。';
+ setTimeout(()=>$('#promptSettingsSaved').textContent='',2500);
+}
 function promptAudienceText(v){return {both:'中学生本人と保護者の双方',player:'中学生本人',parent:'保護者',coach:'コーチ'}[v]||'中学生本人と保護者の双方'}
 function promptLengthText(v){return {short:'簡潔に',standard:'標準的な文章量で',detailed:'根拠を含めて詳しく'}[v]||'標準的な文章量で'}
 function bodyGrowthSummaryLines(records){const c=growthComparisons(records),lines=['【身体測定・成長結果】'];if(!c.latest){lines.push('記録なし');return lines}[['height','身長','cm'],['weight','体重','kg']].forEach(([key,label,unit])=>{const lv=numericValue(c.latest[key]),fv=c.first?numericValue(c.first[key]):null,pv=c.previous?numericValue(c.previous[key]):null;lines.push(`・${label} 初回→現在：${deltaText(lv!==null&&fv!==null?lv-fv:null,unit)}`);lines.push(`・${label} 前回→現在：${deltaText(lv!==null&&pv!==null?lv-pv:null,unit)}`)});return lines}
@@ -1140,32 +1234,49 @@ function buildRecordGapAlerts(){
  return alerts;
 }
 
-function buildDataSummaryText(){
+function buildPlayerDataBlock(){
  if(!state.selected||!state.currentData)return '';
  const p=state.selected,s=loadPromptSettings();
  let alerts=buildRecordGapAlerts();
  if(!s.checkHeightGap)alerts=alerts.filter(x=>!String(x).includes('身体測定'));
  if(!s.checkShootingGap)alerts=alerts.filter(x=>!String(x).includes('シューティング'));
  const lines=[
-  'あなたは中学生バスケットボールの育成コーチです。',
-  s.outputRules,
-  `${promptAudienceText(s.audience)}に伝わる文章にしてください。`,
-  `${promptLengthText(s.length)}作成してください。`,
-  `【チーム育成方針】${s.teamPolicy}`,
-  s.additional?`【追加指示】${s.additional}`:'',
-  '改善点は否定ではなく、次の練習行動へつながる表現にしてください。',
-  s.avoidOldData?'記録が古い場合、その古い数値だけで現在の状態を断定しないでください。':'',
+  '【選手基本情報】',
+  `氏名：${p.name||''}`,
+  `カテゴリー：${p.category||'未設定'}`,
+  p.grade?`学年：${p.grade}`:'',
   '',
-  '【選手基本情報】',`氏名：${p.name||''}`,`カテゴリー：${p.category||'未設定'}`,p.grade?`学年：${p.grade}`:'',
-  '',...summarizeGrowth(state.currentData.growth||[]),
-  '',...summarizeShooting(state.currentData.shooting||{}),`最終シューティング記入日：${latestShootingDate(state.currentData.shooting||{})||'確認できません'}`,
-  '',...summarizeAgility(state.currentData.agility||[]),
+  ...summarizeGrowth(state.currentData.growth||[]),
+  '',
+  ...summarizeShooting(state.currentData.shooting||{}),
+  `最終シューティング記入日：${latestShootingDate(state.currentData.shooting||{})||'確認できません'}`,
+  '',
+  ...summarizeAgility(state.currentData.agility||[]),
   ...(s.includeGrowth?['',...bodyGrowthSummaryLines(state.currentData.growth||[]),'',...agilityGrowthSummaryLines(state.currentData.agility||[])]:[]),
-  '','【入力状況・注意事項】',...alerts,
-  '','【現在のコーチ所見】',($('#coachComment')&&$('#coachComment').value.trim())||'未記入',
-  '','【既存フィードバック】',`いいところ：${($('#goodPoints')&&$('#goodPoints').value.trim())||'未記入'}`,`改善点：${($('#improvementPoints')&&$('#improvementPoints').value.trim())||'未記入'}`,`方向性：${($('#futureDirection')&&$('#futureDirection').value.trim())||'未記入'}`
+  '',
+  '【入力状況・注意事項】',
+  ...alerts,
+  '',
+  '【現在のコーチ所見】',
+  ($('#coachComment')&&$('#coachComment').value.trim())||'未記入',
+  '',
+  '【既存フィードバック】',
+  `いいところ：${($('#goodPoints')&&$('#goodPoints').value.trim())||'未記入'}`,
+  `改善点：${($('#improvementPoints')&&$('#improvementPoints').value.trim())||'未記入'}`,
+  `方向性：${($('#futureDirection')&&$('#futureDirection').value.trim())||'未記入'}`
  ].filter(v=>v!==null&&v!==undefined&&v!=='');
  return lines.join('\n');
+}
+function buildDataSummaryText(){
+ const dataBlock=buildPlayerDataBlock();
+ if(!dataBlock)return '';
+ const s=loadPromptSettings();
+ let template=(s.masterTemplate||DEFAULT_MASTER_PROMPT).trim();
+ if(s.additional)template += `\n\n【追加指示】${s.additional}`;
+ if(template.includes('{PLAYER_DATA}')){
+  return template.replaceAll('{PLAYER_DATA}',dataBlock);
+ }
+ return `${template}\n\n${dataBlock}`;
 }
 function refreshDataSummary(){
  const el=$('#dataSummaryText');
@@ -1413,6 +1524,7 @@ function savePlayerFeedback(){
 
 $('#openPromptTabBtn').onclick=openPromptSettingsTab;
 $('#savePromptSettingsBtn').onclick=savePromptSettings;
+$('#resetPromptTemplateBtn').onclick=resetPromptTemplate;
 $('#refreshDataSummaryBtn').onclick=refreshDataSummary;
 $('#copyChatGptPromptBtn').onclick=copyChatGptPrompt;
 $('#openChatGptSummaryBtn').onclick=openChatGptSummary;
