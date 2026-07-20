@@ -140,76 +140,7 @@
     .architecture-badge::before{content:'●';color:#65d394}
 
 
-.report-agility-grid{
- display:grid;
- grid-template-columns:repeat(2,minmax(0,1fr));
- gap:12px;
- margin-top:8px;
-}
-.report-agility-card{
- border:1px solid #d7e0ea;
- border-radius:12px;
- padding:14px;
- background:#f8fafc;
- break-inside:avoid;
-}
-.report-agility-title{
- font-size:15px;
- font-weight:800;
- color:#142238;
- margin-bottom:8px;
- padding-bottom:7px;
- border-bottom:2px solid #31b66a;
-}
-.report-agility-main{
- display:flex;
- align-items:flex-end;
- justify-content:space-between;
- gap:10px;
- margin-bottom:10px;
-}
-.report-agility-value{
- font-size:22px;
- line-height:1;
- font-weight:900;
- color:#10213a;
-}
-.report-agility-date{
- font-size:11px;
- color:#65758a;
- text-align:right;
- white-space:nowrap;
-}
-.report-agility-deltas{
- display:grid;
- grid-template-columns:1fr 1fr;
- gap:8px;
-}
-.report-agility-deltas>div{
- background:#fff;
- border:1px solid #e1e7ef;
- border-radius:8px;
- padding:8px 9px;
-}
-.report-agility-deltas span{
- display:block;
- font-size:10px;
- color:#718096;
- margin-bottom:3px;
-}
-.report-agility-deltas strong{
- display:block;
- font-size:13px;
- color:#1a2a42;
-}
-@media(max-width:720px){
- .report-agility-grid{grid-template-columns:1fr}
-}
-@media print{
- .report-agility-grid{grid-template-columns:repeat(2,1fr);gap:8px}
- .report-agility-card{padding:10px}
- .report-agility-value{font-size:18px}
-}
+
 
 
 .prompt-master-template{
@@ -228,13 +159,149 @@
  font-weight:800;
 }
 
+
+.report-agility-compact{
+ display:grid;
+ gap:6px;
+ margin-top:5px;
+}
+.report-agility-row{
+ display:grid;
+ grid-template-columns:minmax(92px,1.15fr) minmax(100px,1.15fr) minmax(74px,.8fr) minmax(74px,.8fr);
+ align-items:center;
+ gap:6px;
+ padding:7px 8px;
+ border:1px solid #dfe6ee;
+ border-radius:8px;
+ background:#f8fafc;
+ break-inside:avoid;
+}
+.report-agility-name{
+ font-size:12px;
+ font-weight:800;
+ color:#142238;
+ line-height:1.25;
+}
+.report-agility-record{
+ display:flex;
+ flex-direction:column;
+ line-height:1.15;
+}
+.report-agility-record strong{
+ font-size:14px;
+ color:#10213a;
+}
+.report-agility-record small{
+ font-size:9px;
+ color:#738196;
+ margin-top:2px;
+}
+.report-agility-change{
+ border-left:1px solid #dfe6ee;
+ padding-left:6px;
+ line-height:1.1;
+}
+.report-agility-change span{
+ display:block;
+ font-size:8px;
+ color:#78869a;
+ margin-bottom:2px;
+}
+.report-agility-change strong{
+ display:block;
+ font-size:11px;
+ color:#1a2a42;
+ white-space:nowrap;
+}
+.report-shot-chart-box{
+ break-inside:avoid;
+ page-break-inside:avoid;
+}
+.report-shot-chart-wrap{
+ display:flex;
+ justify-content:center;
+ padding:8px 0 2px;
+}
+.report-shot-court{
+ position:relative;
+ width:100%;
+ max-width:520px;
+ aspect-ratio:.92/1;
+ background:#d7a86e;
+ border:4px solid #f5f5f5;
+ border-radius:8px;
+ overflow:hidden;
+ box-shadow:0 0 0 1px #cbd5df;
+}
+.report-shot-court svg{
+ position:absolute;
+ inset:0;
+ width:100%;
+ height:100%;
+}
+.report-shot-court .shot-marker{
+ position:absolute;
+ transform:translate(-50%,-50%);
+ width:54px;
+ height:54px;
+ border:3px solid #fff;
+ border-radius:50%;
+ display:grid;
+ place-items:center;
+ text-align:center;
+ box-shadow:0 2px 7px rgba(0,0,0,.3);
+ padding:3px;
+}
+.report-shot-court .shot-marker strong{
+ font-size:14px;
+ line-height:1;
+}
+.report-shot-court .shot-marker span{
+ font-size:8px;
+ line-height:1.1;
+ margin-top:2px;
+}
+.report-shot-court .shot-marker .crown{
+ position:absolute;
+ top:-15px;
+ left:50%;
+ transform:translateX(-50%);
+ font-size:18px;
+ line-height:1;
+}
+@media(max-width:720px){
+ .report-agility-row{
+  grid-template-columns:1fr 1fr;
+ }
+ .report-agility-change{border-left:0;padding-left:0}
+}
+@media print{
+ .report-agility-compact{gap:4px}
+ .report-agility-row{padding:5px 6px;gap:4px}
+ .report-agility-name{font-size:10px}
+ .report-agility-record strong{font-size:12px}
+ .report-agility-change strong{font-size:9px}
+ .report-shot-court{max-width:430px}
+ .report-shot-court .shot-marker{width:45px;height:45px}
+ .report-shot-court .shot-marker strong{font-size:12px}
+ .report-shot-court .shot-marker span{font-size:7px}
+}
+
+
+.report-shot-court .shot-marker{
+ box-sizing:border-box;
+ appearance:none;
+ -webkit-appearance:none;
+ font-family:inherit;
+}
+
 </style>
 </head>
 <body>
 <div class="app">
   <header class="topbar">
     <div class="brand"><h1>NINJA PLAYER DATA</h1><p>全選手｜成長・シューティング・アジリティ</p></div>
-    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v30 プロンプト自由編集対応</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
+    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v32 シュートチャート位置修正</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
   </header>
 
   <main class="layout">
@@ -1376,20 +1443,13 @@ function reportAgilityHtml(){
  const rows=Object.values(latest);
  if(!rows.length)return '<p>アジリティの記録はありません。</p>';
  const growth=agilityGrowthComparisons(state.currentData&&state.currentData.agility||[]);
- return `<div class="report-agility-grid">${rows.map(x=>{
+ return `<div class="report-agility-compact">${rows.map(x=>{
   const g=growth.find(y=>y.key===x.key);
-  const firstText=deltaText(g?g.firstDelta:null,x.unit);
-  const previousText=deltaText(g?g.previousDelta:null,x.unit);
-  return `<div class="report-agility-card">
-    <div class="report-agility-title">${reportEsc(x.label)}</div>
-    <div class="report-agility-main">
-      <span class="report-agility-value">${reportEsc(x.value)}${reportEsc(x.unit)}</span>
-      <span class="report-agility-date">${reportEsc(reportDateJa(x.date))}</span>
-    </div>
-    <div class="report-agility-deltas">
-      <div><span>初回比</span><strong>${reportEsc(firstText)}</strong></div>
-      <div><span>前回比</span><strong>${reportEsc(previousText)}</strong></div>
-    </div>
+  return `<div class="report-agility-row">
+    <div class="report-agility-name">${reportEsc(x.label)}</div>
+    <div class="report-agility-record"><strong>${reportEsc(x.value)}${reportEsc(x.unit)}</strong><small>${reportEsc(reportDateJa(x.date))}</small></div>
+    <div class="report-agility-change"><span>初回比</span><strong>${reportEsc(deltaText(g?g.firstDelta:null,x.unit))}</strong></div>
+    <div class="report-agility-change"><span>前回比</span><strong>${reportEsc(deltaText(g?g.previousDelta:null,x.unit))}</strong></div>
   </div>`;
  }).join('')}</div>`;
 }
@@ -1411,6 +1471,36 @@ function reportAlertsHtml(){
  if(!warnings.length)return '';
  return `<div class="report-alert"><strong>記録について</strong><br>${warnings.map(x=>reportEsc(String(x).replace(/^・/,'')).replace(/\n/g,'<br>')).join('<br>')}</div>`;
 }
+function reportShotChartHtml(){
+ const court=$('#shotCourt');
+ if(!court)return '<p>シュートチャートを表示できません。</p>';
+
+ const clone=court.cloneNode(true);
+ clone.removeAttribute('id');
+ clone.classList.add('report-shot-court');
+
+ clone.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
+
+ clone.querySelectorAll('button.shot-marker').forEach(btn=>{
+  const div=document.createElement('div');
+  div.className=btn.className;
+  div.innerHTML=btn.innerHTML;
+
+  // PDF上でも元画面と同じ位置へ配置するため、
+  // left / top / z-index などのインラインスタイルをそのまま引き継ぐ。
+  const styleText=btn.getAttribute('style');
+  if(styleText)div.setAttribute('style',styleText);
+
+  for(const attr of btn.attributes){
+   if(attr.name.startsWith('data-'))div.setAttribute(attr.name,attr.value);
+  }
+
+  btn.replaceWith(div);
+ });
+
+ return `<div class="report-shot-chart-wrap">${clone.outerHTML}</div>`;
+}
+
 function buildParentReportHtml(){
  if(!state.selected||!state.currentData)return '';
  const p=state.selected;
@@ -1432,6 +1522,7 @@ function buildParentReportHtml(){
     <div class="report-box"><h4>身体測定</h4>${reportGrowthHtml()}</div>
     <div class="report-box"><h4>アジリティ</h4>${reportAgilityHtml()}</div>
     <div class="report-box" style="grid-column:1/-1"><h4>シューティング</h4>${reportShootingHtml()}</div>
+    <div class="report-box report-shot-chart-box" style="grid-column:1/-1"><h4>シュートチャート</h4>${reportShotChartHtml()}</div>
   </div>
   <section class="report-section good"><h3>いいところ</h3><div class="report-text">${reportEsc(good)}</div></section>
   <section class="report-section improve"><h3>改善点</h3><div class="report-text">${reportEsc(improve)}</div></section>

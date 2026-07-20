@@ -351,3 +351,9 @@ v29: PDF agility section redesigned into readable metric cards. No functional ch
 
 
 v30: Added fully editable master ChatGPT prompt template with {PLAYER_DATA} insertion and reset.
+
+
+v31: Compact PDF agility layout and live shot chart embedded in player report.
+
+
+v32: Preserved shot marker inline positions in PDF clone.

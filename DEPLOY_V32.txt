@@ -1,0 +1,11 @@
+NINJA PLAYER DATA v32
+
+修正内容:
+・PDF用シュートチャートのマーカー位置を修正
+・元画面のleft / top / z-indexをPDFへそのまま引き継ぐ
+・左上にマーカーが重なる問題を解消
+・既存機能とApps Scriptは変更なし
+
+更新方法:
+GitHubへ index.html / manifest.json / sw.js / icon.svg を上書き。
+反映後 Command + Shift + R。
