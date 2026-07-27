@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0b1220">
-  <title>NINJA PLAYER DATA</title>
+  <title>NINJA AIRS COACH APP</title>
   <link rel="manifest" href="manifest.json">
   <style>
     :root{--bg:#07101f;--panel:#111c2e;--panel2:#17253a;--line:#2b3b52;--text:#f4f7fb;--muted:#9fb0c6;--accent:#35c97b;--blue:#4da3ff;--orange:#ffb547;--danger:#ff6b6b}
@@ -303,13 +303,28 @@
  font-family:inherit;
 }
 
+
+
+    .schedule-modal{position:fixed;inset:0;background:rgba(0,0,0,.82);display:none;z-index:1200;padding:18px;overflow:auto}
+    .schedule-modal.open{display:block}
+    .schedule-shell{width:min(1500px,100%);margin:0 auto;background:#0e1929;border:1px solid var(--line);border-radius:20px;padding:16px}
+    .schedule-toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+    .schedule-toolbar h2{margin:0}
+    .schedule-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .schedule-scroll{overflow:auto;background:#fff;border-radius:14px;border:1px solid #d7dde5;max-height:calc(100vh - 190px)}
+    .schedule-grid{border-collapse:collapse;width:max-content;min-width:100%;color:#111;background:#fff;font-family:Arial,"Noto Sans JP",sans-serif}
+    .schedule-grid td{border:1px solid #b7bec8;padding:3px 5px;white-space:pre-wrap;vertical-align:middle;font-size:11px;line-height:1.25;min-width:38px}
+    .schedule-source{font-size:12px;color:var(--muted)}
+    .schedule-loading{padding:70px 20px;text-align:center;color:var(--muted)}
+    @media(max-width:680px){.schedule-modal{padding:5px}.schedule-shell{padding:9px;border-radius:12px}.schedule-grid td{font-size:9px;padding:2px 3px}.schedule-scroll{max-height:calc(100vh - 150px)}}
+
 </style>
 </head>
 <body>
 <div class="app">
   <header class="topbar">
-    <div class="brand"><h1>NINJA PLAYER DATA</h1><p>全選手｜成長・シューティング・アジリティ</p></div>
-    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v41 コーチ所見PDF完全反映</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button></div>
+    <div class="brand"><h1>NINJA AIRS COACH APP</h1><p>全選手｜成長・シューティング・アジリティ</p></div>
+    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v43 コーチアプリ統合版</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button><button class="btn secondary" id="openScheduleBtn">スケジュール</button></div>
   </header>
 
   <main class="layout">
@@ -589,6 +604,25 @@
 
 <div id="printReportRoot" style="display:none"></div>
 
+
+<div id="scheduleModal" class="schedule-modal" aria-hidden="true">
+  <div class="schedule-shell">
+    <div class="schedule-toolbar">
+      <div>
+        <h2>チームスケジュール</h2>
+        <div id="scheduleSourceLabel" class="schedule-source">保護者用予定表と共有</div>
+      </div>
+      <div class="schedule-controls">
+        <select id="scheduleMonthSelect" class="input" style="width:auto;min-width:150px"></select>
+        <button id="reloadScheduleBtn" class="btn blue">再読込</button>
+        <button id="openScheduleSheetBtn" class="btn secondary">元の予定表を開く</button>
+        <button id="closeScheduleBtn" class="btn secondary">閉じる</button>
+      </div>
+    </div>
+    <div id="scheduleContainer" class="schedule-scroll"><div class="schedule-loading">予定表を読み込んでいます...</div></div>
+  </div>
+</div>
+
 <div id="settingsModal" class="modal">
   <div class="modal-card">
     <h3>Apps Script 接続設定</h3>
@@ -602,7 +636,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script>
 const $=s=>document.querySelector(s);
-const state={currentData:null,apiUrl:localStorage.getItem('ninjaPlayerApiUrl')||'',players:[],selected:null,heightChart:null,weightChart:null,playerRequestSeq:0,playerCache:new Map(),inflight:new Map(),cacheTtlMs:300000};
+const DEFAULT_COACH_API_URL='https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
+const state={currentData:null,apiUrl:localStorage.getItem('ninjaPlayerApiUrl')||DEFAULT_COACH_API_URL,players:[],selected:null,heightChart:null,weightChart:null,playerRequestSeq:0,playerCache:new Map(),inflight:new Map(),cacheTtlMs:300000};
 
 
 
@@ -1067,7 +1102,7 @@ $('#searchInput').oninput=renderPlayers;$('#categoryFilter').onchange=renderPlay
 $('#saveCommentBtn').onclick=saveComment;
 $('#settingsBtn').onclick=()=>{$('#apiUrlInput').value=state.apiUrl;$('#settingsModal').classList.add('open')};$('#closeSettingsBtn').onclick=()=>$('#settingsModal').classList.remove('open');
 $('#saveSettingsBtn').onclick=()=>{state.apiUrl=$('#apiUrlInput').value.trim().replace(/\/$/,'');state.playerCache.clear();state.inflight.clear();localStorage.setItem('ninjaPlayerApiUrl',state.apiUrl);$('#settingsModal').classList.remove('open');state.selected=null;$('#detail').hidden=true;$('#emptyState').hidden=false;loadPlayers()};
-$('#demoBtn').onclick=()=>{state.apiUrl='';state.playerCache.clear();state.inflight.clear();localStorage.removeItem('ninjaPlayerApiUrl');$('#settingsModal').classList.remove('open');state.selected=null;$('#detail').hidden=true;$('#emptyState').hidden=false;loadPlayers()};
+$('#demoBtn').onclick=()=>{state.apiUrl=DEFAULT_COACH_API_URL;state.playerCache.clear();state.inflight.clear();localStorage.removeItem('ninjaPlayerApiUrl');$('#settingsModal').classList.remove('open');state.selected=null;$('#detail').hidden=true;$('#emptyState').hidden=false;loadPlayers()};
 if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 
 
@@ -1933,6 +1968,88 @@ $('#copyLineMessageBtn').onclick=copyParentLineMessage;
 $('#parentReportModal').onclick=e=>{if(e.target===$('#parentReportModal'))closeParentReport()};
 $('#saveFeedbackBtn').onclick=savePlayerFeedback;
 
+
+
+
+let scheduleState={months:[],current:null,sourceUrl:''};
+function currentMonthKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`}
+async function openSchedule(){
+ $('#scheduleModal').classList.add('open');
+ $('#scheduleModal').setAttribute('aria-hidden','false');
+ await loadScheduleMonths();
+}
+function closeSchedule(){
+ $('#scheduleModal').classList.remove('open');
+ $('#scheduleModal').setAttribute('aria-hidden','true');
+}
+async function loadScheduleMonths(){
+ const box=$('#scheduleContainer');
+ box.innerHTML='<div class="schedule-loading">月別シートを確認しています...</div>';
+ try{
+  const r=await apiWithRetry('scheduleMonths',{}, {timeoutMs:45000,retries:1});
+  if(!r||r.status!=='ok')throw new Error(r&&r.message||'月一覧を取得できません');
+  scheduleState.months=r.months||[];
+  $('#scheduleSourceLabel').textContent=`${r.spreadsheetName||'保護者用予定表'}と共有`;
+  const select=$('#scheduleMonthSelect');
+  select.innerHTML=scheduleState.months.map(x=>`<option value="${esc(x.key)}">${esc(x.name)}</option>`).join('');
+  const now=currentMonthKey();
+  const selected=scheduleState.months.some(x=>x.key===now)?now:(scheduleState.months.at(-1)?.key||'');
+  select.value=selected;
+  if(selected)await loadScheduleMonth(selected);
+  else box.innerHTML='<div class="schedule-loading">月別スケジュールシートがありません。</div>';
+ }catch(e){
+  box.innerHTML=`<div class="schedule-loading">予定表の取得に失敗しました。<br>${esc(e.message||e)}</div>`;
+ }
+}
+async function loadScheduleMonth(month){
+ const box=$('#scheduleContainer');
+ box.innerHTML='<div class="schedule-loading">予定表を読み込んでいます...</div>';
+ try{
+  const r=await apiWithRetry('scheduleMonth',{month}, {timeoutMs:45000,retries:1});
+  if(!r||r.status!=='ok')throw new Error(r&&r.message||'予定表を取得できません');
+  scheduleState.current=r;
+  scheduleState.sourceUrl=r.sourceUrl||'';
+  renderScheduleGrid(r);
+ }catch(e){
+  box.innerHTML=`<div class="schedule-loading">予定表の取得に失敗しました。<br>${esc(e.message||e)}</div>`;
+ }
+}
+function renderScheduleGrid(data){
+ const values=data.values||[];
+ const rows=values.length, cols=rows?values[0].length:0;
+ const mergedStarts=new Map(), covered=new Set();
+ (data.mergedRanges||[]).forEach(m=>{
+  mergedStarts.set(`${m.row-1},${m.col-1}`,m);
+  for(let rr=m.row-1;rr<m.row-1+m.rows;rr++)for(let cc=m.col-1;cc<m.col-1+m.cols;cc++){
+   if(rr!==m.row-1||cc!==m.col-1)covered.add(`${rr},${cc}`);
+  }
+ });
+ let html='<table class="schedule-grid"><colgroup>';
+ (data.columnWidths||[]).forEach(w=>html+=`<col style="width:${Math.max(28,Math.round(Number(w||60)*.72))}px">`);
+ html+='</colgroup><tbody>';
+ for(let r=0;r<rows;r++){
+  html+=`<tr style="height:${Math.max(18,Math.round(Number((data.rowHeights||[])[r]||21)*.75))}px">`;
+  for(let c=0;c<cols;c++){
+   const key=`${r},${c}`;if(covered.has(key))continue;
+   const merge=mergedStarts.get(key);
+   const bg=(data.backgrounds?.[r]?.[c]||'#ffffff');
+   const color=(data.fontColors?.[r]?.[c]||'#111111');
+   const weight=(data.fontWeights?.[r]?.[c]||'normal');
+   const align=(data.horizontalAlignments?.[r]?.[c]||'left');
+   const span=merge?` rowspan="${merge.rows}" colspan="${merge.cols}"`:'';
+   html+=`<td${span} style="background:${esc(bg)};color:${esc(color)};font-weight:${esc(weight)};text-align:${esc(align)}">${esc(values[r][c]||'')}</td>`;
+  }
+  html+='</tr>';
+ }
+ html+='</tbody></table>';
+ $('#scheduleContainer').innerHTML=html;
+}
+$('#openScheduleBtn').onclick=openSchedule;
+$('#closeScheduleBtn').onclick=closeSchedule;
+$('#reloadScheduleBtn').onclick=()=>loadScheduleMonth($('#scheduleMonthSelect').value);
+$('#scheduleMonthSelect').onchange=e=>loadScheduleMonth(e.target.value);
+$('#openScheduleSheetBtn').onclick=()=>{if(scheduleState.sourceUrl)window.open(scheduleState.sourceUrl,'_blank','noopener,noreferrer')};
+$('#scheduleModal').onclick=e=>{if(e.target===$('#scheduleModal'))closeSchedule()};
 
 window.addEventListener('error',event=>{
  console.error('NINJA PLAYER DATA error:',event.error||event.message);

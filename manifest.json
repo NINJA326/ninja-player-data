@@ -1,7 +1,8 @@
 {
-  "name": "NINJA PLAYER DATA",
-  "short_name": "PLAYER DATA",
+  "name": "NINJA AIRS COACH APP",
+  "short_name": "COACH APP",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#07101f",
   "theme_color": "#0b1220",
