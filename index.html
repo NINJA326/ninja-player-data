@@ -306,17 +306,12 @@
 
 
     .schedule-modal{position:fixed;inset:0;background:rgba(0,0,0,.82);display:none;z-index:1200;padding:18px;overflow:auto}
-    .schedule-modal.open{display:block}
-    .schedule-shell{width:min(1500px,100%);margin:0 auto;background:#0e1929;border:1px solid var(--line);border-radius:20px;padding:16px}
-    .schedule-toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
-    .schedule-toolbar h2{margin:0}
-    .schedule-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .schedule-scroll{overflow:auto;background:#fff;border-radius:14px;border:1px solid #d7dde5;max-height:calc(100vh - 190px)}
-    .schedule-grid{border-collapse:collapse;width:max-content;min-width:100%;color:#111;background:#fff;font-family:Arial,"Noto Sans JP",sans-serif}
-    .schedule-grid td{border:1px solid #b7bec8;padding:3px 5px;white-space:pre-wrap;vertical-align:middle;font-size:11px;line-height:1.25;min-width:38px}
-    .schedule-source{font-size:12px;color:var(--muted)}
-    .schedule-loading{padding:70px 20px;text-align:center;color:var(--muted)}
-    @media(max-width:680px){.schedule-modal{padding:5px}.schedule-shell{padding:9px;border-radius:12px}.schedule-grid td{font-size:9px;padding:2px 3px}.schedule-scroll{max-height:calc(100vh - 150px)}}
+    .schedule-modal.open{display:block}.schedule-shell{width:min(1240px,100%);margin:0 auto;background:#0e1929;border:1px solid var(--line);border-radius:20px;padding:16px;min-height:calc(100vh - 36px)}
+    .schedule-toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px}.schedule-toolbar h2{margin:0}.schedule-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.schedule-source{font-size:12px;color:var(--muted)}
+    .schedule-filterbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0}.schedule-filterbar .input{width:auto;min-width:140px}.schedule-view-btn.active{background:var(--blue);color:#07101f}
+    .schedule-cards{display:grid;gap:14px}.schedule-day{border:1px solid var(--line);border-radius:16px;background:#0b1525;overflow:hidden}.schedule-day-head{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:13px 15px;background:#152238}.schedule-day-head h3{margin:0;font-size:18px}.schedule-day-body{display:grid;gap:10px;padding:12px}.schedule-event{display:grid;grid-template-columns:8px minmax(0,1fr) auto;gap:12px;align-items:stretch;border:1px solid #2f435e;border-radius:13px;background:#101d30;overflow:hidden}.schedule-color{background:var(--event-color,#4da3ff)}.schedule-event-main{padding:11px 0}.schedule-event-title{font-weight:900;font-size:16px}.schedule-event-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;color:#c2d0e1;font-size:13px}.schedule-chip{border:1px solid #3b506c;border-radius:999px;padding:3px 8px;background:#17263b}.schedule-event-note{margin-top:7px;color:var(--muted);font-size:12px;white-space:pre-wrap}.schedule-event-actions{display:flex;gap:6px;align-items:center;padding:10px}.schedule-empty,.schedule-loading{padding:70px 20px;text-align:center;color:var(--muted)}
+    .coach-locked{border-color:#9b6a18!important;color:#ffd166!important}.danger{background:var(--danger)!important;color:#2b0808!important}.event-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.event-form-grid .full{grid-column:1/-1}.event-form-grid label{display:grid;gap:5px;font-size:12px;color:var(--muted)}
+    @media(max-width:680px){.schedule-modal{padding:5px}.schedule-shell{padding:9px;border-radius:12px}.schedule-event{grid-template-columns:6px 1fr}.schedule-event-actions{grid-column:2;justify-content:flex-start;padding:0 0 10px}.event-form-grid{grid-template-columns:1fr}}
 
 </style>
 </head>
@@ -324,7 +319,7 @@
 <div class="app">
   <header class="topbar">
     <div class="brand"><h1>NINJA AIRS COACH APP</h1><p>全選手｜成長・シューティング・アジリティ</p></div>
-    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v44 安定接続版</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button><button class="btn secondary" id="openScheduleBtn">スケジュール</button></div>
+    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v47 スケジュール編集版</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button><button class="btn secondary" id="openScheduleBtn">スケジュール</button></div>
   </header>
 
   <main class="layout">
@@ -608,20 +603,34 @@
 <div id="scheduleModal" class="schedule-modal" aria-hidden="true">
   <div class="schedule-shell">
     <div class="schedule-toolbar">
-      <div>
-        <h2>チームスケジュール</h2>
-        <div id="scheduleSourceLabel" class="schedule-source">保護者用予定表と共有</div>
-      </div>
+      <div><h2>チームスケジュール</h2><div id="scheduleSourceLabel" class="schedule-source">保護者用予定表と共有</div></div>
       <div class="schedule-controls">
-        <select id="scheduleMonthSelect" class="input" style="width:auto;min-width:150px"></select>
-        <button id="reloadScheduleBtn" class="btn blue">再読込</button>
+        <button id="coachLoginBtn" class="btn secondary coach-locked">🔒 コーチログイン</button>
+        <button id="newScheduleBtn" class="btn" hidden>予定を追加</button>
         <button id="openScheduleSheetBtn" class="btn secondary">元の予定表を開く</button>
         <button id="closeScheduleBtn" class="btn secondary">閉じる</button>
       </div>
     </div>
-    <div id="scheduleContainer" class="schedule-scroll"><div class="schedule-loading">予定表を読み込んでいます...</div></div>
+    <div class="schedule-filterbar">
+      <select id="scheduleMonthSelect" class="input"></select>
+      <select id="scheduleCategoryFilter" class="input"><option value="">全カテゴリー</option></select>
+      <button class="btn secondary schedule-view-btn active" data-view="month">今月</button>
+      <button class="btn secondary schedule-view-btn" data-view="week">今週</button>
+      <button class="btn secondary schedule-view-btn" data-view="today">今日</button>
+      <button id="reloadScheduleBtn" class="btn blue">再読込</button>
+    </div>
+    <div id="scheduleContainer" class="schedule-cards"><div class="schedule-loading">予定表を読み込んでいます...</div></div>
   </div>
 </div>
+
+<div id="coachLoginModal" class="modal"><div class="modal-card"><h3>コーチログイン</h3><p class="small">予定の追加・変更・削除にはコーチパスワードが必要です。</p><input id="coachPasswordInput" class="input" type="password" autocomplete="current-password" placeholder="コーチパスワード"><div style="height:10px"></div><div class="row"><button id="submitCoachLoginBtn" class="btn">ログイン</button><button id="closeCoachLoginBtn" class="btn secondary">閉じる</button></div><div id="coachLoginStatus" class="comment-saved"></div></div></div>
+
+<div id="scheduleEditModal" class="modal"><div class="modal-card"><h3 id="scheduleEditTitle">予定を追加</h3><div class="event-form-grid">
+<label>日付<input id="eventDate" class="input" type="date"></label><label>カテゴリー<select id="eventCategory" class="input"></select></label>
+<label>種別<select id="eventType" class="input"><option>練習</option><option>試合・遠征</option><option>シューティング</option><option>特別練習</option><option>OFF</option><option>その他</option></select></label><label>表示色<input id="eventColor" class="input" type="color" value="#4da3ff"></label>
+<label class="full">予定名<input id="eventTitle" class="input" maxlength="120"></label><label class="full">会場<input id="eventLocation" class="input" maxlength="120"></label>
+<label>開始時間<input id="eventStart" class="input" type="time"></label><label>終了時間<input id="eventEnd" class="input" type="time"></label>
+<label class="full">備考<textarea id="eventNote" class="input" maxlength="1000"></textarea></label></div><div style="height:12px"></div><div class="row"><button id="saveScheduleEventBtn" class="btn">保存</button><button id="deleteScheduleEventBtn" class="btn danger" hidden>削除</button><button id="closeScheduleEditBtn" class="btn secondary">閉じる</button></div><div id="scheduleEditStatus" class="comment-saved"></div></div></div>
 
 <div id="settingsModal" class="modal">
   <div class="modal-card">
@@ -1971,85 +1980,25 @@ $('#saveFeedbackBtn').onclick=savePlayerFeedback;
 
 
 
-let scheduleState={months:[],current:null,sourceUrl:''};
+let scheduleState={months:[],events:[],categories:[],sourceUrl:'',view:'month',editing:null,token:localStorage.getItem('ninjaCoachToken')||''};
 function currentMonthKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`}
-async function openSchedule(){
- $('#scheduleModal').classList.add('open');
- $('#scheduleModal').setAttribute('aria-hidden','false');
- await loadScheduleMonths();
-}
-function closeSchedule(){
- $('#scheduleModal').classList.remove('open');
- $('#scheduleModal').setAttribute('aria-hidden','true');
-}
-async function loadScheduleMonths(){
- const box=$('#scheduleContainer');
- box.innerHTML='<div class="schedule-loading">月別シートを確認しています...</div>';
- try{
-  const r=await apiWithRetry('scheduleMonths',{}, {timeoutMs:45000,retries:1});
-  if(!r||r.status!=='ok')throw new Error(r&&r.message||'月一覧を取得できません');
-  scheduleState.months=r.months||[];
-  $('#scheduleSourceLabel').textContent=`${r.spreadsheetName||'保護者用予定表'}と共有`;
-  const select=$('#scheduleMonthSelect');
-  select.innerHTML=scheduleState.months.map(x=>`<option value="${esc(x.key)}">${esc(x.name)}</option>`).join('');
-  const now=currentMonthKey();
-  const selected=scheduleState.months.some(x=>x.key===now)?now:(scheduleState.months.at(-1)?.key||'');
-  select.value=selected;
-  if(selected)await loadScheduleMonth(selected);
-  else box.innerHTML='<div class="schedule-loading">月別スケジュールシートがありません。</div>';
- }catch(e){
-  box.innerHTML=`<div class="schedule-loading">予定表の取得に失敗しました。<br>${esc(e.message||e)}</div>`;
- }
-}
-async function loadScheduleMonth(month){
- const box=$('#scheduleContainer');
- box.innerHTML='<div class="schedule-loading">予定表を読み込んでいます...</div>';
- try{
-  const r=await apiWithRetry('scheduleMonth',{month}, {timeoutMs:45000,retries:1});
-  if(!r||r.status!=='ok')throw new Error(r&&r.message||'予定表を取得できません');
-  scheduleState.current=r;
-  scheduleState.sourceUrl=r.sourceUrl||'';
-  renderScheduleGrid(r);
- }catch(e){
-  box.innerHTML=`<div class="schedule-loading">予定表の取得に失敗しました。<br>${esc(e.message||e)}</div>`;
- }
-}
-function renderScheduleGrid(data){
- const values=data.values||[];
- const rows=values.length, cols=rows?values[0].length:0;
- const mergedStarts=new Map(), covered=new Set();
- (data.mergedRanges||[]).forEach(m=>{
-  mergedStarts.set(`${m.row-1},${m.col-1}`,m);
-  for(let rr=m.row-1;rr<m.row-1+m.rows;rr++)for(let cc=m.col-1;cc<m.col-1+m.cols;cc++){
-   if(rr!==m.row-1||cc!==m.col-1)covered.add(`${rr},${cc}`);
-  }
- });
- let html='<table class="schedule-grid"><colgroup>';
- (data.columnWidths||[]).forEach(w=>html+=`<col style="width:${Math.max(28,Math.round(Number(w||60)*.72))}px">`);
- html+='</colgroup><tbody>';
- for(let r=0;r<rows;r++){
-  html+=`<tr style="height:${Math.max(18,Math.round(Number((data.rowHeights||[])[r]||21)*.75))}px">`;
-  for(let c=0;c<cols;c++){
-   const key=`${r},${c}`;if(covered.has(key))continue;
-   const merge=mergedStarts.get(key);
-   const bg=(data.backgrounds?.[r]?.[c]||'#ffffff');
-   const color=(data.fontColors?.[r]?.[c]||'#111111');
-   const weight=(data.fontWeights?.[r]?.[c]||'normal');
-   const align=(data.horizontalAlignments?.[r]?.[c]||'left');
-   const span=merge?` rowspan="${merge.rows}" colspan="${merge.cols}"`:'';
-   html+=`<td${span} style="background:${esc(bg)};color:${esc(color)};font-weight:${esc(weight)};text-align:${esc(align)}">${esc(values[r][c]||'')}</td>`;
-  }
-  html+='</tr>';
- }
- html+='</tbody></table>';
- $('#scheduleContainer').innerHTML=html;
-}
-$('#openScheduleBtn').onclick=openSchedule;
-$('#closeScheduleBtn').onclick=closeSchedule;
-$('#reloadScheduleBtn').onclick=()=>loadScheduleMonth($('#scheduleMonthSelect').value);
-$('#scheduleMonthSelect').onchange=e=>loadScheduleMonth(e.target.value);
-$('#openScheduleSheetBtn').onclick=()=>{if(scheduleState.sourceUrl)window.open(scheduleState.sourceUrl,'_blank','noopener,noreferrer')};
-$('#scheduleModal').onclick=e=>{if(e.target===$('#scheduleModal'))closeSchedule()};
+async function sha256Hex(text){const data=new TextEncoder().encode(text);const hash=await crypto.subtle.digest('SHA-256',data);return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('')}
+async function openSchedule(){ $('#scheduleModal').classList.add('open');$('#scheduleModal').setAttribute('aria-hidden','false');await checkCoachStatus();await loadScheduleMonths(); }
+function closeSchedule(){$('#scheduleModal').classList.remove('open');$('#scheduleModal').setAttribute('aria-hidden','true')}
+async function checkCoachStatus(){if(!scheduleState.token){setCoachUi(false);return}try{const r=await apiWithRetry('coachStatus',{token:scheduleState.token},{timeoutMs:15000,retries:0});setCoachUi(Boolean(r?.authenticated));if(!r?.authenticated){scheduleState.token='';localStorage.removeItem('ninjaCoachToken')}}catch(e){setCoachUi(false)}}
+function setCoachUi(ok){$('#newScheduleBtn').hidden=!ok;$('#coachLoginBtn').textContent=ok?'🔓 コーチ認証済み':'🔒 コーチログイン';$('#coachLoginBtn').classList.toggle('coach-locked',!ok)}
+async function loadScheduleMonths(){const box=$('#scheduleContainer');box.innerHTML='<div class="schedule-loading">月別シートを確認しています...</div>';try{const r=await apiWithRetry('scheduleMonths',{}, {timeoutMs:45000,retries:1});if(!r||r.status!=='ok')throw new Error(r&&r.message||'月一覧を取得できません');scheduleState.months=r.months||[];$('#scheduleSourceLabel').textContent=`${r.spreadsheetName||'保護者用予定表'}と共有`;const select=$('#scheduleMonthSelect');select.innerHTML=scheduleState.months.map(x=>`<option value="${esc(x.key)}">${esc(x.name)}</option>`).join('');const now=currentMonthKey();const selected=scheduleState.months.some(x=>x.key===now)?now:(scheduleState.months.at(-1)?.key||'');select.value=selected;if(selected)await loadScheduleEvents(selected);else box.innerHTML='<div class="schedule-empty">月別スケジュールシートがありません。</div>'}catch(e){box.innerHTML=`<div class="schedule-empty">予定表の取得に失敗しました。<br>${esc(e.message||e)}</div>`}}
+async function loadScheduleEvents(month){const box=$('#scheduleContainer');box.innerHTML='<div class="schedule-loading">予定を整理しています...</div>';try{const r=await apiWithRetry('scheduleEvents',{month},{timeoutMs:45000,retries:1});if(!r||r.status!=='ok')throw new Error(r&&r.message||'予定を取得できません');scheduleState.events=r.events||[];scheduleState.categories=r.categories||[];scheduleState.sourceUrl=r.sourceUrl||'';const cf=$('#scheduleCategoryFilter');const prev=cf.value;cf.innerHTML='<option value="">全カテゴリー</option>'+scheduleState.categories.map(c=>`<option>${esc(c)}</option>`).join('');if(scheduleState.categories.includes(prev))cf.value=prev;fillEventCategories();renderScheduleCards()}catch(e){box.innerHTML=`<div class="schedule-empty">予定表の取得に失敗しました。<br>${esc(e.message||e)}</div>`}}
+function fillEventCategories(){const el=$('#eventCategory');el.innerHTML=scheduleState.categories.map(c=>`<option>${esc(c)}</option>`).join('')}
+function filteredScheduleEvents(){const cat=$('#scheduleCategoryFilter').value;const now=new Date();now.setHours(0,0,0,0);const startWeek=new Date(now);startWeek.setDate(now.getDate()-((now.getDay()+6)%7));const endWeek=new Date(startWeek);endWeek.setDate(startWeek.getDate()+6);return scheduleState.events.filter(e=>{if(cat&&e.category!==cat)return false;const d=new Date(e.date+'T00:00:00');if(scheduleState.view==='today')return d.getTime()===now.getTime();if(scheduleState.view==='week')return d>=startWeek&&d<=endWeek;return true})}
+function renderScheduleCards(){const events=filteredScheduleEvents();const box=$('#scheduleContainer');if(!events.length){box.innerHTML='<div class="schedule-empty">該当する予定はありません。</div>';return}const groups={};events.forEach(e=>(groups[e.date]||(groups[e.date]=[])).push(e));box.innerHTML=Object.keys(groups).sort().map(date=>{const d=new Date(date+'T00:00:00');const head=`${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）`;return `<section class="schedule-day"><div class="schedule-day-head"><h3>${head}</h3><span class="small">${groups[date].length}件</span></div><div class="schedule-day-body">${groups[date].map(renderScheduleEvent).join('')}</div></section>`}).join('')}
+function renderScheduleEvent(e){const time=[e.startTime,e.endTime].filter(Boolean).join('〜');const canEdit=!$('#newScheduleBtn').hidden;return `<article class="schedule-event" style="--event-color:${esc(e.color||'#4da3ff')}"><div class="schedule-color"></div><div class="schedule-event-main"><div class="schedule-event-title">${esc(e.title||e.location||e.type||'予定')}</div><div class="schedule-event-meta"><span class="schedule-chip">${esc(e.category||'カテゴリー未設定')}</span>${e.type?`<span class="schedule-chip">${esc(e.type)}</span>`:''}${e.location?`<span>📍 ${esc(e.location)}</span>`:''}${time?`<span>🕒 ${esc(time)}</span>`:''}</div>${e.note?`<div class="schedule-event-note">${esc(e.note)}</div>`:''}</div><div class="schedule-event-actions">${canEdit?`<button class="btn secondary" data-edit-event="${esc(e.scheduleId)}">編集</button>`:''}</div></article>`}
+function openCoachLogin(){$('#coachPasswordInput').value='';$('#coachLoginStatus').textContent='';$('#coachLoginModal').classList.add('open');setTimeout(()=>$('#coachPasswordInput').focus(),50)}
+async function submitCoachLogin(){const pw=$('#coachPasswordInput').value;if(!pw)return;$('#coachLoginStatus').textContent='確認中...';try{const hash=await sha256Hex(pw);const r=await apiWithRetry('coachLogin',{passwordHash:hash},{timeoutMs:30000,retries:0,dedupe:false});if(!r||r.status!=='ok')throw new Error(r&&r.message||'ログイン失敗');scheduleState.token=r.token;localStorage.setItem('ninjaCoachToken',r.token);setCoachUi(true);$('#coachLoginModal').classList.remove('open');renderScheduleCards()}catch(e){$('#coachLoginStatus').textContent=e.message||e}}
+function openScheduleEdit(event=null){if(!scheduleState.token){openCoachLogin();return}scheduleState.editing=event;$('#scheduleEditTitle').textContent=event?'予定を編集':'予定を追加';$('#eventDate').value=event?.date||`${$('#scheduleMonthSelect').value}-01`;$('#eventCategory').value=event?.category||scheduleState.categories[0]||'';$('#eventType').value=event?.type||'練習';$('#eventTitle').value=event?.title||'';$('#eventLocation').value=event?.location||'';$('#eventStart').value=event?.startTime||'';$('#eventEnd').value=event?.endTime||'';$('#eventNote').value=event?.note||'';$('#eventColor').value=/^#[0-9a-f]{6}$/i.test(event?.color||'')?event.color:'#4da3ff';$('#deleteScheduleEventBtn').hidden=!event;$('#scheduleEditStatus').textContent='';$('#scheduleEditModal').classList.add('open')}
+async function saveScheduleEvent(){const btn=$('#saveScheduleEventBtn');btn.disabled=true;$('#scheduleEditStatus').textContent='保存中...';try{const e=scheduleState.editing||{};const params={token:scheduleState.token,scheduleId:e.scheduleId||'',sourceRef:e.sourceRef||'',date:$('#eventDate').value,category:$('#eventCategory').value,type:$('#eventType').value,title:$('#eventTitle').value.trim(),location:$('#eventLocation').value.trim(),startTime:$('#eventStart').value,endTime:$('#eventEnd').value,note:$('#eventNote').value.trim(),color:$('#eventColor').value};const r=await apiWithRetry('saveScheduleEvent',params,{timeoutMs:45000,retries:0,dedupe:false});if(!r||r.status!=='ok')throw new Error(r&&r.message||'保存失敗');$('#scheduleEditModal').classList.remove('open');await loadScheduleEvents($('#scheduleMonthSelect').value)}catch(e){$('#scheduleEditStatus').textContent=e.message||e}finally{btn.disabled=false}}
+async function deleteScheduleEvent(){if(!scheduleState.editing||!confirm('この予定を削除します。元に戻せません。'))return;const btn=$('#deleteScheduleEventBtn');btn.disabled=true;try{const e=scheduleState.editing;const r=await apiWithRetry('deleteScheduleEvent',{token:scheduleState.token,scheduleId:e.scheduleId||'',sourceRef:e.sourceRef||''},{timeoutMs:45000,retries:0,dedupe:false});if(!r||r.status!=='ok')throw new Error(r&&r.message||'削除失敗');$('#scheduleEditModal').classList.remove('open');await loadScheduleEvents($('#scheduleMonthSelect').value)}catch(e){$('#scheduleEditStatus').textContent=e.message||e}finally{btn.disabled=false}}
+$('#openScheduleBtn').onclick=openSchedule;$('#closeScheduleBtn').onclick=closeSchedule;$('#reloadScheduleBtn').onclick=()=>loadScheduleEvents($('#scheduleMonthSelect').value);$('#scheduleMonthSelect').onchange=e=>loadScheduleEvents(e.target.value);$('#scheduleCategoryFilter').onchange=renderScheduleCards;document.querySelectorAll('.schedule-view-btn').forEach(b=>b.onclick=()=>{scheduleState.view=b.dataset.view;document.querySelectorAll('.schedule-view-btn').forEach(x=>x.classList.toggle('active',x===b));renderScheduleCards()});$('#openScheduleSheetBtn').onclick=()=>{if(scheduleState.sourceUrl)window.open(scheduleState.sourceUrl,'_blank','noopener,noreferrer')};$('#coachLoginBtn').onclick=()=>scheduleState.token?openCoachLogin():openCoachLogin();$('#submitCoachLoginBtn').onclick=submitCoachLogin;$('#closeCoachLoginBtn').onclick=()=>$('#coachLoginModal').classList.remove('open');$('#newScheduleBtn').onclick=()=>openScheduleEdit();$('#saveScheduleEventBtn').onclick=saveScheduleEvent;$('#deleteScheduleEventBtn').onclick=deleteScheduleEvent;$('#closeScheduleEditBtn').onclick=()=>$('#scheduleEditModal').classList.remove('open');$('#scheduleContainer').onclick=e=>{const btn=e.target.closest('[data-edit-event]');if(!btn)return;const ev=scheduleState.events.find(x=>x.scheduleId===btn.dataset.editEvent);if(ev)openScheduleEdit(ev)};$('#scheduleModal').onclick=e=>{if(e.target===$('#scheduleModal'))closeSchedule()};
 
 window.addEventListener('error',event=>{
  console.error('NINJA PLAYER DATA error:',event.error||event.message);
