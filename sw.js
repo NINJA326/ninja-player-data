@@ -1,4 +1,4 @@
-const CACHE='ninja-coach-app-v58';
+const CACHE='ninja-coach-app-v59';
 const ASSETS=['./','./index.html','./manifest.json','./icon.svg'];
 self.addEventListener('install',event=>{
   self.skipWaiting();

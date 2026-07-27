@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0b1220">
-  <title>NINJA AIRS COACH APP v58</title>
+  <title>NINJA AIRS COACH APP v59</title>
   <link rel="manifest" href="manifest.json">
   <style>
     :root{--bg:#07101f;--panel:#111c2e;--panel2:#17253a;--line:#2b3b52;--text:#f4f7fb;--muted:#9fb0c6;--accent:#35c97b;--blue:#4da3ff;--orange:#ffb547;--danger:#ff6b6b}
@@ -2032,6 +2032,16 @@ function closeScheduleDetail(){$('#scheduleDetailModal').classList.remove('open'
 function moveScheduleMonth(delta){const sel=$('#scheduleMonthSelect');const idx=[...sel.options].findIndex(x=>x.value===sel.value);const next=Math.max(0,Math.min(sel.options.length-1,idx+delta));if(next!==idx){sel.selectedIndex=next;localStorage.setItem(SCHEDULE_MONTH_KEY,sel.value);scheduleState.selectedDate='';localStorage.removeItem(SCHEDULE_DATE_KEY);loadScheduleEvents(sel.value,{preserve:true})}}
 function saveFilterPreference(){if($('#scheduleFilterFixed').checked){localStorage.setItem(SCHEDULE_FILTER_FIXED_KEY,'1');localStorage.setItem(SCHEDULE_FILTER_KEY,selectedFilter())}else{localStorage.removeItem(SCHEDULE_FILTER_FIXED_KEY);localStorage.removeItem(SCHEDULE_FILTER_KEY)}}
 function openCoachLogin(){$('#coachPasswordInput').value='';$('#coachLoginStatus').textContent='';$('#coachLoginModal').classList.add('open');setTimeout(()=>$('#coachPasswordInput').focus(),50)}
+async function sha256Hex(value){
+  const text=String(value ?? '');
+  if(!window.crypto || !window.crypto.subtle){
+    throw new Error('このブラウザでは安全なログイン処理を利用できません。Chromeを最新版に更新してください。');
+  }
+  const bytes=new TextEncoder().encode(text);
+  const digest=await window.crypto.subtle.digest('SHA-256',bytes);
+  return Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join('');
+}
+
 async function submitCoachLogin(){const pw=$('#coachPasswordInput').value;if(!pw)return;$('#coachLoginStatus').textContent='確認中...';try{const hash=await sha256Hex(pw);const r=await apiWithRetry('coachLogin',{passwordHash:hash},{timeoutMs:30000,retries:0,dedupe:false});if(!r||r.status!=='ok')throw new Error(r&&r.message||'ログイン失敗');scheduleState.token=r.token;localStorage.setItem('ninjaCoachToken',r.token);setCoachUi(true);$('#coachLoginModal').classList.remove('open');renderScheduleCalendar()}catch(e){$('#coachLoginStatus').textContent=e.message||e}}
 function toggleAllDayInputs(){const allDay=$('#eventAllDay').checked;$('#eventStartWrap').hidden=allDay;$('#eventEndWrap').hidden=allDay;$('#eventStart').disabled=allDay;$('#eventEnd').disabled=allDay;if(allDay){$('#eventStart').value='';$('#eventEnd').value=''}}
 function openScheduleEdit(event=null,mode='edit'){if(!scheduleState.token){openCoachLogin();return}const isCopy=mode==='copy'&&event;scheduleState.editing=isCopy?null:event;$('#scheduleEditTitle').textContent=isCopy?'予定を複写':(event?'予定を編集':'予定を追加');$('#eventDate').value=event?.date||scheduleState.selectedDate||`${$('#scheduleMonthSelect').value}-01`;$('#eventCategory').value=event?.category||scheduleState.categories[0]||'';$('#eventType').value=typeLabel(event?.type||'練習');$('#eventTitle').value=event?.title||'';$('#eventLocation').value=event?.location||'';$('#eventAllDay').checked=!!event?.allDay;$('#eventStart').value=event?.allDay?'':(event?.startTime||'');$('#eventEnd').value=event?.allDay?'':(event?.endTime||'');$('#eventNote').value=event?.note||'';$('#eventNotify').checked=false;$('#eventColor').value=/^#[0-9a-f]{6}$/i.test(event?.color||'')?event.color:'#4da3ff';toggleAllDayInputs();$('#deleteScheduleEventBtn').hidden=isCopy||!event;$('#scheduleEditStatus').textContent=isCopy?'内容を確認し、必要に応じて日付を変更して保存してください。':'';$('#scheduleEditModal').classList.add('open')}
