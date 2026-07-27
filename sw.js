@@ -1,4 +1,4 @@
-const CACHE='ninja-coach-app-v57';
+const CACHE='ninja-coach-app-v58';
 const ASSETS=['./','./index.html','./manifest.json','./icon.svg'];
 self.addEventListener('install',event=>{
   self.skipWaiting();
@@ -16,7 +16,7 @@ self.addEventListener('fetch',event=>{
     event.respondWith(fetch(event.request,{cache:'no-store'}).catch(()=>caches.match('./index.html')));
     return;
   }
-  event.respondWith(fetch(event.request).then(response=>{
+  event.respondWith(fetch(event.request,{cache:'no-store'}).then(response=>{
     const copy=response.clone();
     caches.open(CACHE).then(cache=>cache.put(event.request,copy));
     return response;
