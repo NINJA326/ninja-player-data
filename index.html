@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0b1220">
-  <title>NINJA AIRS COACH APP v61.2</title>
+  <title>NINJA AIRS COACH APP v61.3</title>
   <link rel="manifest" href="manifest.json">
   <style>
     :root{--bg:#07101f;--panel:#111c2e;--panel2:#17253a;--line:#2b3b52;--text:#f4f7fb;--muted:#9fb0c6;--accent:#35c97b;--blue:#4da3ff;--orange:#ffb547;--danger:#ff6b6b}
@@ -316,7 +316,7 @@
 
 
 /* =========================================================
-   v61.2 カテゴリー即選択 / Mobile first
+   v61.3 カルテ記入者対応 / Mobile first
    ========================================================= */
 :root{
  --safe-bottom:env(safe-area-inset-bottom,0px);
@@ -475,6 +475,12 @@ body.player-list-open{overflow:hidden}
  .category-pick{min-height:44px;font-size:12px}
 }
 
+
+.report-meta.report-meta-four{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:700px){
+ .report-meta.report-meta-four{grid-template-columns:1fr 1fr}
+}
+
 </style>
 </head>
 <body>
@@ -486,7 +492,7 @@ body.player-list-open{overflow:hidden}
     </div>
     <div class="top-actions">
       <span id="connectionStatus" class="status">接続中</span>
-      <span class="architecture-badge">v61.2 カテゴリー即選択</span>
+      <span class="architecture-badge">v61.3 カルテ記入者対応</span>
       <button class="icon-btn" id="menuToggleBtn" type="button" aria-label="メニュー">☰</button>
     </div>
     <div id="quickMenu" class="quick-menu">
@@ -704,6 +710,15 @@ body.player-list-open{overflow:hidden}
           <div class="section">
             <h3>選手所見・カルテ</h3>
             <div class="notice">数値データだけでは分からない練習・試合・判断・姿勢などをコーチコメントへ入力してください。その内容も含めてAI所見用データを自動作成します。</div>
+
+            <div class="workflow-step">
+              <div class="workflow-step-head">
+                <span class="workflow-no">記</span>
+                <div><h4>記入者</h4><p>このカルテを作成するコーチ名を入力してください。端末に保存され、次回も自動表示されます。</p></div>
+              </div>
+              <input id="cardWriterName" class="input" type="text" maxlength="60" placeholder="例：中瀬">
+              <div id="cardWriterSaved" class="workflow-status"></div>
+            </div>
 
             <div class="workflow-step">
               <div class="workflow-step-head">
@@ -1461,7 +1476,7 @@ $('#saveCommentBtn').onclick=saveComment;
 $('#settingsBtn').onclick=()=>{$('#quickMenu')?.classList.remove('open');$('#apiUrlInput').value=state.apiUrl;$('#settingsModal').classList.add('open')};$('#closeSettingsBtn').onclick=()=>$('#settingsModal').classList.remove('open');
 $('#saveSettingsBtn').onclick=()=>{state.apiUrl=$('#apiUrlInput').value.trim().replace(/\/$/,'');state.playerCache.clear();state.inflight.clear();localStorage.setItem('ninjaPlayerApiUrl',state.apiUrl);$('#settingsModal').classList.remove('open');state.selected=null;$('#detail').hidden=true;$('#emptyState').hidden=false;loadPlayers()};
 $('#demoBtn').onclick=()=>{state.apiUrl=DEFAULT_COACH_API_URL;state.playerCache.clear();state.inflight.clear();localStorage.removeItem('ninjaPlayerApiUrl');$('#settingsModal').classList.remove('open');state.selected=null;$('#detail').hidden=true;$('#emptyState').hidden=false;loadPlayers()};
-if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=612').then(reg=>reg.update()).catch(()=>{});
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=613').then(reg=>reg.update()).catch(()=>{});
 
 
 
@@ -1543,6 +1558,10 @@ function applyFeedbackToCard(){
  setTimeout(()=>$('#feedbackSaved').textContent='',2200);
 }
 function initCoachCardUi(){
+ loadCardWriterName();
+ $('#cardWriterName')?.addEventListener('change',()=>saveCardWriterName(true));
+ $('#cardWriterName')?.addEventListener('blur',()=>saveCardWriterName(false));
+
  $('#menuToggleBtn')?.addEventListener('click',e=>{
   e.stopPropagation();
   $('#quickMenu')?.classList.toggle('open');
@@ -1851,6 +1870,7 @@ function buildPlayerDataBlock(){
   '【選手基本情報】',
   `氏名：${p.name||''}`,
   `カテゴリー：${p.category||'未設定'}`,
+  `カルテ記入者：${currentCardWriterName()||'未設定'}`,
   p.grade?`学年：${p.grade}`:'',
   '',
   ...summarizeGrowth(state.currentData.growth||[]),
@@ -1978,6 +1998,37 @@ function openChatGptFeedback(){
 }
 
 
+
+
+const CARD_WRITER_STORAGE_KEY='ninjaPlayerCardWriter';
+
+function loadCardWriterName(){
+ const input=$('#cardWriterName');
+ if(!input)return;
+ input.value=localStorage.getItem(CARD_WRITER_STORAGE_KEY)||'';
+}
+
+function saveCardWriterName(showMessage=true){
+ const input=$('#cardWriterName');
+ if(!input)return '';
+ const name=String(input.value||'').trim();
+ localStorage.setItem(CARD_WRITER_STORAGE_KEY,name);
+ if(showMessage){
+  const status=$('#cardWriterSaved');
+  if(status){
+   status.textContent=name?'記入者を保存しました':'記入者を未設定にしました';
+   setTimeout(()=>status.textContent='',1800);
+  }
+ }
+ return name;
+}
+
+function currentCardWriterName(){
+ const input=$('#cardWriterName');
+ const name=String(input?.value||'').trim();
+ if(name)return name;
+ return String(localStorage.getItem(CARD_WRITER_STORAGE_KEY)||'').trim();
+}
 
 function currentFeedbackSections(){
  return extractFeedbackSections($('#feedbackText')?$('#feedbackText').value:'');
@@ -2123,9 +2174,10 @@ function buildParentReportHtml(){
   <header class="report-header">
     <div class="report-brand">NINJA AIRS U15</div>
     <div class="report-title">選手カルテ</div>
-    <div class="report-meta">
+    <div class="report-meta report-meta-four">
       <div><small>選手名</small><strong>${reportEsc(p.name||'')}</strong></div>
       <div><small>カテゴリー</small><strong>${reportEsc(p.category||'未設定')}</strong></div>
+      <div><small>記入者</small><strong>${reportEsc(currentCardWriterName()||'未設定')}</strong></div>
       <div><small>作成日</small><strong>${reportEsc(reportCreatedDate())}</strong></div>
     </div>
   </header>
@@ -2380,6 +2432,7 @@ function feedbackFormData(){
   playerName:String(state.selected?.name||''),
   category:String(state.selected?.category||''),
   feedbackText:$('#feedbackText').value.trim(),
+  createdBy:currentCardWriterName(),
   savedAt:new Date().toISOString()
  };
 }
@@ -2406,7 +2459,8 @@ async function savePlayerFeedback(showMessage=true){
    playerId:data.playerId,
    playerName:data.playerName,
    category:data.category,
-   feedbackText:data.feedbackText
+   feedbackText:data.feedbackText,
+   createdBy:data.createdBy
   },{timeoutMs:45000,retries:1,dedupe:false});
 
   if(!result||result.status!=='ok')throw new Error(result&&result.message||'保存失敗');
