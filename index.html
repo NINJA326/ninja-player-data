@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0b1220">
-  <title>NINJA AIRS COACH APP v59</title>
+  <title>NINJA AIRS COACH APP v60</title>
   <link rel="manifest" href="manifest.json">
   <style>
     :root{--bg:#07101f;--panel:#111c2e;--panel2:#17253a;--line:#2b3b52;--text:#f4f7fb;--muted:#9fb0c6;--accent:#35c97b;--blue:#4da3ff;--orange:#ffb547;--danger:#ff6b6b}
@@ -320,7 +320,7 @@
 <div class="app">
   <header class="topbar">
     <div class="brand"><h1>NINJA AIRS COACH APP</h1><p>全選手｜成長・シューティング・アジリティ</p></div>
-    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v57 終日・カテゴリー別LINE通知対応版</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button><button class="btn secondary" id="openScheduleBtn">スケジュール</button></div>
+    <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><span id="connectionStatus" class="status">デモデータ</span><span class="architecture-badge">v60 新DB・龍ラン対応版</span><button class="btn secondary" id="settingsBtn">接続設定</button><button class="btn secondary" id="openPromptTabBtn">プロンプト設定</button><button class="btn secondary" id="openScheduleBtn">スケジュール</button></div>
   </header>
 
   <main class="layout">
@@ -894,23 +894,74 @@ function clearPlayerDisplay(){
  loadPlayerFeedback();
 }
 
+const COACH_AGILITY_DEFS=[
+ ['shuttleRun','20mシャトルラン','回',false,false],
+ ['sideSteps','反復横跳び','回',false,false],
+ ['lCone','L字コーン','秒',true,false],
+ ['verticalJump','垂直跳び','cm',false,false],
+ ['handling120','120回ハンドリング','秒',true,false],
+ ['ryuRunLap1','龍ラン 1周目','秒',true,true],
+ ['ryuRunLap2','龍ラン 2周目','秒',true,true],
+ ['ryuRunTotal','龍ラン 合計','秒',true,true]
+];
+
 function normalizeAgilityApiRecords(rows){
  return (rows||[]).map(row=>{
-  const type=String(row.type||row.metric||row['種目']||row['項目']||'').trim();
+  const rawType=String(row.type||row.metric||row['種目']||row['項目']||'').trim();
+  const type=rawType.normalize('NFKC').replace(/\s+/g,'');
   const value=row.value??row.record??row['記録']??row['測定値'];
   const rec={
    date:row.date||row.recordDate||row.measurementDate||row['測定日']||row['日付']||row.createdAt||'',
    shuttleRun:row.shuttleRun??null,
    sideSteps:row.sideSteps??null,
    lCone:row.lCone??null,
-   verticalJump:row.verticalJump??null
+   verticalJump:row.verticalJump??null,
+   handling120:row.handling120??row.handling120Time??null,
+   ryuRunLap1:row.ryuRunLap1??row.ryuRunLap1Seconds??null,
+   ryuRunLap2:row.ryuRunLap2??row.ryuRunLap2Seconds??null,
+   ryuRunTotal:row.ryuRunTotal??row.ryuRunTotalSeconds??null
   };
-  if(type.includes('シャトル'))rec.shuttleRun=value;
-  else if(type.includes('反復横'))rec.sideSteps=value;
-  else if(type.includes('L字'))rec.lCone=value;
-  else if(type.includes('垂直'))rec.verticalJump=value;
+
+  if(type.includes('龍ラン')||type.includes('竜ラン')||type.includes('りゅうラン')||type.includes('リュウラン')){
+   if(type.includes('1周'))rec.ryuRunLap1=value;
+   else if(type.includes('2周'))rec.ryuRunLap2=value;
+   else rec.ryuRunTotal=value;
+  }else if(type.includes('120')&&type.includes('ハンドリング')){
+   rec.handling120=value;
+  }else if(type.includes('シャトル')){
+   rec.shuttleRun=value;
+  }else if(type.includes('反復横')){
+   rec.sideSteps=value;
+  }else if(type.includes('L字')||type.includes('l字')){
+   rec.lCone=value;
+  }else if(type.includes('垂直')){
+   rec.verticalJump=value;
+  }
+
   return rec;
- }).filter(r=>[r.shuttleRun,r.sideSteps,r.lCone,r.verticalJump].some(v=>v!==null&&v!==undefined&&v!==''));
+ }).filter(r=>COACH_AGILITY_DEFS.some(([key])=>r[key]!==null&&r[key]!==undefined&&r[key]!==''));
+}
+
+function formatAgilityTime(value){
+ const seconds=Math.round(Number(value));
+ if(!Number.isFinite(seconds)||seconds<0)return '－';
+ return `${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`;
+}
+
+function formatAgilityMetricValue(key,value,unit){
+ if(value===null||value===undefined||value==='')return '－';
+ if(key==='ryuRunLap1'||key==='ryuRunLap2'||key==='ryuRunTotal')return formatAgilityTime(value);
+ return `${Number.isFinite(Number(value))?Number(value):value}${unit||''}`;
+}
+
+function formatAgilityDelta(key,value,unit){
+ if(value===null||value===undefined||!Number.isFinite(Number(value)))return '算出不可';
+ const n=Number(value);
+ if(key==='ryuRunLap1'||key==='ryuRunLap2'||key==='ryuRunTotal'){
+  const sign=n>0?'+':n<0?'-':'';
+  return `${sign}${formatAgilityTime(Math.abs(n))}`;
+ }
+ return `${n>0?'+':''}${Number(n.toFixed(2))}${unit||''}`;
 }
 
 async function selectPlayer(id,options={}){
@@ -1055,19 +1106,13 @@ function renderAgility(records){
 
  if(cards){
   cards.innerHTML=items.length
-   ? items.map(x=>`<div class="metric"><small>${esc(x.label)}<span class="latest-badge">最新</span></small><strong>${esc(String(x.value))}${esc(x.unit)}</strong><span>${esc(x.date)}</span></div>`).join('')
+   ? items.map(x=>`<div class="metric"><small>${esc(x.label)}<span class="latest-badge">最新</span></small><strong>${esc(formatAgilityMetricValue(x.key,x.value,x.unit))}</strong><span>${esc(x.date)}</span></div>`).join('')
    : '<div class="empty">スプレッドシートにアジリティ記録がありません。</div>';
  }
 
  if(table){
-  const defs=[
-   ['shuttleRun','シャトルラン','回',false],
-   ['sideSteps','反復横跳び','回',false],
-   ['lCone','L字コーンドリル','秒',true],
-   ['verticalJump','垂直跳び','cm',false]
-  ];
   const rows=[];
-  defs.forEach(([key,label,unit,lowerBetter])=>{
+  COACH_AGILITY_DEFS.forEach(([key,label,unit,lowerBetter])=>{
    const valid=(records||[]).filter(r=>r[key]!==null&&r[key]!==undefined&&r[key]!=='')
      .sort((a,b)=>dateKey(b).localeCompare(dateKey(a)));
    valid.forEach((r,i)=>{
@@ -1075,10 +1120,15 @@ function renderAgility(records){
     let diff='--';
     if(prev && Number.isFinite(Number(r[key])) && Number.isFinite(Number(prev[key]))){
      const d=Number(r[key])-Number(prev[key]);
-     diff=`${d>0?'+':''}${Number(d.toFixed(2))}${unit}`;
+     diff=formatAgilityDelta(key,d,unit);
      if((lowerBetter&&d<0)||(!lowerBetter&&d>0))diff+='（改善）';
     }
-    rows.push({date:dateKey(r)||'日付不明',label,value:`${r[key]}${unit}`,diff});
+    rows.push({
+     date:dateKey(r)||'日付不明',
+     label,
+     value:formatAgilityMetricValue(key,r[key],unit),
+     diff
+    });
    });
   });
   rows.sort((a,b)=>b.date.localeCompare(a.date)||a.label.localeCompare(b.label,'ja'));
@@ -1087,10 +1137,18 @@ function renderAgility(records){
    : '<tr><td colspan="4">スプレッドシートに記録がありません</td></tr>';
  }
 
- const ab=$('#agilityTable')?.closest('.section')||$('#agilityTable')?.parentElement;if(ab){let x=$('#agilityGrowthDeltaBox');if(!x){x=document.createElement('div');x.id='agilityGrowthDeltaBox';x.className='section';ab.appendChild(x)}x.innerHTML='<h3>成長結果</h3>'+agilityGrowthSummaryHtml(records)}
+ const ab=$('#agilityTable')?.closest('.section')||$('#agilityTable')?.parentElement;
+ if(ab){
+  let x=$('#agilityGrowthDeltaBox');
+  if(!x){
+   x=document.createElement('div');
+   x.id='agilityGrowthDeltaBox';
+   x.className='section';
+   ab.appendChild(x);
+  }
+  x.innerHTML='<h3>成長結果</h3>'+agilityGrowthSummaryHtml(records);
+ }
 }
-
-
 
 async function copyComment(){
  try{await navigator.clipboard.writeText($('#coachComment').value);$('#commentSaved').textContent='コピーしました';setTimeout(()=>$('#commentSaved').textContent='',1800)}
@@ -1139,12 +1197,13 @@ function growthComparisons(records){
 }
 function agilitySeries(records,key){return (records||[]).filter(r=>r&&r[key]!==null&&r[key]!==undefined&&r[key]!=='').sort((a,b)=>dateKey(a).localeCompare(dateKey(b)))}
 function agilityGrowthComparisons(records){
- return [['shuttleRun','シャトルラン','回',false],['sideSteps','反復横跳び','回',false],['lCone','L字コーンドリル','秒',true],['verticalJump','垂直跳び','cm',false]].map(([key,label,unit,lowerBetter])=>{
+ return COACH_AGILITY_DEFS.map(([key,label,unit,lowerBetter])=>{
   const rows=agilitySeries(records,key),first=rows[0]||null,latest=rows[rows.length-1]||null,previous=rows.length>=2?rows[rows.length-2]:null;
   const lv=latest?numericValue(latest[key]):null,fv=first?numericValue(first[key]):null,pv=previous?numericValue(previous[key]):null;
   return {key,label,unit,lowerBetter,first,previous,latest,firstDelta:lv!==null&&fv!==null?lv-fv:null,previousDelta:lv!==null&&pv!==null?lv-pv:null};
  });
 }
+
 function deltaText(v,unit=''){return v===null?'算出不可':`${v>0?'+':''}${Number(v.toFixed(2))}${unit}`}
 function bodyGrowthSummaryHtml(records){
  const c=growthComparisons(records); if(!c.latest)return '<div class="empty">身体測定の記録はありません。</div>';
@@ -1156,9 +1215,11 @@ function bodyGrowthSummaryHtml(records){
  return `<div class="growth-delta-grid">${items.join('')}</div>`;
 }
 function agilityGrowthSummaryHtml(records){
- const rows=agilityGrowthComparisons(records).filter(x=>x.latest); if(!rows.length)return '<div class="empty">アジリティの記録はありません。</div>';
- return `<div class="growth-delta-grid">${rows.map(x=>`<div class="growth-delta"><small>${x.label}｜初回→現在</small><strong>${deltaText(x.firstDelta,x.unit)}</strong></div><div class="growth-delta"><small>${x.label}｜前回→現在</small><strong>${deltaText(x.previousDelta,x.unit)}</strong></div>`).join('')}</div>`;
+ const rows=agilityGrowthComparisons(records).filter(x=>x.latest);
+ if(!rows.length)return '<div class="empty">アジリティの記録はありません。</div>';
+ return `<div class="growth-delta-grid">${rows.map(x=>`<div class="growth-delta"><small>${x.label}｜初回→現在</small><strong>${formatAgilityDelta(x.key,x.firstDelta,x.unit)}</strong></div><div class="growth-delta"><small>${x.label}｜前回→現在</small><strong>${formatAgilityDelta(x.key,x.previousDelta,x.unit)}</strong></div>`).join('')}</div>`;
 }
+
 const DEFAULT_MASTER_PROMPT=`あなたは中学生バスケットボールの育成コーチです。
 出力は必ず「いいところ」「改善点」「方向性」「総合所見」の4項目に分けてください。事実と推測を分け、データがない内容は作らないでください。
 中学生本人と保護者の双方に伝わる文章にしてください。
@@ -1241,7 +1302,15 @@ function resetPromptTemplate(){
 function promptAudienceText(v){return {both:'中学生本人と保護者の双方',player:'中学生本人',parent:'保護者',coach:'コーチ'}[v]||'中学生本人と保護者の双方'}
 function promptLengthText(v){return {short:'簡潔に',standard:'標準的な文章量で',detailed:'根拠を含めて詳しく'}[v]||'標準的な文章量で'}
 function bodyGrowthSummaryLines(records){const c=growthComparisons(records),lines=['【身体測定・成長結果】'];if(!c.latest){lines.push('記録なし');return lines}[['height','身長','cm'],['weight','体重','kg']].forEach(([key,label,unit])=>{const lv=numericValue(c.latest[key]),fv=c.first?numericValue(c.first[key]):null,pv=c.previous?numericValue(c.previous[key]):null;lines.push(`・${label} 初回→現在：${deltaText(lv!==null&&fv!==null?lv-fv:null,unit)}`);lines.push(`・${label} 前回→現在：${deltaText(lv!==null&&pv!==null?lv-pv:null,unit)}`)});return lines}
-function agilityGrowthSummaryLines(records){const lines=['【アジリティ・成長結果】'],rows=agilityGrowthComparisons(records).filter(x=>x.latest);if(!rows.length){lines.push('記録なし');return lines}rows.forEach(x=>{lines.push(`・${x.label} 初回→現在：${deltaText(x.firstDelta,x.unit)}`);lines.push(`・${x.label} 前回→現在：${deltaText(x.previousDelta,x.unit)}`)});return lines}
+function agilityGrowthSummaryLines(records){
+ const lines=['【アジリティ・成長結果】'],rows=agilityGrowthComparisons(records).filter(x=>x.latest);
+ if(!rows.length){lines.push('記録なし');return lines}
+ rows.forEach(x=>{
+  lines.push(`・${x.label} 初回→現在：${formatAgilityDelta(x.key,x.firstDelta,x.unit)}`);
+  lines.push(`・${x.label} 前回→現在：${formatAgilityDelta(x.key,x.previousDelta,x.unit)}`);
+ });
+ return lines;
+}
 
 function fmtSummaryNumber(v,unit=''){
  if(v===null||v===undefined||v==='')return '記録なし';
@@ -1285,14 +1354,8 @@ function summarizeShooting(s){
 }
 function latestAgilityValues(records){
  const sorted=(records||[]).slice().sort((a,b)=>dateKey(b).localeCompare(dateKey(a)));
- const defs=[
-  ['shuttleRun','シャトルラン','回'],
-  ['sideSteps','反復横跳び','回'],
-  ['lCone','L字コーンドリル','秒'],
-  ['verticalJump','垂直跳び','cm']
- ];
  const latest={};
- defs.forEach(([key,label,unit])=>{
+ COACH_AGILITY_DEFS.forEach(([key,label,unit])=>{
   const row=sorted.find(r=>r && r[key]!==null && r[key]!==undefined && r[key]!=='');
   if(row)latest[key]={key,label,value:row[key],date:dateKey(row)||'日付不明',unit};
  });
@@ -1303,7 +1366,7 @@ function summarizeAgility(records){
  const latest=latestAgilityValues(records);
  const vals=Object.values(latest);
  if(!vals.length){lines.push('記録なし');return lines}
- vals.forEach(x=>lines.push(`・${x.label}：${x.value}${x.unit}（${x.date}）`));
+ vals.forEach(x=>lines.push(`・${x.label}：${formatAgilityMetricValue(x.key,x.value,x.unit)}（${x.date}）`));
  return lines;
 }
 
@@ -1562,12 +1625,13 @@ function reportAgilityHtml(){
   const g=growth.find(y=>y.key===x.key);
   return `<div class="report-agility-row">
     <div class="report-agility-name">${reportEsc(x.label)}</div>
-    <div class="report-agility-record"><strong>${reportEsc(x.value)}${reportEsc(x.unit)}</strong><small>${reportEsc(reportDateJa(x.date))}</small></div>
-    <div class="report-agility-change"><span>初回比</span><strong>${reportEsc(deltaText(g?g.firstDelta:null,x.unit))}</strong></div>
-    <div class="report-agility-change"><span>前回比</span><strong>${reportEsc(deltaText(g?g.previousDelta:null,x.unit))}</strong></div>
+    <div class="report-agility-record"><strong>${reportEsc(formatAgilityMetricValue(x.key,x.value,x.unit))}</strong><small>${reportEsc(reportDateJa(x.date))}</small></div>
+    <div class="report-agility-change"><span>初回比</span><strong>${reportEsc(formatAgilityDelta(x.key,g?g.firstDelta:null,x.unit))}</strong></div>
+    <div class="report-agility-change"><span>前回比</span><strong>${reportEsc(formatAgilityDelta(x.key,g?g.previousDelta:null,x.unit))}</strong></div>
   </div>`;
  }).join('')}</div>`;
 }
+
 function reportShootingHtml(){
  const s=state.currentData&&state.currentData.shooting||{};
  const t=s.total||{};
