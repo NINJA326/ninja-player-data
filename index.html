@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0b1220">
-  <title>NINJA AIRS COACH APP v61.3</title>
+  <title>NINJA AIRS COACH APP v61.4</title>
   <link rel="manifest" href="manifest.json">
   <style>
     :root{--bg:#07101f;--panel:#111c2e;--panel2:#17253a;--line:#2b3b52;--text:#f4f7fb;--muted:#9fb0c6;--accent:#35c97b;--blue:#4da3ff;--orange:#ffb547;--danger:#ff6b6b}
@@ -316,7 +316,7 @@
 
 
 /* =========================================================
-   v61.3 カルテ記入者対応 / Mobile first
+   v61.4 記入者常時表示 / Mobile first
    ========================================================= */
 :root{
  --safe-bottom:env(safe-area-inset-bottom,0px);
@@ -481,6 +481,41 @@ body.player-list-open{overflow:hidden}
  .report-meta.report-meta-four{grid-template-columns:1fr 1fr}
 }
 
+
+.card-writer-bar{
+ margin-top:12px;
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:10px;
+ padding:11px 12px;
+ border:1px solid var(--line);
+ border-radius:13px;
+ background:#0b1525;
+}
+.card-writer-label small{
+ display:block;
+ color:var(--muted);
+ font-size:10px;
+ margin-bottom:3px;
+}
+.card-writer-label strong{
+ display:block;
+ font-size:15px;
+}
+@media(max-width:560px){
+ .card-writer-bar{
+  position:sticky;
+  top:70px;
+  z-index:8;
+  background:#0b1525;
+ }
+ .card-writer-bar .btn{
+  min-height:42px;
+  padding:8px 10px;
+ }
+}
+
 </style>
 </head>
 <body>
@@ -492,7 +527,7 @@ body.player-list-open{overflow:hidden}
     </div>
     <div class="top-actions">
       <span id="connectionStatus" class="status">接続中</span>
-      <span class="architecture-badge">v61.3 カルテ記入者対応</span>
+      <span class="architecture-badge">v61.4 記入者常時表示</span>
       <button class="icon-btn" id="menuToggleBtn" type="button" aria-label="メニュー">☰</button>
     </div>
     <div id="quickMenu" class="quick-menu">
@@ -546,6 +581,14 @@ body.player-list-open{overflow:hidden}
             <button id="changePlayerBtn" class="btn secondary" type="button">選手を変更</button>
             <button id="refreshSelectedPlayerBtn" class="btn secondary" type="button">更新</button>
           </div>
+        </div>
+
+        <div class="card-writer-bar">
+          <div class="card-writer-label">
+            <small>カルテ記入者</small>
+            <strong id="cardWriterDisplay">未設定</strong>
+          </div>
+          <button id="editCardWriterBtn" class="btn secondary" type="button">記入者を変更</button>
         </div>
 
         <div class="tabs">
@@ -928,6 +971,20 @@ body.player-list-open{overflow:hidden}
 <div id="offColorPreview" class="color-preview">OFF</div><input id="offScheduleColor" class="input" type="color">
 </div><div style="height:14px"></div><div class="row"><button id="saveScheduleColorsBtn" class="btn">保存</button><button id="closeScheduleColorsBtn" class="btn secondary">閉じる</button></div><div id="scheduleColorStatus" class="comment-saved"></div></div></div>
 
+<div id="cardWriterModal" class="modal">
+  <div class="modal-card">
+    <h3>カルテ記入者</h3>
+    <p class="small">選手カルテ・PDF・フィードバックの作成者として使用します。</p>
+    <input id="cardWriterNameModal" class="input" type="text" maxlength="60" placeholder="例：中瀬">
+    <div style="height:10px"></div>
+    <div class="row">
+      <button id="saveCardWriterModalBtn" class="btn">保存</button>
+      <button id="closeCardWriterModalBtn" class="btn secondary">閉じる</button>
+    </div>
+    <div id="cardWriterModalStatus" class="workflow-status"></div>
+  </div>
+</div>
+
 <div id="settingsModal" class="modal">
   <div class="modal-card">
     <h3>Apps Script 接続設定</h3>
@@ -1271,6 +1328,7 @@ async function selectPlayer(id,options={}){
  $('#detail').hidden=false;
  $('#playerName').textContent=player.name;
  $('#playerCategory').textContent=player.category||'未設定';
+ updateCardWriterDisplay();
  const summaryEl=$('#dataSummaryText');
  if(summaryEl)summaryEl.value='';
 
@@ -1476,7 +1534,7 @@ $('#saveCommentBtn').onclick=saveComment;
 $('#settingsBtn').onclick=()=>{$('#quickMenu')?.classList.remove('open');$('#apiUrlInput').value=state.apiUrl;$('#settingsModal').classList.add('open')};$('#closeSettingsBtn').onclick=()=>$('#settingsModal').classList.remove('open');
 $('#saveSettingsBtn').onclick=()=>{state.apiUrl=$('#apiUrlInput').value.trim().replace(/\/$/,'');state.playerCache.clear();state.inflight.clear();localStorage.setItem('ninjaPlayerApiUrl',state.apiUrl);$('#settingsModal').classList.remove('open');state.selected=null;$('#detail').hidden=true;$('#emptyState').hidden=false;loadPlayers()};
 $('#demoBtn').onclick=()=>{state.apiUrl=DEFAULT_COACH_API_URL;state.playerCache.clear();state.inflight.clear();localStorage.removeItem('ninjaPlayerApiUrl');$('#settingsModal').classList.remove('open');state.selected=null;$('#detail').hidden=true;$('#emptyState').hidden=false;loadPlayers()};
-if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=613').then(reg=>reg.update()).catch(()=>{});
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=614').then(reg=>reg.update()).catch(()=>{});
 
 
 
@@ -1559,8 +1617,35 @@ function applyFeedbackToCard(){
 }
 function initCoachCardUi(){
  loadCardWriterName();
+
+ $('#cardWriterName')?.addEventListener('input',()=>{
+  const modalInput=$('#cardWriterNameModal');
+  if(modalInput)modalInput.value=$('#cardWriterName').value;
+  updateCardWriterDisplay();
+ });
  $('#cardWriterName')?.addEventListener('change',()=>saveCardWriterName(true));
  $('#cardWriterName')?.addEventListener('blur',()=>saveCardWriterName(false));
+
+ $('#editCardWriterBtn')?.addEventListener('click',()=>{
+  const modal=$('#cardWriterModal');
+  const modalInput=$('#cardWriterNameModal');
+  if(modalInput)modalInput.value=currentCardWriterName();
+  modal?.classList.add('open');
+  setTimeout(()=>modalInput?.focus(),50);
+ });
+ $('#closeCardWriterModalBtn')?.addEventListener('click',()=>$('#cardWriterModal')?.classList.remove('open'));
+ $('#saveCardWriterModalBtn')?.addEventListener('click',()=>{
+  const modalInput=$('#cardWriterNameModal');
+  const input=$('#cardWriterName');
+  if(input&&modalInput)input.value=modalInput.value;
+  const name=saveCardWriterName(false);
+  const status=$('#cardWriterModalStatus');
+  if(status)status.textContent=name?'保存しました':'未設定にしました';
+  setTimeout(()=>{
+   $('#cardWriterModal')?.classList.remove('open');
+   if(status)status.textContent='';
+  },700);
+ });
 
  $('#menuToggleBtn')?.addEventListener('click',e=>{
   e.stopPropagation();
@@ -2003,16 +2088,31 @@ function openChatGptFeedback(){
 const CARD_WRITER_STORAGE_KEY='ninjaPlayerCardWriter';
 
 function loadCardWriterName(){
+ const name=localStorage.getItem(CARD_WRITER_STORAGE_KEY)||'';
  const input=$('#cardWriterName');
- if(!input)return;
- input.value=localStorage.getItem(CARD_WRITER_STORAGE_KEY)||'';
+ if(input)input.value=name;
+ const modalInput=$('#cardWriterNameModal');
+ if(modalInput)modalInput.value=name;
+ updateCardWriterDisplay();
 }
 
 function saveCardWriterName(showMessage=true){
  const input=$('#cardWriterName');
- if(!input)return '';
- const name=String(input.value||'').trim();
+ const modalInput=$('#cardWriterNameModal');
+ const source=input&&document.activeElement===input
+  ? input
+  : modalInput&&document.activeElement===modalInput
+    ? modalInput
+    : input||modalInput;
+
+ if(!source)return '';
+ const name=String(source.value||'').trim();
  localStorage.setItem(CARD_WRITER_STORAGE_KEY,name);
+
+ if(input)input.value=name;
+ if(modalInput)modalInput.value=name;
+ updateCardWriterDisplay();
+
  if(showMessage){
   const status=$('#cardWriterSaved');
   if(status){
@@ -2023,9 +2123,15 @@ function saveCardWriterName(showMessage=true){
  return name;
 }
 
+function updateCardWriterDisplay(){
+ const display=$('#cardWriterDisplay');
+ if(display)display.textContent=currentCardWriterName()||'未設定';
+}
+
 function currentCardWriterName(){
  const input=$('#cardWriterName');
- const name=String(input?.value||'').trim();
+ const modalInput=$('#cardWriterNameModal');
+ const name=String(input?.value||modalInput?.value||'').trim();
  if(name)return name;
  return String(localStorage.getItem(CARD_WRITER_STORAGE_KEY)||'').trim();
 }
