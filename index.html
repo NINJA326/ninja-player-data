@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0b1220">
-  <title>NINJA AIRS COACH APP v61.1</title>
+  <title>NINJA AIRS COACH APP v61.2</title>
   <link rel="manifest" href="manifest.json">
   <style>
     :root{--bg:#07101f;--panel:#111c2e;--panel2:#17253a;--line:#2b3b52;--text:#f4f7fb;--muted:#9fb0c6;--accent:#35c97b;--blue:#4da3ff;--orange:#ffb547;--danger:#ff6b6b}
@@ -316,7 +316,7 @@
 
 
 /* =========================================================
-   v61.1 選手選択改善 / Mobile first
+   v61.2 カテゴリー即選択 / Mobile first
    ========================================================= */
 :root{
  --safe-bottom:env(safe-area-inset-bottom,0px);
@@ -432,6 +432,49 @@ body.player-list-open{overflow:hidden}
  .status{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 }
 
+
+.category-filter-hidden{
+ position:absolute!important;
+ width:1px!important;
+ height:1px!important;
+ padding:0!important;
+ margin:-1px!important;
+ overflow:hidden!important;
+ clip:rect(0,0,0,0)!important;
+ white-space:nowrap!important;
+ border:0!important;
+}
+.category-pick-grid{
+ display:grid;
+ grid-template-columns:repeat(3,minmax(0,1fr));
+ gap:7px;
+ margin:2px 0 4px;
+}
+.category-pick{
+ min-height:46px;
+ border:1px solid var(--line);
+ border-radius:12px;
+ background:#132238;
+ color:#e7eef7;
+ font-weight:900;
+ font-size:13px;
+ cursor:pointer;
+ padding:7px 5px;
+}
+.category-pick.all{grid-column:1/-1}
+.category-pick.male{border-color:#315d86}
+.category-pick.female{border-color:#7b4158}
+.category-pick.active{
+ background:var(--accent);
+ color:#052116;
+ border-color:var(--accent);
+ box-shadow:0 0 0 1px var(--accent);
+}
+@media(max-width:430px){
+ .category-pick-grid{gap:6px}
+ .category-pick{min-height:44px;font-size:12px}
+}
+
 </style>
 </head>
 <body>
@@ -443,7 +486,7 @@ body.player-list-open{overflow:hidden}
     </div>
     <div class="top-actions">
       <span id="connectionStatus" class="status">接続中</span>
-      <span class="architecture-badge">v61.1 選手選択改善</span>
+      <span class="architecture-badge">v61.2 カテゴリー即選択</span>
       <button class="icon-btn" id="menuToggleBtn" type="button" aria-label="メニュー">☰</button>
     </div>
     <div id="quickMenu" class="quick-menu">
@@ -460,12 +503,16 @@ body.player-list-open{overflow:hidden}
         <button id="closePlayerListBtn" class="btn secondary" type="button">閉じる</button>
       </div>
       <div class="stack">
-                <div class="filter-chips">
-          <button class="filter-chip active" type="button" data-gender-filter="">全員</button>
-          <button class="filter-chip" type="button" data-gender-filter="男子">男子</button>
-          <button class="filter-chip" type="button" data-gender-filter="女子">女子</button>
+                <div class="category-pick-grid" aria-label="カテゴリー">
+          <button class="category-pick active all" type="button" data-category-pick="">全員</button>
+          <button class="category-pick male" type="button" data-category-pick="男子U13">男子U13</button>
+          <button class="category-pick male" type="button" data-category-pick="男子U14">男子U14</button>
+          <button class="category-pick male" type="button" data-category-pick="男子U15">男子U15</button>
+          <button class="category-pick female" type="button" data-category-pick="女子U13">女子U13</button>
+          <button class="category-pick female" type="button" data-category-pick="女子U14">女子U14</button>
+          <button class="category-pick female" type="button" data-category-pick="女子U15">女子U15</button>
         </div>
-        <select id="categoryFilter" class="input">
+        <select id="categoryFilter" class="input category-filter-hidden" aria-hidden="true" tabindex="-1">
           <option value="">全カテゴリー</option>
           <option value="男子U13">男子U13</option>
           <option value="男子U14">男子U14</option>
@@ -950,9 +997,14 @@ function fillFilters(){
  const fixedCategories=['','男子U13','男子U14','男子U15','女子U13','女子U14','女子U15'];
  const select=$('#categoryFilter');
  if(!select)return;
- const current=select.value;
+
+ const current=fixedCategories.includes(select.value)?select.value:'';
  select.innerHTML=fixedCategories.map(c=>`<option value="${esc(c)}">${esc(c||'全カテゴリー')}</option>`).join('');
- select.value=fixedCategories.includes(current)?current:'';
+ select.value=current;
+
+ document.querySelectorAll('[data-category-pick]').forEach(x=>{
+  x.classList.toggle('active',(x.dataset.categoryPick||'')===current);
+ });
 }
 function renderPlayers(){
  const cat=$('#categoryFilter').value;
@@ -1394,7 +1446,13 @@ function dateKey(r){return String(r.date||r.measuredAtIso||r.createdAt||'').slic
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>switchCoachTab(b.dataset.tab));
 $('#copyCommentBtn').onclick=copyComment;
 $('#clearAllCommentsBtn').onclick=clearAllCoachComments;
-$('#categoryFilter').onchange=renderPlayers;$('#reloadBtn').onclick=async()=>{
+$('#categoryFilter').onchange=()=>{
+ renderPlayers();
+ const category=$('#categoryFilter').value||'';
+ document.querySelectorAll('[data-category-pick]').forEach(x=>{
+  x.classList.toggle('active',(x.dataset.categoryPick||'')===category);
+ });
+};$('#reloadBtn').onclick=async()=>{
  state.playerCache.clear();
  await loadPlayers();
  if(state.selected)selectPlayer(state.selected.playerId,{force:true});
@@ -1403,7 +1461,7 @@ $('#saveCommentBtn').onclick=saveComment;
 $('#settingsBtn').onclick=()=>{$('#quickMenu')?.classList.remove('open');$('#apiUrlInput').value=state.apiUrl;$('#settingsModal').classList.add('open')};$('#closeSettingsBtn').onclick=()=>$('#settingsModal').classList.remove('open');
 $('#saveSettingsBtn').onclick=()=>{state.apiUrl=$('#apiUrlInput').value.trim().replace(/\/$/,'');state.playerCache.clear();state.inflight.clear();localStorage.setItem('ninjaPlayerApiUrl',state.apiUrl);$('#settingsModal').classList.remove('open');state.selected=null;$('#detail').hidden=true;$('#emptyState').hidden=false;loadPlayers()};
 $('#demoBtn').onclick=()=>{state.apiUrl=DEFAULT_COACH_API_URL;state.playerCache.clear();state.inflight.clear();localStorage.removeItem('ninjaPlayerApiUrl');$('#settingsModal').classList.remove('open');state.selected=null;$('#detail').hidden=true;$('#emptyState').hidden=false;loadPlayers()};
-if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=611').then(reg=>reg.update()).catch(()=>{});
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=612').then(reg=>reg.update()).catch(()=>{});
 
 
 
@@ -1497,28 +1555,20 @@ function initCoachCardUi(){
  $('#closePlayerListBtn')?.addEventListener('click',closePlayerListMobile);
  $('.mobile-player-backdrop')?.addEventListener('click',closePlayerListMobile);
 
- document.querySelectorAll('[data-gender-filter]').forEach(btn=>{
+ document.querySelectorAll('[data-category-pick]').forEach(btn=>{
   btn.addEventListener('click',()=>{
-   document.querySelectorAll('[data-gender-filter]').forEach(x=>x.classList.remove('active'));
-   btn.classList.add('active');
-
-   const gender=btn.dataset.genderFilter||'';
+   const category=btn.dataset.categoryPick||'';
    const select=$('#categoryFilter');
    if(!select)return;
 
-   const options=[...select.options];
-   options.forEach(option=>{
-    const value=String(option.value||'');
-    option.hidden=Boolean(gender&&value&& !value.startsWith(gender));
+   select.value=category;
+   document.querySelectorAll('[data-category-pick]').forEach(x=>{
+    x.classList.toggle('active',(x.dataset.categoryPick||'')===category);
    });
 
-   if(!gender){
-    select.value='';
-   }else if(!String(select.value||'').startsWith(gender)){
-    select.value='';
-   }
-
    renderPlayers();
+   const list=$('#playerList');
+   if(list)list.scrollTop=0;
   });
  });
 
