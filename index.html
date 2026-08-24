@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0b1220">
-  <title>NINJA AIRS COACH APP v61.6</title>
+  <title>NINJA AIRS COACH APP v61.7</title>
   <link rel="manifest" href="manifest.json">
   <style>
     :root{--bg:#07101f;--panel:#111c2e;--panel2:#17253a;--line:#2b3b52;--text:#f4f7fb;--muted:#9fb0c6;--accent:#35c97b;--blue:#4da3ff;--orange:#ffb547;--danger:#ff6b6b}
@@ -555,6 +555,68 @@ body.player-list-open{overflow:hidden}
 
 .compact-summary{grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}
 
+
+/* =========================================================
+   v61.7 コーチアドバイス
+   ========================================================= */
+.coach-advice-modal{
+  position:fixed;
+  inset:0;
+  display:none;
+  z-index:2400;
+  background:rgba(2,8,16,.84);
+  padding:16px;
+  overflow:auto;
+  backdrop-filter:blur(6px);
+}
+.coach-advice-modal.open{display:grid;place-items:center}
+.coach-advice-card{
+  width:min(620px,100%);
+  background:#0f1b2d;
+  border:1px solid var(--line);
+  border-radius:20px;
+  padding:18px;
+  box-shadow:0 22px 70px rgba(0,0,0,.48);
+}
+.coach-advice-card h3{margin:0 0 6px;font-size:19px}
+.coach-advice-player{
+  margin:10px 0 14px;
+  padding:11px 12px;
+  border:1px solid #304966;
+  border-radius:13px;
+  background:#0b1728;
+}
+.coach-advice-player small{display:block;color:var(--muted);font-size:10px}
+.coach-advice-player strong{display:block;margin-top:4px;font-size:16px}
+.coach-advice-text{min-height:150px}
+.coach-advice-actions{
+  display:flex;
+  gap:9px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+.coach-advice-status{
+  min-height:20px;
+  margin-top:9px;
+  color:var(--accent);
+  font-size:12px;
+  line-height:1.5;
+}
+.coach-advice-status.error{color:#ff9ca4}
+@media(max-width:640px){
+  .coach-advice-modal{padding:0}
+  .coach-advice-card{
+    width:100%;
+    min-height:100dvh;
+    border-radius:0;
+    border-left:0;
+    border-right:0;
+    padding:16px 14px calc(18px + var(--safe-bottom));
+  }
+  .coach-advice-actions{display:grid;grid-template-columns:1fr}
+  .coach-advice-actions .btn{min-height:50px}
+}
+
 </style>
 </head>
 <body>
@@ -685,6 +747,7 @@ body.player-list-open{overflow:hidden}
               </div>
               <div class="reflection-overview-actions">
                 <button id="openReflectionBtn" class="btn secondary" type="button">本人振り返りを見る</button>
+                <button id="openCoachAdviceBtn" class="btn blue" type="button">コーチアドバイス</button>
               </div>
             </div>
           </div>
@@ -1028,6 +1091,34 @@ body.player-list-open{overflow:hidden}
 <div id="mixedColorPreview" class="color-preview">男女共通</div><input id="mixedScheduleColor" class="input" type="color">
 <div id="offColorPreview" class="color-preview">OFF</div><input id="offScheduleColor" class="input" type="color">
 </div><div style="height:14px"></div><div class="row"><button id="saveScheduleColorsBtn" class="btn">保存</button><button id="closeScheduleColorsBtn" class="btn secondary">閉じる</button></div><div id="scheduleColorStatus" class="comment-saved"></div></div></div>
+
+
+<div id="coachAdviceModal" class="coach-advice-modal" aria-hidden="true">
+  <div class="coach-advice-card">
+    <h3>コーチアドバイス</h3>
+    <p class="small">選択中の選手に、短いアドバイスを記録します。選手カルテとは別に保存されます。</p>
+
+    <div class="coach-advice-player">
+      <small>対象選手</small>
+      <strong id="coachAdvicePlayerName">選手未選択</strong>
+    </div>
+
+    <label class="small" for="coachAdviceText">アドバイス内容</label>
+    <textarea
+      id="coachAdviceText"
+      class="input coach-advice-text"
+      maxlength="2000"
+      placeholder="例：今日の練習では、リバウンドの前に相手へ体を当てることを意識しよう。"
+    ></textarea>
+
+    <div class="coach-advice-actions">
+      <button id="saveCoachAdviceBtn" class="btn" type="button">アドバイスを保存</button>
+      <button id="closeCoachAdviceBtn" class="btn secondary" type="button">閉じる</button>
+    </div>
+
+    <div id="coachAdviceStatus" class="coach-advice-status"></div>
+  </div>
+</div>
 
 <div id="cardWriterModal" class="modal">
   <div class="modal-card">
@@ -1822,8 +1913,143 @@ function applyFeedbackToCard(){
  $('#feedbackSaved').textContent=`カルテへ反映しました（${count}/4項目）`;
  setTimeout(()=>$('#feedbackSaved').textContent='',2200);
 }
+
+function openCoachAdvice(){
+ if(!state.selected){
+  alert('選手を選択してください');
+  return;
+ }
+ const modal=$('#coachAdviceModal');
+ const playerName=$('#coachAdvicePlayerName');
+ const textArea=$('#coachAdviceText');
+ const status=$('#coachAdviceStatus');
+
+ if(playerName){
+  const category=String(state.selected.category||'').trim();
+  playerName.textContent=`${state.selected.name||'選手'}${category?` / ${category}`:''}`;
+ }
+ if(textArea)textArea.value='';
+ if(status){
+  status.textContent='';
+  status.classList.remove('error');
+ }
+
+ modal?.classList.add('open');
+ modal?.setAttribute('aria-hidden','false');
+ setTimeout(()=>textArea?.focus(),50);
+}
+
+function closeCoachAdvice(){
+ const modal=$('#coachAdviceModal');
+ modal?.classList.remove('open');
+ modal?.setAttribute('aria-hidden','true');
+}
+
+async function saveCoachAdvice(){
+ if(!state.selected){
+  alert('選手を選択してください');
+  return;
+ }
+
+ const adviceText=String($('#coachAdviceText')?.value||'').trim();
+ if(!adviceText){
+  const status=$('#coachAdviceStatus');
+  if(status){
+   status.textContent='アドバイスを入力してください。';
+   status.classList.add('error');
+  }
+  $('#coachAdviceText')?.focus();
+  return;
+ }
+
+ const createdBy=currentCardWriterName();
+ if(!createdBy){
+  const status=$('#coachAdviceStatus');
+  if(status){
+   status.textContent='先にカルテ記入者を設定してください。';
+   status.classList.add('error');
+  }
+  return;
+ }
+
+ if(!state.apiUrl){
+  const status=$('#coachAdviceStatus');
+  if(status){
+   status.textContent='Apps Scriptの接続設定がありません。';
+   status.classList.add('error');
+  }
+  return;
+ }
+
+ const button=$('#saveCoachAdviceBtn');
+ const status=$('#coachAdviceStatus');
+ const selectedId=String(state.selected.playerId||'');
+
+ if(button){
+  button.disabled=true;
+  button.textContent='保存しています…';
+ }
+ if(status){
+  status.textContent='保存しています…';
+  status.classList.remove('error');
+ }
+
+ try{
+  await fetch(state.apiUrl,{
+   method:'POST',
+   mode:'no-cors',
+   headers:{'Content-Type':'text/plain;charset=UTF-8'},
+   body:JSON.stringify({
+    action:'coachAdvice.create',
+    playerId:selectedId,
+    playerName:String(state.selected.name||''),
+    category:String(state.selected.category||''),
+    adviceText,
+    createdBy
+   }),
+   cache:'no-store',
+   credentials:'omit'
+  });
+
+  if(!state.selected||String(state.selected.playerId||'')!==selectedId){
+   return;
+  }
+
+  if(status){
+   status.textContent='アドバイスを送信しました。';
+   status.classList.remove('error');
+  }
+
+  if($('#coachAdviceText'))$('#coachAdviceText').value='';
+
+  setTimeout(()=>{
+   if($('#coachAdviceModal')?.classList.contains('open'))closeCoachAdvice();
+  },900);
+
+ }catch(e){
+  console.error('coach advice save failed',e);
+  if(status){
+   status.textContent='保存に失敗しました。通信状態を確認してもう一度お試しください。';
+   status.classList.add('error');
+  }
+ }finally{
+  if(button){
+   button.disabled=false;
+   button.textContent='アドバイスを保存';
+  }
+ }
+}
+
 function initCoachCardUi(){
  loadCardWriterName();
+
+ $('#openCoachAdviceBtn')?.addEventListener('click',openCoachAdvice);
+ $('#closeCoachAdviceBtn')?.addEventListener('click',closeCoachAdvice);
+ $('#saveCoachAdviceBtn')?.addEventListener('click',saveCoachAdvice);
+ $('#coachAdviceModal')?.addEventListener('click',e=>{
+  if(e.target===$('#coachAdviceModal'))closeCoachAdvice();
+ });
+
 
  $('#cardWriterName')?.addEventListener('input',()=>{
   const modalInput=$('#cardWriterNameModal');
