@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0b1220">
-  <title>NINJA AIRS COACH APP v61.5</title>
+  <title>NINJA AIRS COACH APP v61.6</title>
   <link rel="manifest" href="manifest.json">
   <style>
     :root{--bg:#07101f;--panel:#111c2e;--panel2:#17253a;--line:#2b3b52;--text:#f4f7fb;--muted:#9fb0c6;--accent:#35c97b;--blue:#4da3ff;--orange:#ffb547;--danger:#ff6b6b}
@@ -316,7 +316,7 @@
 
 
 /* =========================================================
-   v61.5 本人振り返りAI連携 / Mobile first
+   v61.6 本人振り返り詳細 / Mobile first
    ========================================================= */
 :root{
  --safe-bottom:env(safe-area-inset-bottom,0px);
@@ -372,6 +372,42 @@ body{padding-bottom:calc(76px + var(--safe-bottom))}
 .compact-summary div{border:1px solid var(--line);background:#111e31;border-radius:11px;padding:9px}
 .compact-summary small{color:var(--muted);display:block;font-size:10px}
 .compact-summary strong{display:block;margin-top:4px}
+
+.reflection-overview-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.reflection-overview-actions .btn{min-height:46px}
+.reflection-modal{position:fixed;inset:0;display:none;z-index:2300;background:rgba(2,8,16,.82);padding:16px;overflow:auto;backdrop-filter:blur(6px)}
+.reflection-modal.open{display:block}
+.reflection-shell{width:min(820px,100%);margin:0 auto;background:#0f1b2d;border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 22px 70px rgba(0,0,0,.48)}
+.reflection-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 16px;background:rgba(15,27,45,.97);border-bottom:1px solid var(--line);backdrop-filter:blur(10px)}
+.reflection-head h3{margin:0;font-size:18px}.reflection-head p{margin:3px 0 0;color:var(--muted);font-size:11px}
+.reflection-close{min-width:44px;min-height:44px;border:1px solid var(--line);border-radius:12px;background:#1a2a40;color:var(--text);font-size:20px;cursor:pointer}
+.reflection-body{padding:14px;display:grid;gap:12px}
+.reflection-empty{padding:42px 18px;text-align:center;color:var(--muted);border:1px dashed #38506f;border-radius:14px;background:#0b1525}
+.reflection-card{border:1px solid #2e4563;border-radius:16px;background:#0b1728;overflow:hidden}
+.reflection-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:#122238;border-bottom:1px solid #2e4563}
+.reflection-date{font-size:16px;font-weight:900}
+.reflection-badges{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.reflection-badge{border:1px solid #3b526f;border-radius:999px;padding:4px 8px;font-size:10px;color:#d9e5f2;background:#182a42;white-space:nowrap}
+.reflection-badge.good{border-color:#287d53;background:#123523;color:#8fe5b8}
+.reflection-badge.warn{border-color:#9b6a20;background:#35250d;color:#ffd38a}
+.reflection-badge.danger{border-color:#8a3d49;background:#35151d;color:#ffb3bb}
+.reflection-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px}
+.reflection-block{border:1px solid var(--line);border-radius:12px;background:#101e31;padding:11px;min-width:0}
+.reflection-block.full{grid-column:1/-1}
+.reflection-block small{display:block;color:var(--muted);font-size:10px;font-weight:800;margin-bottom:5px}
+.reflection-block div{font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.reflection-subhead{grid-column:1/-1;color:#8fb4d9;font-size:11px;font-weight:900;letter-spacing:.06em;margin:2px 2px -2px}
+.reflection-injury{grid-column:1/-1;border:1px solid #8a5b12;background:#2a1c09;color:#ffd797;border-radius:12px;padding:11px;font-size:12px;line-height:1.65}
+.reflection-times{grid-column:1/-1;display:flex;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:10px;padding:0 2px 2px}
+@media(max-width:640px){
+ .reflection-modal{padding:0}
+ .reflection-shell{min-height:100vh;border-radius:0;border-left:0;border-right:0}
+ .reflection-body{padding:10px}
+ .reflection-grid{grid-template-columns:1fr;padding:10px}
+ .reflection-block.full,.reflection-subhead,.reflection-injury,.reflection-times{grid-column:1}
+ .reflection-card-head{align-items:flex-start;flex-direction:column}
+ .reflection-badges{justify-content:flex-start}
+}
 .records-jump{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 4px}
 .records-jump .btn{min-height:48px}
 .mobile-bottom-nav{display:none;position:fixed;left:0;right:0;bottom:0;z-index:100;background:rgba(8,17,29,.97);border-top:1px solid var(--line);padding:6px 8px calc(6px + var(--safe-bottom));grid-template-columns:repeat(5,1fr);gap:4px;backdrop-filter:blur(12px)}
@@ -530,7 +566,7 @@ body.player-list-open{overflow:hidden}
     </div>
     <div class="top-actions">
       <span id="connectionStatus" class="status">接続中</span>
-      <span class="architecture-badge">v61.5 本人振り返りAI連携</span>
+      <span class="architecture-badge">v61.6 本人振り返り詳細</span>
       <button class="icon-btn" id="menuToggleBtn" type="button" aria-label="メニュー">☰</button>
     </div>
     <div id="quickMenu" class="quick-menu">
@@ -646,6 +682,9 @@ body.player-list-open{overflow:hidden}
                 <div><small>シュート</small><strong>確認中</strong></div>
                 <div><small>アジリティ</small><strong>確認中</strong></div>
                 <div><small>フィードバック</small><strong>確認中</strong></div>
+              </div>
+              <div class="reflection-overview-actions">
+                <button id="openReflectionBtn" class="btn secondary" type="button">本人振り返りを見る</button>
               </div>
             </div>
           </div>
@@ -898,6 +937,22 @@ body.player-list-open{overflow:hidden}
 </div>
 
 <div class="mobile-player-backdrop"></div>
+
+<div id="reflectionModal" class="reflection-modal" aria-hidden="true">
+  <div class="reflection-shell">
+    <div class="reflection-head">
+      <div>
+        <h3>本人振り返り</h3>
+        <p id="reflectionModalMeta">選手本人がLINEから記入した内容です。</p>
+      </div>
+      <button id="closeReflectionBtn" class="reflection-close" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div id="reflectionList" class="reflection-body">
+      <div class="reflection-empty">本人振り返りを読み込んでいます。</div>
+    </div>
+  </div>
+</div>
+
 <nav class="mobile-bottom-nav" aria-label="主要メニュー">
   <button class="bottom-nav-btn" type="button" data-mobile-action="players"><span>👥</span><span>選手</span></button>
   <button class="bottom-nav-btn active" type="button" data-mobile-tab="overview"><span>⌂</span><span>概要</span></button>
@@ -1538,10 +1593,14 @@ $('#categoryFilter').onchange=()=>{
  if(state.selected)selectPlayer(state.selected.playerId,{force:true});
 };$('#refreshSelectedPlayerBtn').onclick=()=>{if(state.selected){state.playerCache.delete(String(state.selected.playerId));selectPlayer(state.selected.playerId,{force:true})}};
 $('#saveCommentBtn').onclick=saveComment;
+$('#openReflectionBtn').onclick=openPracticeReflections;
+$('#closeReflectionBtn').onclick=closePracticeReflections;
+$('#reflectionModal').onclick=e=>{if(e.target===$('#reflectionModal'))closePracticeReflections()};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#reflectionModal')?.classList.contains('open'))closePracticeReflections()});
 $('#settingsBtn').onclick=()=>{$('#quickMenu')?.classList.remove('open');$('#apiUrlInput').value=state.apiUrl;$('#settingsModal').classList.add('open')};$('#closeSettingsBtn').onclick=()=>$('#settingsModal').classList.remove('open');
 $('#saveSettingsBtn').onclick=()=>{state.apiUrl=$('#apiUrlInput').value.trim().replace(/\/$/,'');state.playerCache.clear();state.inflight.clear();localStorage.setItem('ninjaPlayerApiUrl',state.apiUrl);$('#settingsModal').classList.remove('open');state.selected=null;$('#detail').hidden=true;$('#emptyState').hidden=false;loadPlayers()};
 $('#demoBtn').onclick=()=>{state.apiUrl=DEFAULT_COACH_API_URL;state.playerCache.clear();state.inflight.clear();localStorage.removeItem('ninjaPlayerApiUrl');$('#settingsModal').classList.remove('open');state.selected=null;$('#detail').hidden=true;$('#emptyState').hidden=false;loadPlayers()};
-if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=615').then(reg=>reg.update()).catch(()=>{});
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=616').then(reg=>reg.update()).catch(()=>{});
 
 
 
@@ -1560,6 +1619,140 @@ function openPlayerListMobile(){
 function closePlayerListMobile(){
  document.body.classList.remove('player-list-open');
 }
+
+function reflectionValue(value,fallback='未記入'){
+ const text=String(value??'').trim();
+ return text||fallback;
+}
+function reflectionScore(value){
+ const n=Number(value);
+ return Number.isFinite(n)&&n>=1&&n<=5?`${n} / 5`:'未記録';
+}
+function reflectionDateLabel(value){
+ const raw=String(value||'').slice(0,10);
+ if(!raw)return '日付不明';
+ const [y,m,d]=raw.split('-');
+ return `${y}/${Number(m)}/${Number(d)}`;
+}
+function reflectionTimeLabel(value){
+ const text=String(value||'').trim();
+ if(!text)return '';
+ const match=text.match(/(\d{1,2}:\d{2})(?::\d{2})?$/);
+ return match?match[1]:text;
+}
+function reflectionBadgeClass(record){
+ const ci=record?.checkIn||{};
+ if(ci.injury==='あり')return 'danger';
+ const health=Number(ci.health);
+ if(Number.isFinite(health)&&health<=2)return 'warn';
+ return 'good';
+}
+function renderPracticeReflections(records){
+ const list=$('#reflectionList');
+ if(!list)return;
+
+ const rows=Array.isArray(records)
+  ? records.slice().sort((a,b)=>String(b?.date||'').localeCompare(String(a?.date||'')))
+  : [];
+
+ if(!rows.length){
+  list.innerHTML='<div class="reflection-empty">本人振り返りの記録はありません。</div>';
+  return;
+ }
+
+ list.innerHTML=rows.map(record=>{
+  const ci=record?.checkIn||{};
+  const co=record?.checkOut||{};
+  const injury=ci.injury==='あり';
+  const checkedOut=Boolean(String(co.checkedOutAt||co.checkoutAt||'').trim()||String(co.goodPoint||'').trim());
+  const badgeClass=reflectionBadgeClass(record);
+
+  return `
+   <article class="reflection-card">
+    <div class="reflection-card-head">
+     <div class="reflection-date">${esc(reflectionDateLabel(record?.date))}</div>
+     <div class="reflection-badges">
+      <span class="reflection-badge ${badgeClass}">体調 ${esc(reflectionScore(ci.health))}</span>
+      <span class="reflection-badge ${injury?'danger':'good'}">痛み・怪我 ${injury?'あり':'なし'}</span>
+      <span class="reflection-badge ${checkedOut?'good':'warn'}">${checkedOut?'振り返り完了':'チェックインのみ'}</span>
+     </div>
+    </div>
+
+    <div class="reflection-grid">
+     <div class="reflection-subhead">練習前</div>
+     <div class="reflection-block full">
+      <small>今日やるべきこと</small>
+      <div>${esc(reflectionValue(ci.task))}</div>
+     </div>
+     <div class="reflection-block full">
+      <small>今日意識すること</small>
+      <div>${esc(reflectionValue(ci.focus))}</div>
+     </div>
+     <div class="reflection-block">
+      <small>体調</small>
+      <div>${esc(reflectionScore(ci.health))}</div>
+     </div>
+     <div class="reflection-block">
+      <small>気持ち・準備度</small>
+      <div>${esc(reflectionScore(ci.condition))}</div>
+     </div>
+
+     ${injury?`
+      <div class="reflection-injury">
+       <strong>痛み・怪我あり</strong><br>
+       部位：${esc(reflectionValue(ci.injuryPart))}<br>
+       状態：${esc(reflectionValue(ci.injuryStatus))}
+      </div>
+     `:''}
+
+     <div class="reflection-subhead">練習後</div>
+     <div class="reflection-block full">
+      <small>今日よかったこと</small>
+      <div>${esc(reflectionValue(co.goodPoint))}</div>
+     </div>
+     <div class="reflection-block full">
+      <small>もっと良くできること</small>
+      <div>${esc(reflectionValue(co.improvement))}</div>
+     </div>
+     <div class="reflection-block full">
+      <small>次の練習でやること</small>
+      <div>${esc(reflectionValue(co.nextAction))}</div>
+     </div>
+     <div class="reflection-block">
+      <small>達成度</small>
+      <div>${esc(reflectionScore(co.achievement))}</div>
+     </div>
+     <div class="reflection-times">
+      ${ci.checkedInAt?`<span>チェックイン ${esc(reflectionTimeLabel(ci.checkedInAt))}</span>`:''}
+      ${(co.checkedOutAt||co.checkoutAt)?`<span>チェックアウト ${esc(reflectionTimeLabel(co.checkedOutAt||co.checkoutAt))}</span>`:''}
+     </div>
+    </div>
+   </article>
+  `;
+ }).join('');
+}
+function openPracticeReflections(){
+ if(!state.selected)return;
+
+ const data=state.currentData||{};
+ const records=Array.isArray(data.practiceReflections)?data.practiceReflections:[];
+ renderPracticeReflections(records);
+
+ const meta=$('#reflectionModalMeta');
+ if(meta){
+  meta.textContent=`${state.selected.name||state.selected.playerName||'選手'} / ${records.length}件`;
+ }
+
+ $('#reflectionModal')?.classList.add('open');
+ $('#reflectionModal')?.setAttribute('aria-hidden','false');
+ document.body.style.overflow='hidden';
+}
+function closePracticeReflections(){
+ $('#reflectionModal')?.classList.remove('open');
+ $('#reflectionModal')?.setAttribute('aria-hidden','true');
+ document.body.style.overflow='';
+}
+
 function renderOverview(data){
  const growth=(data&&data.growth||[]).slice().filter(x=>Number(x.height)>0||Number(x.weight)>0).sort((a,b)=>dateKey(a).localeCompare(dateKey(b)));
  const latestBody=growth[growth.length-1]||null;
@@ -1588,12 +1781,12 @@ function renderOverview(data){
  setText('#overviewRyuRunSub',ryu?`${ryu.date} / 最新`:'記録なし');
 
  const status=$('#overviewDataStatus');
+ const reflectionCount=Array.isArray(data&&data.practiceReflections)?data.practiceReflections.length:0;
  if(status){
   const bodyOk=growth.length>0;
   const shotOk=Number(shooting?.total?.attempts||0)>0;
   const agilityOk=agility.length>0;
   const feedbackOk=Boolean(data&&data.feedback);
-  const reflectionCount=Array.isArray(data&&data.practiceReflections)?data.practiceReflections.length:0;
   status.innerHTML=[
    ['身体測定',bodyOk?'✓ 取得済':'未記録'],
    ['シュート',shotOk?'✓ 取得済':'未記録'],
@@ -1601,6 +1794,11 @@ function renderOverview(data){
    ['本人振り返り',reflectionCount?`${reflectionCount}件`:'未記録'],
    ['フィードバック',feedbackOk?'保存済':'未作成']
   ].map(([label,value])=>`<div><small>${label}</small><strong>${value}</strong></div>`).join('');
+ }
+ const reflectionBtn=$('#openReflectionBtn');
+ if(reflectionBtn){
+  reflectionBtn.disabled=reflectionCount===0;
+  reflectionBtn.textContent=reflectionCount?`本人振り返りを見る（${reflectionCount}件）`:'本人振り返りなし';
  }
 }
 function syncFeedbackPreview(){
