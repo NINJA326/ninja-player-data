@@ -339,7 +339,7 @@
 
 <script>
 'use strict';
-const PLAYER_CARD_VERSION='v8';
+const PLAYER_CARD_VERSION='v10';
 
 const LIFF_ID='2010789200-d4tyvqcE';
 const GAS_URL='https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
@@ -467,53 +467,68 @@ function renderShooting(shooting){
 function renderShotChart(shooting){
   const el=document.getElementById('shotChartSummary');
 
-  // 新DB Reader の byPosition は type と position を保持している。
-  // 推測や再分類は行わず、既存コーチ/成長記録と同じデータをそのまま使う。
-  const positions=Array.isArray(shooting&&shooting.byPosition)
-    ? shooting.byPosition.filter(function(x){
-        return Number(x&&x.attempts||0)>0;
+  // byPosition は現在の集計処理によって shotType が失われる場合があるため使用しない。
+  // 元レコードには shotType と position が両方保持されているので、
+  // 既存の成長記録/コーチアプリと同じ type + position 単位でここで再集計する。
+  const records=Array.isArray(shooting&&shooting.records)
+    ? shooting.records.filter(function(r){
+        return Number(r&&r.attempts||0)>0;
       })
     : [];
 
-  if(!positions.length){
+  if(!records.length){
     el.innerHTML='<div class="report-row"><span>チャート</span><strong>ポジション別記録なし</strong></div>';
     return;
   }
 
-  // 既存コーチアプリと同じく type + position 単位でまとめる。
-  const merged={};
-  positions.forEach(function(x){
-    const key=String(x.position||'')+'|'+String(x.type||'');
-    if(!merged[key]){
-      merged[key]={
-        type:String(x.type||''),
-        position:String(x.position||''),
-        made:Number(x.made||0),
-        attempts:Number(x.attempts||0)
+  const map={};
+
+  records.forEach(function(r){
+    const type=String(r.shotType||r.type||'').trim();
+    const position=String(r.position||'').trim();
+
+    if(!type||!position)return;
+
+    const key=type+'|||'+position;
+
+    if(!map[key]){
+      map[key]={
+        type:type,
+        position:position,
+        made:0,
+        attempts:0
       };
-    }else{
-      merged[key].made+=Number(x.made||0);
-      merged[key].attempts+=Number(x.attempts||0);
     }
+
+    map[key].made+=Number(r.made||0);
+    map[key].attempts+=Number(r.attempts||0);
   });
 
-  const rows=Object.values(merged).map(function(x){
-    return Object.assign({},x,{
-      rate:x.attempts
-        ? Math.round(x.made/x.attempts*1000)/10
-        : 0
+  const rows=Object.values(map)
+    .filter(function(r){
+      return r.attempts>0;
+    })
+    .map(function(r){
+      return Object.assign({},r,{
+        rate:Math.round((r.made/r.attempts)*1000)/10
+      });
+    })
+    .sort(function(a,b){
+      return (
+        a.type.localeCompare(b.type,'ja') ||
+        b.attempts-a.attempts ||
+        b.rate-a.rate
+      );
     });
-  });
 
-  // まず既存コーチアプリと同じ基準座標を取得する。
-  // そのうえで、同一付近の円だけを最小限ずらし、表示が重ならないようにする。
-  // データ上のポジション・成功数・試投数は変更しない。
-  const placed=resolveShotMarkerPositions(rows);
+  if(!rows.length){
+    el.innerHTML='<div class="report-row"><span>チャート</span><strong>ポジション別記録なし</strong></div>';
+    return;
+  }
 
-  const markers=placed.map(function(item){
-    const x=item.row;
-    const p=item.position;
-    const rank=shotRank(x.rate);
+  const markers=rows.map(function(r){
+    const p=courtPosition(r.position,r.type);
+    const rank=shotRank(r.rate);
     const crown=rank.crown
       ? '<span class="crown">♛</span>'
       : '';
@@ -521,13 +536,13 @@ function renderShotChart(shooting){
     return `<div
       class="shot-dot ${rank.cls}"
       style="left:${p.x}%;top:${p.y}%"
-      title="${esc(x.type)} / ${esc(x.position)}"
-      aria-label="${esc(x.position)} ${esc(x.type)} 成功率${formatRate(x.rate)}% ${x.made}/${x.attempts}"
+      title="${esc(r.type)} / ${esc(r.position)}"
+      aria-label="${esc(r.position)} ${esc(r.type)} 成功率${formatRate(r.rate)}% ${r.made}/${r.attempts}"
     >
       ${crown}
       <div>
-        <strong>${formatRate(x.rate)}%</strong>
-        <span>${esc(x.type)}<br>${x.made}/${x.attempts}</span>
+        <strong>${formatRate(r.rate)}%</strong>
+        <span>${esc(r.type)}<br>${r.made}/${r.attempts}</span>
       </div>
     </div>`;
   }).join('');
@@ -537,95 +552,22 @@ function renderShotChart(shooting){
       <rect x="8" y="8" width="904" height="984" rx="4" fill="none" stroke="#ffffff" stroke-width="10"/>
       <line x1="8" y1="120" x2="912" y2="120" stroke="#ffffff" stroke-width="10"/>
       <path d="M350 120 A110 110 0 0 0 570 120" fill="none" stroke="#ffffff" stroke-width="10"/>
+
       <line x1="105" y1="992" x2="105" y2="690" stroke="#ffffff" stroke-width="10"/>
       <line x1="815" y1="992" x2="815" y2="690" stroke="#ffffff" stroke-width="10"/>
       <path d="M105 690 A365 365 0 0 1 815 690" fill="none" stroke="#ffffff" stroke-width="10"/>
+
       <rect x="315" y="655" width="290" height="337" fill="#f07c00" stroke="#ffffff" stroke-width="10"/>
+
       <path d="M365 655 A95 95 0 0 1 555 655" fill="none" stroke="#ffffff" stroke-width="10"/>
       <path d="M365 655 A95 95 0 0 0 555 655" fill="none" stroke="#ffffff" stroke-width="10" stroke-dasharray="18 16"/>
+
       <path d="M395 925 A65 65 0 0 1 525 925" fill="none" stroke="#ffffff" stroke-width="10"/>
       <line x1="395" y1="955" x2="525" y2="955" stroke="#ffffff" stroke-width="12"/>
       <circle cx="460" cy="925" r="20" fill="none" stroke="#ffffff" stroke-width="8"/>
     </svg>
     ${markers}
   </div>`;
-}
-
-function resolveShotMarkerPositions(rows){
-  const prepared=(rows||[]).map(function(row,index){
-    return {
-      row:row,
-      index:index,
-      base:courtPosition(row.position,row.type)
-    };
-  });
-
-  // 試投数が多い記録ほど本来の座標を優先する。
-  const order=prepared.slice().sort(function(a,b){
-    const diff=Number(b.row.attempts||0)-Number(a.row.attempts||0);
-    return diff||a.index-b.index;
-  });
-
-  const placed=[];
-  const candidates=[
-    {x:0,y:0},
-    {x:-7,y:-4},
-    {x:7,y:-4},
-    {x:-7,y:5},
-    {x:7,y:5},
-    {x:0,y:-8},
-    {x:0,y:8},
-    {x:-10,y:0},
-    {x:10,y:0}
-  ];
-
-  function clamp(value,min,max){
-    return Math.max(min,Math.min(max,value));
-  }
-
-  function distance(a,b){
-    const dx=a.x-b.x;
-    const dy=a.y-b.y;
-    return Math.sqrt(dx*dx+dy*dy);
-  }
-
-  order.forEach(function(item){
-    let selected=null;
-
-    for(let i=0;i<candidates.length;i+=1){
-      const c=candidates[i];
-      const candidate={
-        x:clamp(item.base.x+c.x,7,93),
-        y:clamp(item.base.y+c.y,8,93)
-      };
-
-      const safe=placed.every(function(other){
-        return distance(candidate,other.position)>=11.5;
-      });
-
-      if(safe){
-        selected=candidate;
-        break;
-      }
-    }
-
-    // 候補がすべて埋まっている場合も、本来のゾーンから大きく外さない。
-    if(!selected){
-      selected={
-        x:clamp(item.base.x,7,93),
-        y:clamp(item.base.y,8,93)
-      };
-    }
-
-    placed.push({
-      row:item.row,
-      index:item.index,
-      position:selected
-    });
-  });
-
-  // 元データの表示順へ戻す。
-  return placed.sort(function(a,b){return a.index-b.index;});
 }
 
 function normalizePositionName(name){
@@ -635,10 +577,16 @@ function normalizePositionName(name){
     .replace(/[（(].*?[）)]/g,'');
 }
 
-// 既存コーチアプリ/成長記録で実際に使用している座標ルールをそのまま移植。
+// 現在正常に動いている NINJA成長記録 と同じ固定座標。
 function courtPosition(name,type){
   const n=normalizePositionName(name);
-  const is3=String(type||'').toUpperCase().includes('3P');
+  const t=normalizePositionName(type);
+
+  if(n.includes('マイカン')||t.includes('マイカン')){
+    return {x:50,y:91};
+  }
+
+  const is3=String(type||'').includes('3P');
 
   const map=[
     {keys:['右0度','右コーナー','右底角'],x:is3?94:76,y:82},
