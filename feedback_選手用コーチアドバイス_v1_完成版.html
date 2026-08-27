@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#07111f">
+  <title>NINJA フィードバック</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    :root{
+      --bg:#07111f;
+      --panel:#0d192a;
+      --line:#223653;
+      --text:#f5f8fc;
+      --muted:#9eb0c7;
+      --accent:#37cf82;
+      --blue:#5aa7ff;
+      --danger:#ff6b76;
+      --safe-bottom:env(safe-area-inset-bottom,0px);
+    }
+    *{box-sizing:border-box}
+    html{background:var(--bg)}
+    body{
+      margin:0;
+      min-height:100vh;
+      background:
+        radial-gradient(circle at 85% 0%,rgba(90,167,255,.12),transparent 28%),
+        linear-gradient(180deg,#07111f,#091625);
+      color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue","Yu Gothic",Meiryo,sans-serif;
+      -webkit-font-smoothing:antialiased;
+      padding-bottom:calc(24px + var(--safe-bottom));
+    }
+    button{-webkit-tap-highlight-color:transparent;font:inherit}
+    .app{max-width:620px;margin:0 auto;padding:14px}
+    .header{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      padding:10px 2px 16px;
+    }
+    .brand small{
+      display:block;
+      color:var(--accent);
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:.16em;
+      margin-bottom:5px;
+    }
+    .brand h1{margin:0;font-size:22px}
+    .player-chip{
+      display:none;
+      max-width:48%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:8px 10px;
+      color:var(--muted);
+      font-size:11px;
+    }
+    .card{
+      margin-bottom:12px;
+      padding:17px;
+      border:1px solid var(--line);
+      border-radius:18px;
+      background:rgba(13,25,42,.96);
+      box-shadow:0 16px 42px rgba(0,0,0,.2);
+    }
+    .eyebrow{
+      color:var(--blue);
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:.12em;
+      margin-bottom:7px;
+    }
+    .title{margin:0 0 7px;font-size:26px;line-height:1.25}
+    .lead{margin:0;color:var(--muted);font-size:13px;line-height:1.7}
+    .list{display:grid;gap:11px}
+    .advice{
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:#091729;
+      padding:15px;
+    }
+    .advice-meta{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+      color:var(--muted);
+      font-size:11px;
+    }
+    .advice-text{
+      font-size:15px;
+      line-height:1.75;
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+    .coach{
+      margin-top:11px;
+      padding-top:10px;
+      border-top:1px solid rgba(34,54,83,.75);
+      color:#c8d6e6;
+      font-size:12px;
+    }
+    .empty{
+      text-align:center;
+      padding:34px 16px;
+      color:var(--muted);
+      line-height:1.8;
+      font-size:13px;
+    }
+    .loading{
+      min-height:62vh;
+      display:grid;
+      place-items:center;
+      text-align:center;
+      color:var(--muted);
+    }
+    .spinner{
+      width:34px;height:34px;
+      margin:0 auto 14px;
+      border:3px solid #203450;
+      border-top-color:var(--accent);
+      border-radius:50%;
+      animation:spin .8s linear infinite;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .hidden{display:none!important}
+    .error-title{color:#ff9ba3;font-weight:900;font-size:20px;margin-bottom:8px}
+    .button{
+      width:100%;
+      min-height:50px;
+      margin-top:14px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#13233a;
+      color:var(--text);
+      font-weight:800;
+    }
+    .count{
+      display:inline-flex;
+      margin-top:11px;
+      padding:6px 9px;
+      border-radius:999px;
+      background:#13233a;
+      color:#c8d6e6;
+      font-size:11px;
+      font-weight:800;
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="brand">
+      <small>NINJA AIRS</small>
+      <h1>フィードバック</h1>
+    </div>
+    <div id="playerChip" class="player-chip"></div>
+  </header>
+
+  <main>
+    <section id="loadingView" class="loading">
+      <div>
+        <div class="spinner"></div>
+        <div>LINE認証とアドバイスを確認しています…</div>
+      </div>
+    </section>
+
+    <section id="mainView" class="hidden">
+      <div class="card">
+        <div class="eyebrow">COACH ADVICE</div>
+        <h2 class="title">コーチからのアドバイス</h2>
+        <p class="lead">練習や試合で意識してほしいことを確認できます。</p>
+        <div id="countBadge" class="count"></div>
+      </div>
+      <div id="adviceList" class="list"></div>
+    </section>
+
+    <section id="errorView" class="hidden">
+      <div class="card">
+        <div class="error-title">開けませんでした</div>
+        <p id="errorText" class="lead"></p>
+        <button class="button" type="button" onclick="location.reload()">もう一度試す</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+'use strict';
+
+const LIFF_ID = '2010789200-osUDbuzD';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
+
+window.addEventListener('load', init);
+
+async function init(){
+  try{
+    if(!window.liff){
+      throw new Error('LIFF SDKを読み込めませんでした。');
+    }
+
+    await withTimeout(
+      liff.init({liffId:LIFF_ID}),
+      15000,
+      'LINE認証の初期化がタイムアウトしました。'
+    );
+
+    if(!liff.isLoggedIn()){
+      liff.login({redirectUri:location.href.split('#')[0]});
+      return;
+    }
+
+    const idToken = liff.getIDToken();
+    if(!idToken){
+      throw new Error('LINE認証情報を取得できませんでした。');
+    }
+
+    const result = await jsonp({
+      action:'coachAdvice.listMine',
+      idToken,
+      limit:'50'
+    });
+
+    if(!result || result.status === 'error' || result.success === false){
+      throw new Error(
+        result && result.message
+          ? result.message
+          : 'コーチアドバイスを取得できませんでした。'
+      );
+    }
+
+    render(result);
+
+  }catch(error){
+    showError(error && error.message ? error.message : String(error));
+  }
+}
+
+function render(result){
+  const player = result.player || {};
+  const records = Array.isArray(result.records) ? result.records : [];
+
+  const chip = document.getElementById('playerChip');
+  const chipText = [player.playerName,player.category].filter(Boolean).join(' / ');
+  if(chipText){
+    chip.textContent = chipText;
+    chip.style.display = 'block';
+  }
+
+  document.getElementById('countBadge').textContent =
+    records.length ? `${records.length}件` : '0件';
+
+  const list = document.getElementById('adviceList');
+
+  if(!records.length){
+    list.innerHTML = `
+      <div class="card empty">
+        まだコーチからのアドバイスはありません。
+      </div>
+    `;
+  }else{
+    list.innerHTML = records.map(record => `
+      <article class="advice">
+        <div class="advice-meta">
+          <span>${esc(formatDate(record.createdAt || record.updatedAt))}</span>
+        </div>
+        <div class="advice-text">${esc(record.adviceText || '')}</div>
+        <div class="coach">コーチ：${esc(record.createdBy || 'NINJA AIRS')}</div>
+      </article>
+    `).join('');
+  }
+
+  showOnly('mainView');
+}
+
+function showError(message){
+  const text = String(message || '');
+  let friendly = text;
+
+  if(text.includes('LINE') && (text.includes('連携') || text.includes('選手'))){
+    friendly = 'このLINEアカウントは選手情報と連携されていません。コーチへ連絡してください。';
+  }else if(text.includes('認証')){
+    friendly = 'LINE認証を確認できませんでした。LINEからもう一度開いてください。';
+  }
+
+  document.getElementById('errorText').textContent = friendly;
+  showOnly('errorView');
+}
+
+function showOnly(id){
+  ['loadingView','mainView','errorView'].forEach(viewId=>{
+    document.getElementById(viewId).classList.toggle('hidden',viewId !== id);
+  });
+  window.scrollTo({top:0,behavior:'instant'});
+}
+
+function jsonp(params,timeoutMs=20000){
+  return new Promise((resolve,reject)=>{
+    const callback =
+      '__ninjaFeedback_' +
+      Date.now() +
+      '_' +
+      Math.random().toString(36).slice(2);
+
+    const script = document.createElement('script');
+
+    const timer = setTimeout(()=>{
+      cleanup();
+      reject(new Error('サーバー通信がタイムアウトしました。'));
+    },timeoutMs);
+
+    function cleanup(){
+      clearTimeout(timer);
+      try{ delete window[callback]; }catch(_){}
+      if(script.parentNode) script.parentNode.removeChild(script);
+    }
+
+    window[callback] = data=>{
+      cleanup();
+      resolve(data);
+    };
+
+    const query = new URLSearchParams({
+      ...params,
+      callback,
+      _ts:String(Date.now())
+    }).toString();
+
+    script.src = GAS_URL + '?' + query;
+
+    script.onerror = ()=>{
+      cleanup();
+      reject(new Error('Apps Scriptへ接続できませんでした。'));
+    };
+
+    document.head.appendChild(script);
+  });
+}
+
+function formatDate(value){
+  const text = String(value || '').trim();
+  const match = text.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})(?:\s+(\d{1,2}):(\d{2}))?/);
+  if(!match) return text;
+
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+
+  return match[4]
+    ? `${month}月${day}日 ${match[4]}:${match[5]}`
+    : `${month}月${day}日`;
+}
+
+function withTimeout(promise,ms,message){
+  return Promise.race([
+    promise,
+    new Promise((_,reject)=>{
+      setTimeout(()=>reject(new Error(message)),ms);
+    })
+  ]);
+}
+
+function esc(value){
+  return String(value == null ? '' : value)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+</script>
+</body>
+</html>
