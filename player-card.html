@@ -348,7 +348,7 @@
 
 <script>
 'use strict';
-const PLAYER_CARD_VERSION='v14';
+const PLAYER_CARD_VERSION='v15';
 
 const LIFF_ID='2010789200-d4tyvqcE';
 const GAS_URL='https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
@@ -704,44 +704,75 @@ function normalizePositionName(name){
   return String(name||'')
     .normalize('NFKC')
     .replace(/\s+/g,'')
-    .replace(/[（(].*?[）)]/g,'');
+    .replace(/°/g,'度')
+    .replace(/ウイング/g,'ウィング')
+    .trim();
 }
 
-// 現在正常に動いている NINJA成長記録 と同じ固定座標。
+// コーチ版で使用しているポジション名を、そのまま固定座標へ割り当てる。
+// 「コーナーミドル」と通常の「0度」を分けるため、括弧内の名称は削除しない。
 function courtPosition(name,type){
   const n=normalizePositionName(name);
-  const t=normalizePositionName(type);
+  const t=String(type||'').normalize('NFKC').toUpperCase().trim();
 
-  if(n.includes('マイカン')||t.includes('マイカン')){
-    return {x:50,y:91};
+  const exact={
+    '右0度（コーナー）':{x:88,y:82},
+    '左0度（コーナー）':{x:12,y:82},
+    '右45度（ウィング）':{x:80,y:52},
+    '左45度（ウィング）':{x:20,y:52},
+    '90度（トップ）':{x:50,y:34},
+
+    '右0度（コーナーミドル）':{x:72,y:78},
+    '左0度（コーナーミドル）':{x:28,y:78},
+    '右45度（ウィングミドル）':{x:67,y:61},
+    '左45度（ウィングミドル）':{x:33,y:61},
+    '90度（トップミドル）':{x:50,y:54},
+
+    '右エルボー':{x:60,y:68},
+    '左エルボー':{x:40,y:68},
+    'フリースロー':{x:50,y:66},
+    '右レイアップ':{x:55,y:90},
+    '左レイアップ':{x:45,y:90}
+  };
+
+  if(exact[n]){
+    return exact[n];
   }
 
-  const is3=String(type||'').includes('3P');
+  // 既存データの表記揺れにも対応。
+  // 具体的な「ミドル」を先に判定し、通常0度/45度との衝突を防ぐ。
+  if(n.includes('右0度')&&n.includes('ミドル'))return {x:72,y:78};
+  if(n.includes('左0度')&&n.includes('ミドル'))return {x:28,y:78};
+  if(n.includes('右45度')&&n.includes('ミドル'))return {x:67,y:61};
+  if(n.includes('左45度')&&n.includes('ミドル'))return {x:33,y:61};
+  if((n.includes('90度')||n.includes('トップ'))&&n.includes('ミドル'))return {x:50,y:54};
 
-  const map=[
-    {keys:['右0度','右コーナー','右底角'],x:is3?94:76,y:82},
-    {keys:['左0度','左コーナー','左底角'],x:is3?6:24,y:82},
-    {keys:['右45度','右ウィング'],x:is3?87:70,y:is3?52:66},
-    {keys:['左45度','左ウィング'],x:is3?13:30,y:is3?52:66},
-    {keys:['90度','トップ','正面'],x:50,y:is3?37:59},
-    {keys:['右エルボー'],x:61,y:69},
-    {keys:['左エルボー'],x:39,y:69},
-    {keys:['右ショートコーナー'],x:72,y:84},
-    {keys:['左ショートコーナー'],x:28,y:84},
-    {keys:['右ブロック'],x:58,y:88},
-    {keys:['左ブロック'],x:42,y:88},
-    {keys:['ゴール下','リング下','ペイント'],x:50,y:91},
-    {keys:['フリースロー','FT'],x:50,y:67}
-  ];
+  if(n.includes('右エルボー'))return {x:60,y:68};
+  if(n.includes('左エルボー'))return {x:40,y:68};
 
-  const hit=map.find(function(m){
-    return m.keys.some(function(k){
-      return n.includes(k);
-    });
-  });
+  if(n.includes('右0度')||n.includes('右コーナー')||n.includes('右底角')){
+    return t.includes('3P')?{x:88,y:82}:{x:72,y:78};
+  }
+  if(n.includes('左0度')||n.includes('左コーナー')||n.includes('左底角')){
+    return t.includes('3P')?{x:12,y:82}:{x:28,y:78};
+  }
+  if(n.includes('右45度')||n.includes('右ウィング')){
+    return t.includes('3P')?{x:80,y:52}:{x:67,y:61};
+  }
+  if(n.includes('左45度')||n.includes('左ウィング')){
+    return t.includes('3P')?{x:20,y:52}:{x:33,y:61};
+  }
+  if(n.includes('90度')||n.includes('トップ')||n.includes('正面')){
+    return t.includes('3P')?{x:50,y:34}:{x:50,y:54};
+  }
 
-  return hit||{x:50,y:is3?37:66};
+  if(n.includes('フリースロー')||n==='FT')return {x:50,y:66};
+  if(n.includes('右レイアップ'))return {x:55,y:90};
+  if(n.includes('左レイアップ'))return {x:45,y:90};
+
+  return {x:50,y:t.includes('3P')?34:62};
 }
+
 
 function shotRank(rate){
   const r=Number(rate||0);
