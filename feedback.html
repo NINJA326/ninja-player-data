@@ -151,6 +151,41 @@
       font-size:11px;
       font-weight:800;
     }
+
+    .feedback-section-title{
+      margin:0 0 10px;
+      font-size:18px;
+      font-weight:900;
+    }
+    .feedback-date{
+      margin-top:10px;
+      color:var(--muted);
+      font-size:11px;
+    }
+    .feedback-grid{
+      display:grid;
+      gap:10px;
+      margin-top:13px;
+    }
+    .feedback-block{
+      padding:13px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#091729;
+    }
+    .feedback-block small{
+      display:block;
+      margin-bottom:5px;
+      color:var(--blue);
+      font-size:11px;
+      font-weight:900;
+    }
+    .feedback-block div{
+      white-space:pre-wrap;
+      word-break:break-word;
+      font-size:14px;
+      line-height:1.7;
+    }
   </style>
 </head>
 <body>
@@ -178,6 +213,12 @@
         <p class="lead">練習や試合で意識してほしいことを確認できます。</p>
         <div id="countBadge" class="count"></div>
       </div>
+      <div id="latestFeedbackCard" class="card hidden">
+        <div class="eyebrow">PLAYER CARD</div>
+        <h3 class="feedback-section-title">最新の選手カルテ</h3>
+        <div id="latestFeedbackContent"></div>
+      </div>
+
       <div id="adviceList" class="list"></div>
     </section>
 
@@ -221,28 +262,42 @@ async function init(){
       throw new Error('LINE認証情報を取得できませんでした。');
     }
 
-    const result = await jsonp({
-      action:'coachAdvice.listMine',
-      idToken,
-      limit:'50'
-    });
+    const [adviceResult,feedbackResult] = await Promise.all([
+      jsonp({
+        action:'coachAdvice.listMine',
+        idToken,
+        limit:'50'
+      }),
+      jsonp({
+        action:'feedback.listMine',
+        idToken
+      })
+    ]);
 
-    if(!result || result.status === 'error' || result.success === false){
+    if(!adviceResult || adviceResult.status === 'error' || adviceResult.success === false){
       throw new Error(
-        result && result.message
-          ? result.message
+        adviceResult && adviceResult.message
+          ? adviceResult.message
           : 'コーチアドバイスを取得できませんでした。'
       );
     }
 
-    render(result);
+    if(!feedbackResult || feedbackResult.status === 'error' || feedbackResult.success === false){
+      throw new Error(
+        feedbackResult && feedbackResult.message
+          ? feedbackResult.message
+          : '最新カルテ所見を取得できませんでした。'
+      );
+    }
+
+    render(adviceResult,feedbackResult);
 
   }catch(error){
     showError(error && error.message ? error.message : String(error));
   }
 }
 
-function render(result){
+function render(result,feedbackResult){
   const player = result.player || {};
   const records = Array.isArray(result.records) ? result.records : [];
 
@@ -255,6 +310,12 @@ function render(result){
 
   document.getElementById('countBadge').textContent =
     records.length ? `${records.length}件` : '0件';
+
+  renderLatestFeedback(
+    feedbackResult && feedbackResult.feedback
+      ? feedbackResult.feedback
+      : null
+  );
 
   const list = document.getElementById('adviceList');
 
@@ -277,6 +338,74 @@ function render(result){
   }
 
   showOnly('mainView');
+}
+
+
+function renderLatestFeedback(feedback){
+  const card = document.getElementById('latestFeedbackCard');
+  const content = document.getElementById('latestFeedbackContent');
+
+  if(!feedback || !String(feedback.feedbackText || '').trim()){
+    card.classList.add('hidden');
+    content.innerHTML = '';
+    return;
+  }
+
+  const sections = parseFeedbackSections(feedback.feedbackText);
+
+  const items = [
+    ['いいところ',sections.good],
+    ['改善点',sections.improvement],
+    ['方向性',sections.direction],
+    ['総合所見',sections.summary]
+  ].filter(item => item[1]);
+
+  if(items.length){
+    content.innerHTML = `
+      <div class="feedback-grid">
+        ${items.map(item => `
+          <div class="feedback-block">
+            <small>${esc(item[0])}</small>
+            <div>${esc(item[1])}</div>
+          </div>
+        `).join('')}
+      </div>
+      ${feedback.savedAt ? `<div class="feedback-date">更新：${esc(formatDate(feedback.savedAt))}</div>` : ''}
+    `;
+  }else{
+    content.innerHTML = `
+      <div class="feedback-block">
+        <div>${esc(feedback.feedbackText)}</div>
+      </div>
+      ${feedback.savedAt ? `<div class="feedback-date">更新：${esc(formatDate(feedback.savedAt))}</div>` : ''}
+    `;
+  }
+
+  card.classList.remove('hidden');
+}
+
+function parseFeedbackSections(text){
+  const source = String(text || '').replace(/\r\n/g,'\n').trim();
+  const result = {good:'',improvement:'',direction:'',summary:''};
+
+  const matches = [...source.matchAll(
+    /(?:^|\n)\s*#{0,3}\s*(いいところ|改善点|方向性|総合所見)\s*(?:\n|$)/g
+  )];
+
+  if(!matches.length) return result;
+
+  matches.forEach((match,index)=>{
+    const start = match.index + match[0].length;
+    const end = index + 1 < matches.length ? matches[index + 1].index : source.length;
+    const body = source.slice(start,end).trim();
+
+    if(match[1] === 'いいところ') result.good = body;
+    if(match[1] === '改善点') result.improvement = body;
+    if(match[1] === '方向性') result.direction = body;
+    if(match[1] === '総合所見') result.summary = body;
+  });
+
+  return result;
 }
 
 function showError(message){
