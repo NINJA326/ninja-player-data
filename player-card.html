@@ -115,9 +115,10 @@
     .agility-card .sub{font-size:10px;color:#718096;margin-top:3px;line-height:1.45}
     .shot-chart{
       position:relative;
-      width:min(100%,470px);
-      margin:6px auto 0;
-      aspect-ratio:0.92/1;
+      width:100%;
+      max-width:520px;
+      margin:8px auto 2px;
+      aspect-ratio:.92/1;
       background:#d7a86e;
       border:4px solid #f5f5f5;
       border-radius:8px;
@@ -126,17 +127,34 @@
     }
     .shot-chart svg{position:absolute;inset:0;width:100%;height:100%}
     .shot-dot{
-      position:absolute;transform:translate(-50%,-50%);
-      width:54px;height:54px;border:3px solid #fff;border-radius:50%;
-      display:grid;place-items:center;text-align:center;
-      font-weight:900;font-size:13px;line-height:1.05;
-      box-shadow:0 3px 10px rgba(0,0,0,.25);
-      color:#fff;background:#1f8a4c;
+      position:absolute;
+      transform:translate(-50%,-50%);
+      width:54px;height:54px;
+      border:3px solid #fff;
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      text-align:center;
+      box-shadow:0 2px 7px rgba(0,0,0,.3);
+      padding:3px;
+      font-weight:900;
+      line-height:1;
+      color:#fff;
+      z-index:2;
     }
-    .shot-dot small{display:block;font-size:8px;font-weight:700;margin-top:2px}
-    .shot-dot.low{background:#b42318}
-    .shot-dot.mid{background:#d4a017;color:#15120a}
-    .shot-dot.high{background:#1f8a4c}
+    .shot-dot strong{font-size:14px;line-height:1}
+    .shot-dot span{display:block;font-size:8px;line-height:1.1;margin-top:2px;font-weight:700}
+    .shot-dot.rank-red{background:#b42318}
+    .shot-dot.rank-yellow{background:#d4a017;color:#16120a}
+    .shot-dot.rank-green{background:#1f8a4c}
+    .shot-dot.rank-silver{
+      background:linear-gradient(145deg,#f7f7f7,#a9b0b7 55%,#737b84);
+      color:#111;border-color:#fff
+    }
+    .shot-dot.rank-gold{
+      background:linear-gradient(145deg,#fff3a6,#d4af37 55%,#8f6b00);
+      color:#1a1400;border-color:#fff4b8
+    }
     .report-coach-title{
       margin-top:24px;padding:12px 14px;
       border-top:2px solid var(--ink);border-bottom:1px solid var(--line);
@@ -433,55 +451,105 @@ function renderShooting(shooting){
 
 function renderShotChart(shooting){
   const el=document.getElementById('shotChartSummary');
-  const types=Array.isArray(shooting&&shooting.byType)?shooting.byType:[];
-  if(!types.length){
-    el.innerHTML='<div class="report-row"><span>チャート</span><strong>表示できる集計なし</strong></div>';
+
+  // コーチアプリと同じポジション別データを優先する。
+  const rows=Array.isArray(shooting&&shooting.byPosition)
+    ? shooting.byPosition.filter(function(r){
+        return Number(r&&r.attempts||0)>0;
+      })
+    : [];
+
+  if(!rows.length){
+    el.innerHTML='<div class="report-row"><span>チャート</span><strong>ポジション別記録なし</strong></div>';
     return;
   }
 
-  const map={};
-  types.forEach(item=>{
-    const key=String(item.type||item.shotType||item.name||'').toLowerCase();
-    const m=firstNumber(item.made,item.success,item.makes,item.hit);
-    const a=firstNumber(item.attempts,item.shots,item.total,item.trials);
-    if(a===null||m===null)return;
-    const rate=a>0?m/a*100:0;
-    if(key.includes('3'))map.three={rate,m,a};
-    else if(key.includes('右'))map.right={rate,m,a};
-    else if(key.includes('左'))map.left={rate,m,a};
-    else if(key.includes('2'))map.mid={rate,m,a};
-  });
+  const markers=rows.map(function(r){
+    const type=String(r.type||r.shotType||'').trim();
+    const position=String(r.position||r.name||'').trim();
+    const made=Number(r.made||0);
+    const attempts=Number(r.attempts||0);
+    const rate=Number.isFinite(Number(r.rate))
+      ? Number(r.rate)
+      : (attempts>0?made/attempts*100:0);
 
-  const dots=[];
-  if(map.three)dots.push(dot('50%','22%',map.three,'3P'));
-  if(map.left)dots.push(dot('28%','64%',map.left,'2P'));
-  if(map.mid)dots.push(dot('52%','56%',map.mid,'2P'));
-  if(map.right)dots.push(dot('74%','64%',map.right,'2P'));
+    const pos=courtPosition(position,type);
+    return `<div class="shot-dot ${shotRank(rate)}" style="left:${pos.x}%;top:${pos.y}%">
+      <div><strong>${formatRate(rate)}%</strong><span>${esc(type)}<br>${made}/${attempts}</span></div>
+    </div>`;
+  }).join('');
 
-  if(!dots.length){
-    el.innerHTML='<div class="report-row"><span>チャート</span><strong>表示できる位置別集計なし</strong></div>';
-    return;
-  }
+  el.innerHTML=`<div class="shot-chart" aria-label="シューティングポジション別成功率">
+    <svg viewBox="0 0 920 1000" aria-hidden="true">
+      <rect x="8" y="8" width="904" height="984" rx="4" fill="none" stroke="#ffffff" stroke-width="10"/>
+      <line x1="8" y1="120" x2="912" y2="120" stroke="#ffffff" stroke-width="10"/>
+      <path d="M350 120 A110 110 0 0 0 570 120" fill="none" stroke="#ffffff" stroke-width="10"/>
 
-  el.innerHTML=`<div class="shot-chart">
-    <svg viewBox="0 0 100 110" aria-hidden="true">
-      <rect x="1" y="1" width="98" height="108" fill="none" stroke="#fff" stroke-width="1.2"/>
-      <line x1="1" y1="22" x2="99" y2="22" stroke="#fff" stroke-width="1.2"/>
-      <path d="M38 22 A12 12 0 0 0 62 22" fill="none" stroke="#fff" stroke-width="1.2"/>
-      <rect x="34" y="75" width="32" height="34" fill="none" stroke="#fff" stroke-width="1.2"/>
-      <circle cx="50" cy="75" r="12" fill="none" stroke="#fff" stroke-width="1.2"/>
-      <path d="M22 109 A28 28 0 0 1 78 109" fill="none" stroke="#fff" stroke-width="1.2"/>
-      <line x1="44" y1="82" x2="56" y2="82" stroke="#fff" stroke-width="1.2"/>
+      <line x1="105" y1="992" x2="105" y2="690" stroke="#ffffff" stroke-width="10"/>
+      <line x1="815" y1="992" x2="815" y2="690" stroke="#ffffff" stroke-width="10"/>
+      <path d="M105 690 A365 365 0 0 1 815 690" fill="none" stroke="#ffffff" stroke-width="10"/>
+
+      <rect x="315" y="655" width="290" height="337" fill="#f07c00" stroke="#ffffff" stroke-width="10"/>
+
+      <path d="M365 655 A95 95 0 0 1 555 655" fill="none" stroke="#ffffff" stroke-width="10"/>
+      <path d="M365 655 A95 95 0 0 0 555 655" fill="none" stroke="#ffffff" stroke-width="10" stroke-dasharray="18 16"/>
+
+      <path d="M395 925 A65 65 0 0 1 525 925" fill="none" stroke="#ffffff" stroke-width="10"/>
+
+      <line x1="395" y1="955" x2="525" y2="955" stroke="#ffffff" stroke-width="12"/>
+      <circle cx="460" cy="925" r="20" fill="none" stroke="#ffffff" stroke-width="8"/>
+
+      <line x1="315" y1="735" x2="290" y2="735" stroke="#ffffff" stroke-width="8"/>
+      <line x1="315" y1="790" x2="290" y2="790" stroke="#ffffff" stroke-width="8"/>
+      <line x1="315" y1="845" x2="290" y2="845" stroke="#ffffff" stroke-width="8"/>
+      <line x1="605" y1="735" x2="630" y2="735" stroke="#ffffff" stroke-width="8"/>
+      <line x1="605" y1="790" x2="630" y2="790" stroke="#ffffff" stroke-width="8"/>
+      <line x1="605" y1="845" x2="630" y2="845" stroke="#ffffff" stroke-width="8"/>
     </svg>
-    ${dots.join('')}
+    ${markers}
   </div>`;
 }
 
-function dot(left,top,data,label){
-  const cls=data.rate<35?'low':data.rate<50?'mid':'high';
-  return `<div class="shot-dot ${cls}" style="left:${left};top:${top}">
-    <div>${Math.round(data.rate)}%<small>${esc(label)}<br>${data.m}/${data.a}</small></div>
-  </div>`;
+function normalizePositionName(name){
+  return String(name||'')
+    .normalize('NFKC')
+    .replace(/\s+/g,'')
+    .replace(/[（(].*?[）)]/g,'');
+}
+
+function courtPosition(name,type){
+  const n=normalizePositionName(name);
+  const is3=String(type||'').includes('3P');
+
+  const map=[
+    {keys:['右0度','右コーナー','右底角'],x:is3?94:76,y:82},
+    {keys:['左0度','左コーナー','左底角'],x:is3?6:24,y:82},
+    {keys:['右45度','右ウィング'],x:is3?87:70,y:is3?52:66},
+    {keys:['左45度','左ウィング'],x:is3?13:30,y:is3?52:66},
+    {keys:['90度','トップ','正面'],x:50,y:is3?37:59},
+    {keys:['右エルボー'],x:61,y:69},
+    {keys:['左エルボー'],x:39,y:69},
+    {keys:['フリースロー','FT'],x:50,y:67},
+    {keys:['マイカン','ゴール下'],x:50,y:91}
+  ];
+
+  return map.find(function(m){
+    return m.keys.some(function(k){return n.includes(k)});
+  })||{x:50,y:is3?37:66};
+}
+
+function shotRank(rate){
+  const r=Number(rate||0);
+  if(r<=20)return 'rank-red';
+  if(r<=35)return 'rank-yellow';
+  if(r<=45)return 'rank-green';
+  if(r<=60)return 'rank-silver';
+  return 'rank-gold';
+}
+
+function formatRate(rate){
+  const n=Number(rate||0);
+  return Number.isInteger(n)?String(n):n.toFixed(1);
 }
 
 function renderFeedback(feedback){
