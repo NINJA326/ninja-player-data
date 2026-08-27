@@ -151,6 +151,13 @@
       position:absolute;top:-15px;left:50%;transform:translateX(-50%);
       font-size:18px;line-height:1;pointer-events:none;
     }
+    /* iPhone等の狭い画面では、座標を変えずにマーカーだけ少し小さくする。 */
+    @media(max-width:700px){
+      .shot-dot{width:46px;height:46px;border-width:2px;padding:2px}
+      .shot-dot strong{font-size:12px}
+      .shot-dot span{font-size:7px;margin-top:1px}
+      .shot-dot .crown{top:-13px;font-size:15px}
+    }
     .shot-dot.rank-red{background:#b42318}
     .shot-dot.rank-yellow{background:#d4a017;color:#16120a}
     .shot-dot.rank-green{background:#1f8a4c}
@@ -498,8 +505,14 @@ function renderShotChart(shooting){
     });
   });
 
-  const markers=rows.map(function(x){
-    const p=courtPosition(x.position,x.type);
+  // まず既存コーチアプリと同じ基準座標を取得する。
+  // そのうえで、同一付近の円だけを最小限ずらし、表示が重ならないようにする。
+  // データ上のポジション・成功数・試投数は変更しない。
+  const placed=resolveShotMarkerPositions(rows);
+
+  const markers=placed.map(function(item){
+    const x=item.row;
+    const p=item.position;
     const rank=shotRank(x.rate);
     const crown=rank.crown
       ? '<span class="crown">♛</span>'
@@ -509,6 +522,7 @@ function renderShotChart(shooting){
       class="shot-dot ${rank.cls}"
       style="left:${p.x}%;top:${p.y}%"
       title="${esc(x.type)} / ${esc(x.position)}"
+      aria-label="${esc(x.position)} ${esc(x.type)} 成功率${formatRate(x.rate)}% ${x.made}/${x.attempts}"
     >
       ${crown}
       <div>
@@ -535,6 +549,83 @@ function renderShotChart(shooting){
     </svg>
     ${markers}
   </div>`;
+}
+
+function resolveShotMarkerPositions(rows){
+  const prepared=(rows||[]).map(function(row,index){
+    return {
+      row:row,
+      index:index,
+      base:courtPosition(row.position,row.type)
+    };
+  });
+
+  // 試投数が多い記録ほど本来の座標を優先する。
+  const order=prepared.slice().sort(function(a,b){
+    const diff=Number(b.row.attempts||0)-Number(a.row.attempts||0);
+    return diff||a.index-b.index;
+  });
+
+  const placed=[];
+  const candidates=[
+    {x:0,y:0},
+    {x:-7,y:-4},
+    {x:7,y:-4},
+    {x:-7,y:5},
+    {x:7,y:5},
+    {x:0,y:-8},
+    {x:0,y:8},
+    {x:-10,y:0},
+    {x:10,y:0}
+  ];
+
+  function clamp(value,min,max){
+    return Math.max(min,Math.min(max,value));
+  }
+
+  function distance(a,b){
+    const dx=a.x-b.x;
+    const dy=a.y-b.y;
+    return Math.sqrt(dx*dx+dy*dy);
+  }
+
+  order.forEach(function(item){
+    let selected=null;
+
+    for(let i=0;i<candidates.length;i+=1){
+      const c=candidates[i];
+      const candidate={
+        x:clamp(item.base.x+c.x,7,93),
+        y:clamp(item.base.y+c.y,8,93)
+      };
+
+      const safe=placed.every(function(other){
+        return distance(candidate,other.position)>=11.5;
+      });
+
+      if(safe){
+        selected=candidate;
+        break;
+      }
+    }
+
+    // 候補がすべて埋まっている場合も、本来のゾーンから大きく外さない。
+    if(!selected){
+      selected={
+        x:clamp(item.base.x,7,93),
+        y:clamp(item.base.y,8,93)
+      };
+    }
+
+    placed.push({
+      row:item.row,
+      index:item.index,
+      position:selected
+    });
+  });
+
+  // 元データの表示順へ戻す。
+  return placed.sort(function(a,b){return a.index-b.index;});
 }
 
 function normalizePositionName(name){
