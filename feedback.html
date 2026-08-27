@@ -186,6 +186,23 @@
       font-size:14px;
       line-height:1.7;
     }
+
+    .player-card-link{
+      width:100%;
+      min-height:52px;
+      margin:14px 0 4px;
+      border:1px solid var(--accent);
+      border-radius:14px;
+      background:var(--accent);
+      color:#052116;
+      font-size:15px;
+      font-weight:900;
+      cursor:pointer;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .player-card-link:active{
+      transform:translateY(1px);
+    }
   </style>
 </head>
 <body>
@@ -213,6 +230,15 @@
         <p class="lead">練習や試合で意識してほしいことを確認できます。</p>
         <div id="countBadge" class="count"></div>
       </div>
+      <button
+        id="playerCardBtn"
+        class="player-card-link"
+        type="button"
+        aria-label="選手カルテを見る"
+      >
+        選手カルテを見る
+      </button>
+
       <div id="latestFeedbackCard" class="card hidden">
         <div class="eyebrow">PLAYER CARD</div>
         <h3 class="feedback-section-title">最新の選手カルテ</h3>
@@ -236,9 +262,15 @@
 'use strict';
 
 const LIFF_ID = '2010789200-osUDbuzD';
+const PLAYER_CARD_LIFF_URL = 'https://liff.line.me/2010789200-d4tyvqcE';
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
 
 window.addEventListener('load', init);
+document.getElementById('playerCardBtn').addEventListener('click', openPlayerCard);
+
+function openPlayerCard(){
+  location.href = PLAYER_CARD_LIFF_URL;
+}
 
 async function init(){
   try{
