@@ -348,7 +348,7 @@
 
 <script>
 'use strict';
-const PLAYER_CARD_VERSION='v13';
+const PLAYER_CARD_VERSION='v14';
 
 const LIFF_ID='2010789200-d4tyvqcE';
 const GAS_URL='https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
@@ -542,11 +542,10 @@ function formatMinutesSeconds(seconds){
 }
 
 function agilityRankText(name,ranking,player){
-  // 龍ラン1周目・2周目はランキング対象外。合計だけ順位表示。
-  const rankingName=(name==='龍ラン 1周目'||name==='龍ラン 2周目')?'':name;
-  if(!rankingName||!ranking||!ranking.agility)return '';
+  // 龍ラン1周目・2周目・合計をすべてランキング表示。
+  if(!name||!ranking||!ranking.agility)return '';
 
-  const group=ranking.agility[rankingName];
+  const group=ranking.agility[name];
   const rows=group&&Array.isArray(group.rows)?group.rows:[];
   if(!rows.length)return '';
 
