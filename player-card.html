@@ -147,6 +147,10 @@
     }
     .shot-dot strong{font-size:14px;line-height:1}
     .shot-dot span{display:block;font-size:8px;line-height:1.1;margin-top:2px;font-weight:700}
+    .shot-dot .crown{
+      position:absolute;top:-15px;left:50%;transform:translateX(-50%);
+      font-size:18px;line-height:1;pointer-events:none;
+    }
     .shot-dot.rank-red{background:#b42318}
     .shot-dot.rank-yellow{background:#d4a017;color:#16120a}
     .shot-dot.rank-green{background:#1f8a4c}
@@ -328,7 +332,7 @@
 
 <script>
 'use strict';
-const PLAYER_CARD_VERSION='v7';
+const PLAYER_CARD_VERSION='v8';
 
 const LIFF_ID='2010789200-d4tyvqcE';
 const GAS_URL='https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
@@ -455,40 +459,61 @@ function renderShooting(shooting){
 
 function renderShotChart(shooting){
   const el=document.getElementById('shotChartSummary');
-  const rows=Array.isArray(shooting&&shooting.byPosition)
-    ? shooting.byPosition.filter(function(r){
-        return Number(r&&r.attempts||0)>0;
+
+  // 新DB Reader の byPosition は type と position を保持している。
+  // 推測や再分類は行わず、既存コーチ/成長記録と同じデータをそのまま使う。
+  const positions=Array.isArray(shooting&&shooting.byPosition)
+    ? shooting.byPosition.filter(function(x){
+        return Number(x&&x.attempts||0)>0;
       })
     : [];
 
-  if(!rows.length){
+  if(!positions.length){
     el.innerHTML='<div class="report-row"><span>チャート</span><strong>ポジション別記録なし</strong></div>';
     return;
   }
 
-  const markers=rows.map(function(r){
-    const position=String(r.position||r.label||r.name||'').trim();
+  // 既存コーチアプリと同じく type + position 単位でまとめる。
+  const merged={};
+  positions.forEach(function(x){
+    const key=String(x.position||'')+'|'+String(x.type||'');
+    if(!merged[key]){
+      merged[key]={
+        type:String(x.type||''),
+        position:String(x.position||''),
+        made:Number(x.made||0),
+        attempts:Number(x.attempts||0)
+      };
+    }else{
+      merged[key].made+=Number(x.made||0);
+      merged[key].attempts+=Number(x.attempts||0);
+    }
+  });
 
-    // 現在のGrowthServiceのbyPosition集計は type にposition名が入るため、
-    // コーチ版と同じ表示にするためposition名から2P/3P/FTを復元する。
-    const type=inferShotType(position,r.type||r.shotType||'');
+  const rows=Object.values(merged).map(function(x){
+    return Object.assign({},x,{
+      rate:x.attempts
+        ? Math.round(x.made/x.attempts*1000)/10
+        : 0
+    });
+  });
 
-    const made=Number(r.made||0);
-    const attempts=Number(r.attempts||0);
-    const rate=Number.isFinite(Number(r.rate))
-      ? Number(r.rate)
-      : (attempts>0?made/attempts*100:0);
-
-    const pos=coachCourtPosition(position,type);
+  const markers=rows.map(function(x){
+    const p=courtPosition(x.position,x.type);
+    const rank=shotRank(x.rate);
+    const crown=rank.crown
+      ? '<span class="crown">♛</span>'
+      : '';
 
     return `<div
-      class="shot-dot ${shotRank(rate)}"
-      style="left:${pos.x}%;top:${pos.y}%"
-      title="${esc(position)}"
+      class="shot-dot ${rank.cls}"
+      style="left:${p.x}%;top:${p.y}%"
+      title="${esc(x.type)} / ${esc(x.position)}"
     >
+      ${crown}
       <div>
-        <strong>${formatRate(rate)}%</strong>
-        <span>${esc(type)}<br>${made}/${attempts}</span>
+        <strong>${formatRate(x.rate)}%</strong>
+        <span>${esc(x.type)}<br>${x.made}/${x.attempts}</span>
       </div>
     </div>`;
   }).join('');
@@ -498,16 +523,12 @@ function renderShotChart(shooting){
       <rect x="8" y="8" width="904" height="984" rx="4" fill="none" stroke="#ffffff" stroke-width="10"/>
       <line x1="8" y1="120" x2="912" y2="120" stroke="#ffffff" stroke-width="10"/>
       <path d="M350 120 A110 110 0 0 0 570 120" fill="none" stroke="#ffffff" stroke-width="10"/>
-
       <line x1="105" y1="992" x2="105" y2="690" stroke="#ffffff" stroke-width="10"/>
       <line x1="815" y1="992" x2="815" y2="690" stroke="#ffffff" stroke-width="10"/>
       <path d="M105 690 A365 365 0 0 1 815 690" fill="none" stroke="#ffffff" stroke-width="10"/>
-
       <rect x="315" y="655" width="290" height="337" fill="#f07c00" stroke="#ffffff" stroke-width="10"/>
-
       <path d="M365 655 A95 95 0 0 1 555 655" fill="none" stroke="#ffffff" stroke-width="10"/>
       <path d="M365 655 A95 95 0 0 0 555 655" fill="none" stroke="#ffffff" stroke-width="10" stroke-dasharray="18 16"/>
-
       <path d="M395 925 A65 65 0 0 1 525 925" fill="none" stroke="#ffffff" stroke-width="10"/>
       <line x1="395" y1="955" x2="525" y2="955" stroke="#ffffff" stroke-width="12"/>
       <circle cx="460" cy="925" r="20" fill="none" stroke="#ffffff" stroke-width="8"/>
@@ -516,86 +537,50 @@ function renderShotChart(shooting){
   </div>`;
 }
 
-function inferShotType(position,rawType){
-  const p=normalizePositionName(position);
-  const raw=String(rawType||'').toUpperCase();
-
-  if(raw==='2P'||raw==='3P'||raw==='FT'||raw==='マイカン'){
-    return raw;
-  }
-
-  if(p.includes('フリースロー'))return 'FT';
-  if(p.includes('レイアップ')||p.includes('マイカン'))return 'マイカン';
-
-  // 「ミドル」が付く公式ポジションは2P。
-  if(p.includes('ミドル')||p.includes('エルボー'))return '2P';
-
-  // コーナー/ウィング/トップでミドル表記がないものは3P。
-  if(
-    p.includes('コーナー')||
-    p.includes('ウィング')||
-    p.includes('トップ')
-  )return '3P';
-
-  return '2P';
-}
-
 function normalizePositionName(name){
   return String(name||'')
     .normalize('NFKC')
     .replace(/\s+/g,'')
-    .trim();
+    .replace(/[（(].*?[）)]/g,'');
 }
 
-function coachCourtPosition(position,type){
-  const p=normalizePositionName(position);
-  const t=String(type||'').toUpperCase();
+// 既存コーチアプリ/成長記録で実際に使用している座標ルールをそのまま移植。
+function courtPosition(name,type){
+  const n=normalizePositionName(name);
+  const is3=String(type||'').toUpperCase().includes('3P');
 
-  // コーチアプリで使用している公式ポジションを固定座標へ割り当てる。
-  const exact={
-    '右0度（コーナー）':{x:88,y:82},
-    '左0度（コーナー）':{x:12,y:82},
-    '右45度（ウィング）':{x:80,y:52},
-    '左45度（ウィング）':{x:20,y:52},
-    '90度（トップ）':{x:50,y:34},
+  const map=[
+    {keys:['右0度','右コーナー','右底角'],x:is3?94:76,y:82},
+    {keys:['左0度','左コーナー','左底角'],x:is3?6:24,y:82},
+    {keys:['右45度','右ウィング'],x:is3?87:70,y:is3?52:66},
+    {keys:['左45度','左ウィング'],x:is3?13:30,y:is3?52:66},
+    {keys:['90度','トップ','正面'],x:50,y:is3?37:59},
+    {keys:['右エルボー'],x:61,y:69},
+    {keys:['左エルボー'],x:39,y:69},
+    {keys:['右ショートコーナー'],x:72,y:84},
+    {keys:['左ショートコーナー'],x:28,y:84},
+    {keys:['右ブロック'],x:58,y:88},
+    {keys:['左ブロック'],x:42,y:88},
+    {keys:['ゴール下','リング下','ペイント'],x:50,y:91},
+    {keys:['フリースロー','FT'],x:50,y:67}
+  ];
 
-    '右0度（コーナーミドル）':{x:72,y:78},
-    '左0度（コーナーミドル）':{x:28,y:78},
-    '右45度（ウィングミドル）':{x:67,y:61},
-    '左45度（ウィングミドル）':{x:33,y:61},
-    '90度（トップミドル）':{x:50,y:54},
-    '右エルボー':{x:60,y:68},
-    '左エルボー':{x:40,y:68},
+  const hit=map.find(function(m){
+    return m.keys.some(function(k){
+      return n.includes(k);
+    });
+  });
 
-    'フリースロー':{x:50,y:66},
-    '右レイアップ':{x:55,y:90},
-    '左レイアップ':{x:45,y:90}
-  };
-
-  if(exact[p])return exact[p];
-
-  // 表記揺れがあっても既存データを落とさない。
-  if(p.includes('右0度'))return t==='3P'?{x:88,y:82}:{x:72,y:78};
-  if(p.includes('左0度'))return t==='3P'?{x:12,y:82}:{x:28,y:78};
-  if(p.includes('右45度'))return t==='3P'?{x:80,y:52}:{x:67,y:61};
-  if(p.includes('左45度'))return t==='3P'?{x:20,y:52}:{x:33,y:61};
-  if(p.includes('90度')||p.includes('トップ'))return t==='3P'?{x:50,y:34}:{x:50,y:54};
-  if(p.includes('右エルボー'))return {x:60,y:68};
-  if(p.includes('左エルボー'))return {x:40,y:68};
-  if(p.includes('フリースロー'))return {x:50,y:66};
-  if(p.includes('右レイアップ'))return {x:55,y:90};
-  if(p.includes('左レイアップ'))return {x:45,y:90};
-
-  return {x:50,y:62};
+  return hit||{x:50,y:is3?37:66};
 }
 
 function shotRank(rate){
   const r=Number(rate||0);
-  if(r<=20)return 'rank-red';
-  if(r<=35)return 'rank-yellow';
-  if(r<=45)return 'rank-green';
-  if(r<=60)return 'rank-silver';
-  return 'rank-gold';
+  if(r<=20)return {cls:'rank-red',label:'赤',crown:false};
+  if(r<=35)return {cls:'rank-yellow',label:'黄',crown:false};
+  if(r<=45)return {cls:'rank-green',label:'緑',crown:false};
+  if(r<=60)return {cls:'rank-silver',label:'銀',crown:true};
+  return {cls:'rank-gold',label:'金',crown:true};
 }
 
 function formatRate(rate){
