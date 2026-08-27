@@ -238,6 +238,7 @@
   </style>
 </head>
 <body>
+<!-- player-card v4: iPhone/LINE print fallback -->
 <div class="app">
   <div class="topbar">
     <div class="brand">
@@ -574,11 +575,35 @@ function agilityValue(r){
 }
 
 function savePdf(){
+  // LINEアプリ内ブラウザでは window.print() が動作しない/制限されることがあります。
+  // LINE内で開いている場合は、同じ本人用LIFFを外部ブラウザ(Safari)で開き、
+  // Safari側でこのボタンを再度押してPDF保存/印刷します。
+  const inLineClient =
+    window.liff &&
+    typeof liff.isInClient === 'function' &&
+    liff.isInClient();
+
+  if(inLineClient){
+    const url = 'https://liff.line.me/2010789200-d4tyvqcE?openExternalBrowser=1';
+
+    if(typeof liff.openWindow === 'function'){
+      liff.openWindow({
+        url,
+        external:true
+      });
+      return;
+    }
+
+    location.href = url;
+    return;
+  }
+
   const oldTitle=document.title;
   const name=document.getElementById('playerName').textContent||'選手';
   const d=new Date();
   const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
   document.title=`${name}_選手カルテ_${ym}`;
+
   setTimeout(()=>{
     window.print();
     setTimeout(()=>{document.title=oldTitle},600);
