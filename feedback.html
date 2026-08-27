@@ -141,17 +141,6 @@
       color:var(--text);
       font-weight:800;
     }
-    .count{
-      display:inline-flex;
-      margin-top:11px;
-      padding:6px 9px;
-      border-radius:999px;
-      background:#13233a;
-      color:#c8d6e6;
-      font-size:11px;
-      font-weight:800;
-    }
-
     .feedback-section-title{
       margin:0 0 10px;
       font-size:18px;
@@ -227,8 +216,9 @@
       <div class="card">
         <div class="eyebrow">COACH ADVICE</div>
         <h2 class="title">コーチからのアドバイス</h2>
-        <p class="lead">練習や試合で意識してほしいことを確認できます。</p>
-        <div id="countBadge" class="count"></div>
+        <div id="adviceDate" class="advice-meta hidden"></div>
+        <div id="adviceText" class="advice-text"></div>
+        <div id="adviceCoach" class="coach hidden"></div>
       </div>
       <button
         id="playerCardBtn"
@@ -245,7 +235,6 @@
         <div id="latestFeedbackContent"></div>
       </div>
 
-      <div id="adviceList" class="list"></div>
     </section>
 
     <section id="errorView" class="hidden">
@@ -261,7 +250,7 @@
 <script>
 'use strict';
 
-const FEEDBACK_PAGE_VERSION = 'v13';
+const FEEDBACK_PAGE_VERSION = 'v14';
 const LIFF_ID = '2010789200-osUDbuzD';
 const PLAYER_CARD_LIFF_URL = 'https://liff.line.me/2010789200-d4tyvqcE?v=12';
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
@@ -341,23 +330,14 @@ function render(result,feedbackResult){
     chip.style.display = 'block';
   }
 
-  document.getElementById('countBadge').textContent =
-    records.length ? '最新' : '0件';
-
-  renderLatestFeedback(
-    feedbackResult && feedbackResult.feedback
-      ? feedbackResult.feedback
-      : null
-  );
-
-  const list = document.getElementById('adviceList');
+  const adviceDate = document.getElementById('adviceDate');
+  const adviceText = document.getElementById('adviceText');
+  const adviceCoach = document.getElementById('adviceCoach');
 
   if(!records.length){
-    list.innerHTML = `
-      <div class="card empty">
-        まだコーチからのアドバイスはありません。
-      </div>
-    `;
+    adviceDate.classList.add('hidden');
+    adviceCoach.classList.add('hidden');
+    adviceText.textContent = 'まだコーチからのアドバイスはありません。';
   }else{
     const latestRecord = [...records].sort((a,b) => {
       const aTime = Date.parse(String(a.updatedAt || a.createdAt || '').replace(/\//g,'-')) || 0;
@@ -365,16 +345,20 @@ function render(result,feedbackResult){
       return bTime - aTime;
     })[0];
 
-    list.innerHTML = `
-      <article class="advice">
-        <div class="advice-meta">
-          <span>${esc(formatDate(latestRecord.updatedAt || latestRecord.createdAt))}</span>
-        </div>
-        <div class="advice-text">${esc(latestRecord.adviceText || '')}</div>
-        <div class="coach">コーチ：${esc(latestRecord.createdBy || 'NINJA AIRS')}</div>
-      </article>
-    `;
+    adviceDate.textContent = formatDate(latestRecord.updatedAt || latestRecord.createdAt);
+    adviceDate.classList.remove('hidden');
+
+    adviceText.textContent = latestRecord.adviceText || '';
+
+    adviceCoach.textContent = `コーチ：${latestRecord.createdBy || 'NINJA AIRS'}`;
+    adviceCoach.classList.remove('hidden');
   }
+
+  renderLatestFeedback(
+    feedbackResult && feedbackResult.feedback
+      ? feedbackResult.feedback
+      : null
+  );
 
   showOnly('mainView');
 }
