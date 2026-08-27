@@ -113,7 +113,17 @@
     .agility-card{
       border:1px solid #dce3eb;border-radius:10px;padding:10px;background:#fbfcfe;
     }
-    .agility-card .name{font-weight:800;font-size:12px;margin-bottom:5px}
+    .agility-card-head{
+      display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:5px;
+    }
+    .agility-card .name{font-weight:800;font-size:12px;margin-bottom:0}
+    .agility-rank{
+      flex:0 0 auto;
+      font-size:12px;
+      font-weight:900;
+      color:#2f6fbd;
+      white-space:nowrap;
+    }
     .agility-card .value{font-size:17px;font-weight:900}
     .agility-card .sub{font-size:10px;color:#718096;margin-top:3px;line-height:1.45}
     .shot-chart{
@@ -338,7 +348,7 @@
 
 <script>
 'use strict';
-const PLAYER_CARD_VERSION='v12';
+const PLAYER_CARD_VERSION='v13';
 
 const LIFF_ID='2010789200-d4tyvqcE';
 const GAS_URL='https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
@@ -373,7 +383,11 @@ function render(data){
   setText('writerName',fb.writerName||fb.createdBy||fb.coachName||fb.author||'未設定');
 
   renderBody(data.growth&&Array.isArray(data.growth.records)?data.growth.records:[]);
-  renderAgility(data.agility&&Array.isArray(data.agility.records)?data.agility.records:[]);
+  renderAgility(
+    data.agility&&Array.isArray(data.agility.records)?data.agility.records:[],
+    data.ranking||null,
+    data.player||{}
+  );
   renderShooting(data.shooting||null);
   renderShotChart(data.shooting||null);
   renderFeedback(fb);
@@ -404,31 +418,150 @@ function renderBody(records){
   el.innerHTML=`<div class="report-list">${rows.map(([k,v])=>row(k,v)).join('')}</div>`;
 }
 
-function renderAgility(records){
+function renderAgility(records,ranking,player){
   const el=document.getElementById('agilitySummary');
   if(!records.length){
     el.innerHTML='<div class="report-row"><span>記録</span><strong>未記録</strong></div>';
     return;
   }
 
+  const normalized=records.map(r=>{
+    const name=normalizeAgilityName(r.event||r.type||r.item||r.measurement||r.name||'');
+    return Object.assign({},r,{__name:name});
+  }).filter(r=>r.__name);
+
   const byName={};
-  records.forEach(r=>{
-    const name=String(r.event||r.type||r.item||r.measurement||r.name||'').trim();
-    if(!name)return;
+  normalized.forEach(r=>{
+    const name=r.__name;
     if(!byName[name]||dateKey(r)>=dateKey(byName[name]))byName[name]=r;
   });
 
-  const cards=Object.entries(byName).map(([name,r])=>{
-    const value=agilityValue(r);
-    const date=formatJPDate(r.date||r.measuredAt||r.measuredAtIso||'');
-    return `<div class="agility-card">
-      <div class="name">${esc(name)}</div>
-      <div class="value">${esc(value)}</div>
-      <div class="sub">${esc(date||'日付なし')}</div>
-    </div>`;
-  });
+  const order=[
+    '20mシャトルラン',
+    '反復横跳び',
+    'L字コーン',
+    '垂直跳び',
+    '120回ハンドリング',
+    '龍ラン 1周目',
+    '龍ラン 2周目',
+    '龍ラン'
+  ];
+
+  const cards=Object.entries(byName)
+    .sort((a,b)=>{
+      const ai=order.indexOf(a[0]),bi=order.indexOf(b[0]);
+      return (ai<0?999:ai)-(bi<0?999:bi);
+    })
+    .map(([name,r])=>{
+      const value=formatAgilityValue(name,r);
+      const date=formatJPDate(r.date||r.measuredAt||r.measuredAtIso||'');
+      const rank=agilityRankText(name,ranking,player);
+
+      return `<div class="agility-card">
+        <div class="agility-card-head">
+          <div class="name">${esc(agilityDisplayName(name))}</div>
+          ${rank?`<div class="agility-rank">${esc(rank)}</div>`:''}
+        </div>
+        <div class="value">${esc(value)}</div>
+        <div class="sub">${esc(date||'日付なし')}</div>
+      </div>`;
+    });
 
   el.innerHTML=`<div class="agility-grid">${cards.join('')}</div>`;
+}
+
+function normalizeAgilityName(value){
+  const text=String(value||'').normalize('NFKC').replace(/\s+/g,'');
+  if(!text)return '';
+  if(text.includes('龍ラン')||text.includes('竜ラン')||text.includes('りゅうラン')||text.includes('リュウラン')){
+    if(text.includes('1周'))return '龍ラン 1周目';
+    if(text.includes('2周'))return '龍ラン 2周目';
+    return '龍ラン';
+  }
+  if(text.includes('シャトル'))return '20mシャトルラン';
+  if(text.includes('反復横'))return '反復横跳び';
+  if((text.includes('L字')||text.includes('l字'))&&text.includes('コーン'))return 'L字コーン';
+  if(text.includes('垂直'))return '垂直跳び';
+  if(text.includes('120')&&text.includes('ハンドリング'))return '120回ハンドリング';
+  return String(value||'').trim();
+}
+
+function agilityDisplayName(name){
+  return name==='龍ラン'?'龍ラン 合計':name;
+}
+
+function formatAgilityValue(name,r){
+  const raw=agilityRawValue(r);
+  if(raw===null)return '記録あり';
+
+  const n=Number(raw);
+  if(!Number.isFinite(n))return String(raw);
+
+  if(name==='20mシャトルラン'||name==='反復横跳び'){
+    return `${formatSimpleNumber(n)}回`;
+  }
+
+  if(name==='垂直跳び'){
+    return `${formatSimpleNumber(n)}cm`;
+  }
+
+  if(name==='龍ラン'||name==='龍ラン 1周目'||name==='龍ラン 2周目'){
+    return formatMinutesSeconds(n);
+  }
+
+  if(name==='L字コーン'||name==='120回ハンドリング'){
+    return `${formatSimpleNumber(n)}秒`;
+  }
+
+  const explicitUnit=String(r.unit||'').trim();
+  return explicitUnit?`${formatSimpleNumber(n)}${explicitUnit}`:formatSimpleNumber(n);
+}
+
+function agilityRawValue(r){
+  const c=[
+    r.value,r.result,r.score,r.count,r.time,r.seconds,r.record,
+    r.shuttle,r.shuttleRun,r.verticalJump,r.sideStep,r.sideSteps,
+    r.lCone,r.handling120,r.ryuRun,r.ryuRunTotal,
+    r.ryuRunLap1,r.ryuRunLap2
+  ];
+  const v=c.find(x=>x!==undefined&&x!==null&&String(x).trim()!=='');
+  return v===undefined?null:v;
+}
+
+function formatSimpleNumber(value){
+  const n=Number(value);
+  if(!Number.isFinite(n))return String(value);
+  return Number.isInteger(n)?String(n):String(Math.round(n*100)/100);
+}
+
+function formatMinutesSeconds(seconds){
+  const total=Math.max(0,Math.round(Number(seconds)||0));
+  const minutes=Math.floor(total/60);
+  const remain=total%60;
+  return `${minutes}分${String(remain).padStart(2,'0')}秒`;
+}
+
+function agilityRankText(name,ranking,player){
+  // 龍ラン1周目・2周目はランキング対象外。合計だけ順位表示。
+  const rankingName=(name==='龍ラン 1周目'||name==='龍ラン 2周目')?'':name;
+  if(!rankingName||!ranking||!ranking.agility)return '';
+
+  const group=ranking.agility[rankingName];
+  const rows=group&&Array.isArray(group.rows)?group.rows:[];
+  if(!rows.length)return '';
+
+  const playerId=String(
+    ranking.currentPlayerId||
+    player.playerId||
+    player.id||
+    ''
+  ).trim();
+
+  const row=rows.find(x=>String(x.playerId||'').trim()===playerId);
+  if(!row||row.rank===null||row.rank===undefined)return '';
+
+  const gender=String(ranking.gender||'').trim();
+  return `${gender?gender+' ':''}${row.rank}位`;
 }
 
 function renderShooting(shooting){
