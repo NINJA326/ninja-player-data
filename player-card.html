@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#07111f">
-  <title>NINJA 選手カルテ</title>
+  <title>NINJA 選手カルテ v2</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     :root{
@@ -347,7 +347,18 @@ async function init(){
     );
 
     if(!liff.isLoggedIn()){
-      liff.login({redirectUri:location.href.split('#')[0]});
+      // feedback.html と同じ LIFF アプリを使用。
+      // GitHub Pages の player-card.html を直接開いた場合は、
+      // LINE Login の redirectUri に未登録の個別URLを渡さず、
+      // 動作確認済みの LIFF URL から入り直す。
+      const isInClient = typeof liff.isInClient === 'function' && liff.isInClient();
+
+      if(!isInClient){
+        location.replace('https://liff.line.me/2010789200-osUDbuzD');
+        return;
+      }
+
+      liff.login();
       return;
     }
 
