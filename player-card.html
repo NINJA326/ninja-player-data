@@ -9,6 +9,7 @@
   <meta http-equiv="Expires" content="0">
   <title>NINJA 選手カルテ</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
   <style>
     :root{
       --bg:#07101f;
@@ -51,6 +52,10 @@
       background:#24344b;color:#fff;font-weight:800;
     }
     .btn.primary{background:var(--accent);color:#062014}
+    .btn:disabled{
+      opacity:.6;
+      cursor:wait;
+    }
     .loading{
       min-height:70vh;display:grid;place-items:center;text-align:center;color:#9fb0c6;
     }
@@ -251,7 +256,7 @@
     </div>
     <div class="toolbar-actions">
       <button class="btn" type="button" onclick="history.back()">戻る</button>
-      <button id="printBtn" class="btn primary" type="button">PDF保存 / 印刷</button>
+      <button id="printBtn" class="btn primary" type="button">PDFを保存</button>
     </div>
   </div>
 
@@ -339,7 +344,7 @@
 
 <script>
 'use strict';
-const PLAYER_CARD_VERSION='v10';
+const PLAYER_CARD_VERSION='v11';
 
 const LIFF_ID='2010789200-d4tyvqcE';
 const GAS_URL='https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
@@ -668,22 +673,122 @@ function renderRecordAlert(data){
   }
 }
 
-function savePdf(){
-  const inLine=window.liff&&typeof liff.isInClient==='function'&&liff.isInClient();
-  if(inLine){
-    const url='https://liff.line.me/2010789200-d4tyvqcE?openExternalBrowser=1';
-    if(typeof liff.openWindow==='function'){
-      liff.openWindow({url,external:true});
-      return;
-    }
-    location.href=url;
+async function savePdf(){
+  const btn=document.getElementById('printBtn');
+  const report=document.querySelector('.parent-report-paper');
+
+  if(!report){
+    alert('カルテを表示してからPDFを作成してください。');
     return;
   }
-  const old=document.title;
-  const name=document.getElementById('playerName').textContent||'選手';
+
+  if(typeof window.html2pdf!=='function'){
+    alert('PDF作成ライブラリを読み込めませんでした。通信状態を確認して再度お試しください。');
+    return;
+  }
+
+  const playerName=(document.getElementById('playerName').textContent||'選手').trim();
   const d=new Date();
-  document.title=`${name}_選手カルテ_${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-  setTimeout(()=>{window.print();setTimeout(()=>document.title=old,600)},50);
+  const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  const fileName=`${safeFileName(playerName)}_選手カルテ_${ym}.pdf`;
+
+  const oldText=btn.textContent;
+  btn.disabled=true;
+  btn.textContent='PDF作成中…';
+
+  try{
+    const options={
+      margin:[8,8,8,8],
+      filename:fileName,
+      image:{
+        type:'jpeg',
+        quality:0.96
+      },
+      html2canvas:{
+        scale:2,
+        useCORS:true,
+        backgroundColor:'#ffffff',
+        logging:false,
+        scrollX:0,
+        scrollY:0
+      },
+      jsPDF:{
+        unit:'mm',
+        format:'a4',
+        orientation:'portrait',
+        compress:true
+      },
+      pagebreak:{
+        mode:['css','legacy'],
+        avoid:[
+          '.report-header',
+          '.report-box',
+          '.agility-card',
+          '.report-section h3'
+        ]
+      }
+    };
+
+    const worker=window.html2pdf()
+      .set(options)
+      .from(report)
+      .toPdf();
+
+    const pdf=await worker.get('pdf');
+    const blob=pdf.output('blob');
+    const file=new File(
+      [blob],
+      fileName,
+      {type:'application/pdf'}
+    );
+
+    // iPhone/LINE内でファイル共有が使える場合は、Safariを経由せず
+    // iOSの共有シートを直接開く。
+    if(
+      navigator.share &&
+      navigator.canShare &&
+      navigator.canShare({files:[file]})
+    ){
+      await navigator.share({
+        files:[file],
+        title:'NINJA AIRS 選手カルテ'
+      });
+      return;
+    }
+
+    // Web Share APIのファイル共有に未対応の場合は、
+    // LINE内ブラウザで生成したPDFそのものを開く。
+    const blobUrl=URL.createObjectURL(blob);
+    const opened=window.open(blobUrl,'_blank');
+
+    if(!opened){
+      location.href=blobUrl;
+    }
+
+    setTimeout(function(){
+      URL.revokeObjectURL(blobUrl);
+    },60000);
+
+  }catch(error){
+    if(error&&error.name==='AbortError'){
+      return;
+    }
+
+    console.error(error);
+    alert(
+      'PDFを作成できませんでした。もう一度お試しください。'
+    );
+  }finally{
+    btn.disabled=false;
+    btn.textContent=oldText;
+  }
+}
+
+function safeFileName(value){
+  return String(value||'選手')
+    .replace(/[\\/:*?"<>|]/g,'_')
+    .replace(/\s+/g,' ')
+    .trim()||'選手';
 }
 
 function parseFeedback(text){
