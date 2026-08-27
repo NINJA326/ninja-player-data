@@ -348,7 +348,7 @@
 
 <script>
 'use strict';
-const PLAYER_CARD_VERSION='v15';
+const PLAYER_CARD_VERSION='v16';
 
 const LIFF_ID='2010789200-d4tyvqcE';
 const GAS_URL='https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
@@ -724,11 +724,11 @@ function courtPosition(name,type){
 
     '右0度（コーナーミドル）':{x:72,y:78},
     '左0度（コーナーミドル）':{x:28,y:78},
-    '右45度（ウィングミドル）':{x:67,y:61},
+    '右45度（ウィングミドル）':{x:72,y:56},
     '左45度（ウィングミドル）':{x:33,y:61},
     '90度（トップミドル）':{x:50,y:54},
 
-    '右エルボー':{x:60,y:68},
+    '右エルボー':{x:57,y:70},
     '左エルボー':{x:40,y:68},
     'フリースロー':{x:50,y:66},
     '右レイアップ':{x:55,y:90},
@@ -743,11 +743,11 @@ function courtPosition(name,type){
   // 具体的な「ミドル」を先に判定し、通常0度/45度との衝突を防ぐ。
   if(n.includes('右0度')&&n.includes('ミドル'))return {x:72,y:78};
   if(n.includes('左0度')&&n.includes('ミドル'))return {x:28,y:78};
-  if(n.includes('右45度')&&n.includes('ミドル'))return {x:67,y:61};
+  if(n.includes('右45度')&&n.includes('ミドル'))return {x:72,y:56};
   if(n.includes('左45度')&&n.includes('ミドル'))return {x:33,y:61};
   if((n.includes('90度')||n.includes('トップ'))&&n.includes('ミドル'))return {x:50,y:54};
 
-  if(n.includes('右エルボー'))return {x:60,y:68};
+  if(n.includes('右エルボー'))return {x:57,y:70};
   if(n.includes('左エルボー'))return {x:40,y:68};
 
   if(n.includes('右0度')||n.includes('右コーナー')||n.includes('右底角')){
@@ -757,7 +757,7 @@ function courtPosition(name,type){
     return t.includes('3P')?{x:12,y:82}:{x:28,y:78};
   }
   if(n.includes('右45度')||n.includes('右ウィング')){
-    return t.includes('3P')?{x:80,y:52}:{x:67,y:61};
+    return t.includes('3P')?{x:80,y:52}:{x:72,y:56};
   }
   if(n.includes('左45度')||n.includes('左ウィング')){
     return t.includes('3P')?{x:20,y:52}:{x:33,y:61};
