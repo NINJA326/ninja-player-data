@@ -3,249 +3,221 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#07111f">
+  <meta name="theme-color" content="#0b1220">
   <title>NINJA 選手カルテ</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     :root{
-      --bg:#07111f;
-      --panel:#0d192a;
-      --line:#223653;
-      --text:#f5f8fc;
-      --muted:#9eb0c7;
-      --accent:#37cf82;
-      --blue:#5aa7ff;
-      --danger:#ff6b76;
-      --safe-bottom:env(safe-area-inset-bottom,0px);
+      --bg:#07101f;
+      --panel:#e8edf3;
+      --paper:#fff;
+      --ink:#172033;
+      --muted:#68768a;
+      --line:#d6dde7;
+      --green:#2f9e66;
+      --orange:#d89000;
+      --blue:#3c7fd1;
+      --purple:#7653b7;
+      --accent:#35c97b;
+      --danger:#b42318;
     }
     *{box-sizing:border-box}
     html{background:var(--bg)}
     body{
       margin:0;
+      background:linear-gradient(145deg,#07101f,#0c1728 55%,#081221);
+      color:#f4f7fb;
+      font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif;
       min-height:100vh;
-      background:
-        radial-gradient(circle at 90% 0%,rgba(90,167,255,.12),transparent 28%),
-        linear-gradient(180deg,#07111f,#091625);
-      color:var(--text);
-      font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue","Yu Gothic",Meiryo,sans-serif;
-      -webkit-font-smoothing:antialiased;
-      padding-bottom:calc(24px + var(--safe-bottom));
     }
-    button{font:inherit;-webkit-tap-highlight-color:transparent}
-    .app{max-width:760px;margin:0 auto;padding:14px}
-    .topbar{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-      padding:8px 0 14px;
+    button{font:inherit}
+    .app{max-width:880px;margin:0 auto;padding:10px}
+    .toolbar{
+      position:sticky;top:0;z-index:20;
+      display:flex;justify-content:space-between;align-items:center;gap:10px;
+      padding:10px 0 12px;
+      background:linear-gradient(180deg,#07101f 82%,rgba(7,16,31,0));
     }
-    .brand small{
-      display:block;
-      color:var(--accent);
-      font-size:10px;
-      font-weight:900;
-      letter-spacing:.16em;
-      margin-bottom:3px;
+    .toolbar-brand small{
+      display:block;color:var(--accent);font-size:10px;font-weight:900;letter-spacing:.16em;
     }
-    .brand strong{font-size:21px}
-    .actions{display:flex;gap:8px}
+    .toolbar-brand strong{display:block;margin-top:2px;font-size:20px}
+    .toolbar-actions{display:flex;gap:8px}
     .btn{
-      min-height:44px;
-      border-radius:13px;
-      border:1px solid var(--line);
-      background:#13233a;
-      color:#fff;
-      padding:0 14px;
-      font-weight:800;
+      min-height:44px;border:0;border-radius:12px;padding:0 14px;
+      background:#24344b;color:#fff;font-weight:800;
     }
-    .btn.primary{
-      background:var(--accent);
-      border-color:var(--accent);
-      color:#052116;
-    }
+    .btn.primary{background:var(--accent);color:#062014}
     .loading{
-      min-height:65vh;
-      display:grid;
-      place-items:center;
-      text-align:center;
-      color:var(--muted);
+      min-height:70vh;display:grid;place-items:center;text-align:center;color:#9fb0c6;
     }
     .spinner{
-      width:34px;height:34px;
-      margin:0 auto 14px;
-      border:3px solid #203450;
-      border-top-color:var(--accent);
-      border-radius:50%;
-      animation:spin .8s linear infinite;
+      width:34px;height:34px;margin:0 auto 14px;border:3px solid #203450;
+      border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;
     }
     @keyframes spin{to{transform:rotate(360deg)}}
     .hidden{display:none!important}
-
-    .paper{
-      background:#fff;
-      color:#111827;
-      border-radius:18px;
-      overflow:hidden;
-      box-shadow:0 18px 50px rgba(0,0,0,.28);
+    .report-shell{
+      background:var(--panel);border-radius:16px;padding:9px;
+    }
+    .parent-report-paper{
+      width:min(794px,100%);
+      margin:0 auto;
+      background:var(--paper);
+      color:var(--ink);
+      box-shadow:0 8px 30px rgba(0,0,0,.25);
+      padding:30px 30px 34px;
     }
     .report-header{
-      padding:22px;
-      background:linear-gradient(135deg,#101827,#18263c);
-      color:#fff;
+      border-bottom:3px solid var(--ink);
+      padding-bottom:14px;margin-bottom:20px;
     }
     .report-brand{
-      color:#74e6a8;
-      font-size:11px;
-      font-weight:900;
-      letter-spacing:.16em;
+      font-size:12px;font-weight:800;letter-spacing:.14em;color:#52708f;
     }
     .report-title{
-      font-size:28px;
-      font-weight:900;
-      margin:4px 0 14px;
+      font-size:28px;font-weight:900;margin:4px 0 12px;
     }
-    .meta{
-      display:grid;
-      grid-template-columns:repeat(3,1fr);
-      gap:8px;
+    .report-meta{
+      display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;font-size:13px;
     }
-    .meta div{
-      border:1px solid rgba(255,255,255,.18);
-      border-radius:11px;
-      padding:9px 10px;
-      background:rgba(255,255,255,.05);
+    .report-meta div{
+      border:1px solid var(--line);border-radius:9px;padding:9px 11px;min-width:0;
     }
-    .meta small{display:block;color:#b7c4d7;font-size:9px}
-    .meta strong{display:block;margin-top:3px;font-size:13px}
-
-    .report-body{padding:18px}
-    .summary-grid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
-      margin-bottom:16px;
+    .report-meta small{display:block;color:var(--muted);margin-bottom:3px}
+    .report-meta strong{display:block;word-break:break-word}
+    .report-summary-grid{
+      display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0;
     }
-    .box{
-      border:1px solid #d8e0ea;
-      border-radius:13px;
-      padding:13px;
-      background:#f8fafc;
+    .report-box{
+      border:1px solid var(--line);border-radius:11px;padding:13px;break-inside:avoid;
     }
-    .box.full{grid-column:1/-1}
-    .box h3{
-      margin:0 0 9px;
-      font-size:14px;
-      color:#1f3a56;
+    .report-box.full{grid-column:1/-1}
+    .report-box h4{
+      margin:0 0 9px;font-size:15px;border-left:4px solid var(--green);padding-left:8px;
     }
-    .data-list{display:grid;gap:7px}
-    .data-row{
-      display:flex;
-      justify-content:space-between;
-      gap:12px;
-      border-bottom:1px solid #e5eaf0;
-      padding-bottom:6px;
-      font-size:12px;
+    .report-list{display:grid;gap:8px}
+    .report-row{
+      display:flex;justify-content:space-between;align-items:flex-start;gap:14px;
+      border-bottom:1px solid #edf1f5;padding-bottom:7px;font-size:12.5px;line-height:1.55;
     }
-    .data-row:last-child{border-bottom:0;padding-bottom:0}
-    .data-row span{color:#64748b}
-    .data-row strong{text-align:right}
-    .note{font-size:11px;color:#64748b;line-height:1.6}
-
-    .coach-title{
-      margin:18px 0 10px;
-      padding-bottom:8px;
-      border-bottom:2px solid #1e293b;
+    .report-row:last-child{border-bottom:0;padding-bottom:0}
+    .report-row span{color:#4d5e73;flex:0 0 auto}
+    .report-row strong{text-align:right;font-weight:800}
+    .agility-grid{
+      display:grid;grid-template-columns:1fr 1fr;gap:8px;
     }
-    .coach-title strong{font-size:17px}
-    .coach-title span{display:block;font-size:10px;color:#64748b;margin-top:2px}
-    .section{
-      margin-bottom:11px;
-      border-radius:12px;
-      padding:13px;
-      border:1px solid #d8e0ea;
-      page-break-inside:avoid;
+    .agility-card{
+      border:1px solid #dce3eb;border-radius:10px;padding:10px;background:#fbfcfe;
     }
-    .section h3{margin:0 0 7px;font-size:14px}
-    .section.good{border-left:5px solid #22a06b}
-    .section.improve{border-left:5px solid #f59e0b}
-    .section.direction{border-left:5px solid #3b82f6}
-    .section.overall{border-left:5px solid #8b5cf6}
-    .text{
-      white-space:pre-wrap;
-      word-break:break-word;
-      font-size:12px;
-      line-height:1.75;
+    .agility-card .name{font-weight:800;font-size:12px;margin-bottom:5px}
+    .agility-card .value{font-size:17px;font-weight:900}
+    .agility-card .sub{font-size:10px;color:#718096;margin-top:3px;line-height:1.45}
+    .shot-chart{
+      position:relative;
+      width:min(100%,470px);
+      margin:6px auto 0;
+      aspect-ratio:0.92/1;
+      background:#d7a86e;
+      border:4px solid #f5f5f5;
+      border-radius:8px;
+      overflow:hidden;
+      box-shadow:0 0 0 1px #cbd5df;
+    }
+    .shot-chart svg{position:absolute;inset:0;width:100%;height:100%}
+    .shot-dot{
+      position:absolute;transform:translate(-50%,-50%);
+      width:54px;height:54px;border:3px solid #fff;border-radius:50%;
+      display:grid;place-items:center;text-align:center;
+      font-weight:900;font-size:13px;line-height:1.05;
+      box-shadow:0 3px 10px rgba(0,0,0,.25);
+      color:#fff;background:#1f8a4c;
+    }
+    .shot-dot small{display:block;font-size:8px;font-weight:700;margin-top:2px}
+    .shot-dot.low{background:#b42318}
+    .shot-dot.mid{background:#d4a017;color:#15120a}
+    .shot-dot.high{background:#1f8a4c}
+    .report-coach-title{
+      margin-top:24px;padding:12px 14px;
+      border-top:2px solid var(--ink);border-bottom:1px solid var(--line);
+      display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+      break-after:avoid;page-break-after:avoid;
+    }
+    .report-coach-title strong{font-size:20px}
+    .report-coach-title span{font-size:11.5px;color:var(--muted)}
+    .report-section{
+      margin-top:18px;break-inside:auto;page-break-inside:auto;
+    }
+    .report-section h3{
+      font-size:17px;margin:0 0 10px;padding:8px 11px;background:#edf3f8;
+      border-left:5px solid var(--blue);
+      break-after:avoid;page-break-after:avoid;
+    }
+    .report-text{
+      font-size:13.5px;line-height:1.9;white-space:pre-wrap;word-break:break-word;
+      overflow-wrap:anywhere;min-height:36px;padding:0 2px;
+    }
+    .report-section.good h3{border-left-color:var(--green)}
+    .report-section.improve h3{border-left-color:var(--orange)}
+    .report-section.direction h3{border-left-color:var(--blue)}
+    .report-section.overall h3{border-left-color:var(--purple)}
+    .report-alert{
+      margin-top:16px;border:1px solid #e0a83b;background:#fff8e8;
+      border-radius:10px;padding:11px 13px;font-size:12px;line-height:1.65;
     }
     .report-footer{
-      padding:14px 18px 20px;
-      color:#64748b;
-      font-size:10px;
-      text-align:center;
+      margin-top:24px;padding-top:12px;border-top:1px solid var(--line);
+      text-align:right;font-size:11px;color:#718096;
     }
-
     .error{
-      padding:22px;
-      border:1px solid #71313d;
-      border-radius:16px;
-      background:#35151d;
-      color:#ffc4ca;
+      padding:20px;border:1px solid #7a3340;border-radius:14px;background:#3b1720;color:#ffd2d7;
     }
-    .error strong{display:block;margin-bottom:7px;font-size:18px}
-
-    @media(max-width:560px){
-      .app{padding:10px}
-      .topbar{align-items:flex-start}
-      .actions{flex-direction:column}
-      .btn{min-height:42px;padding:0 11px}
-      .report-header{padding:17px}
+    @media(max-width:700px){
+      .app{padding:6px}
+      .toolbar{padding:7px 2px 10px}
+      .toolbar-brand strong{font-size:17px}
+      .toolbar-actions{gap:6px}
+      .btn{min-height:42px;padding:0 11px;font-size:13px}
+      .report-shell{padding:4px;border-radius:8px}
+      .parent-report-paper{padding:22px 16px 28px}
       .report-title{font-size:25px}
-      .meta{grid-template-columns:1fr}
-      .summary-grid{grid-template-columns:1fr}
-      .box.full{grid-column:auto}
-      .report-body{padding:13px}
+      .report-meta{grid-template-columns:1fr 1fr}
+      .report-summary-grid{grid-template-columns:1fr}
+      .report-box.full{grid-column:auto}
+      .agility-grid{grid-template-columns:1fr 1fr}
+      .report-coach-title{padding:10px 7px}
+      .report-coach-title strong{font-size:18px}
+      .report-text{font-size:13px;line-height:1.85}
     }
-
+    @media(max-width:410px){
+      .report-meta{grid-template-columns:1fr 1fr}
+      .agility-grid{grid-template-columns:1fr}
+    }
     @media print{
-      @page{size:A4;margin:10mm}
-      html,body{
-        background:#fff!important;
-        color:#111!important;
-        padding:0!important;
+      @page{size:A4;margin:8mm}
+      html,body{background:#fff!important}
+      .toolbar,.loading,#errorView{display:none!important}
+      .app{max-width:none;padding:0}
+      .report-shell{padding:0;background:#fff}
+      .parent-report-paper{
+        width:100%;box-shadow:none;padding:0;color:#172033;
       }
-      .app{
-        max-width:none;
-        padding:0;
-      }
-      .topbar,.loading,#errorView{
-        display:none!important;
-      }
-      #reportView{
-        display:block!important;
-      }
-      .paper{
-        border-radius:0;
-        box-shadow:none;
-      }
-      .report-header{
-        -webkit-print-color-adjust:exact;
-        print-color-adjust:exact;
-      }
-      .box,.section{
-        break-inside:avoid;
-      }
+      .report-meta{grid-template-columns:repeat(4,1fr)}
+      .report-summary-grid{grid-template-columns:1fr 1fr}
+      .report-box.full{grid-column:1/-1}
+      .report-section,.report-box,.agility-card{break-inside:avoid}
+      .shot-chart{max-width:430px}
     }
   </style>
 </head>
 <body>
-<!-- player-card v4: iPhone/LINE print fallback -->
 <div class="app">
-  <div class="topbar">
-    <div class="brand">
+  <div class="toolbar">
+    <div class="toolbar-brand">
       <small>NINJA AIRS</small>
       <strong>選手カルテ</strong>
     </div>
-    <div class="actions">
+    <div class="toolbar-actions">
       <button class="btn" type="button" onclick="history.back()">戻る</button>
       <button id="printBtn" class="btn primary" type="button">PDF保存 / 印刷</button>
     </div>
@@ -259,65 +231,70 @@
   </section>
 
   <section id="reportView" class="hidden">
-    <article class="paper">
-      <header class="report-header">
-        <div class="report-brand">NINJA AIRS U15</div>
-        <div class="report-title">選手カルテ</div>
-        <div class="meta">
-          <div><small>選手名</small><strong id="playerName">-</strong></div>
-          <div><small>カテゴリー</small><strong id="playerCategory">-</strong></div>
-          <div><small>作成日</small><strong id="createdDate">-</strong></div>
+    <div class="report-shell">
+      <article class="parent-report-paper">
+        <header class="report-header">
+          <div class="report-brand">NINJA AIRS U15</div>
+          <div class="report-title">選手カルテ</div>
+          <div class="report-meta">
+            <div><small>選手名</small><strong id="playerName">-</strong></div>
+            <div><small>カテゴリー</small><strong id="playerCategory">-</strong></div>
+            <div><small>記入者</small><strong id="writerName">未設定</strong></div>
+            <div><small>作成日</small><strong id="createdDate">-</strong></div>
+          </div>
+        </header>
+
+        <div class="report-summary-grid">
+          <section class="report-box">
+            <h4>身体測定</h4>
+            <div id="bodySummary"></div>
+          </section>
+
+          <section class="report-box">
+            <h4>アジリティ</h4>
+            <div id="agilitySummary"></div>
+          </section>
+
+          <section class="report-box full">
+            <h4>シューティング</h4>
+            <div id="shootingSummary"></div>
+          </section>
+
+          <section class="report-box full">
+            <h4>シュートチャート</h4>
+            <div id="shotChartSummary"></div>
+          </section>
         </div>
-      </header>
 
-      <div class="report-body">
-        <div class="summary-grid">
-          <section class="box">
-            <h3>身体測定</h3>
-            <div id="bodySummary" class="data-list"></div>
-          </section>
-
-          <section class="box">
-            <h3>アジリティ</h3>
-            <div id="agilitySummary" class="data-list"></div>
-          </section>
-
-          <section class="box full">
-            <h3>シューティング</h3>
-            <div id="shootingSummary" class="data-list"></div>
-          </section>
-        </div>
-
-        <div class="coach-title">
+        <div class="report-coach-title">
           <strong>コーチ所見</strong>
           <span>現在の成長と次の取り組み</span>
         </div>
 
-        <section class="section good">
+        <section class="report-section good">
           <h3>いいところ</h3>
-          <div id="goodText" class="text">未記入</div>
+          <div id="goodText" class="report-text">未記入</div>
         </section>
 
-        <section class="section improve">
+        <section class="report-section improve">
           <h3>改善点</h3>
-          <div id="improvementText" class="text">未記入</div>
+          <div id="improvementText" class="report-text">未記入</div>
         </section>
 
-        <section class="section direction">
+        <section class="report-section direction">
           <h3>方向性</h3>
-          <div id="directionText" class="text">未記入</div>
+          <div id="directionText" class="report-text">未記入</div>
         </section>
 
-        <section class="section overall">
+        <section class="report-section overall">
           <h3>総合所見</h3>
-          <div id="overallText" class="text">未記入</div>
+          <div id="overallText" class="report-text">未記入</div>
         </section>
-      </div>
 
-      <footer class="report-footer">
-        NINJA AIRS U15
-      </footer>
-    </article>
+        <div id="recordAlert" class="report-alert hidden"></div>
+        <footer class="report-footer">NINJA AIRS U15</footer>
+      </article>
+    </div>
   </section>
 
   <section id="errorView" class="hidden">
@@ -331,39 +308,24 @@
 <script>
 'use strict';
 
-const LIFF_ID = '2010789200-d4tyvqcE';
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
+const LIFF_ID='2010789200-d4tyvqcE';
+const GAS_URL='https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
 
 window.addEventListener('load',init);
 document.getElementById('printBtn').addEventListener('click',savePdf);
 
 async function init(){
   try{
-    if(!window.liff) throw new Error('LIFF SDKを読み込めませんでした。');
-
-    await withTimeout(
-      liff.init({liffId:LIFF_ID}),
-      15000,
-      'LINE認証の初期化がタイムアウトしました。'
-    );
-
-    if(!liff.isLoggedIn()){
-      liff.login();
-      return;
-    }
-
+    if(!window.liff)throw new Error('LIFF SDKを読み込めませんでした。');
+    await withTimeout(liff.init({liffId:LIFF_ID}),15000,'LINE認証の初期化がタイムアウトしました。');
+    if(!liff.isLoggedIn()){liff.login();return;}
     const idToken=liff.getIDToken();
-    if(!idToken) throw new Error('LINE認証情報を取得できませんでした。');
+    if(!idToken)throw new Error('LINE認証情報を取得できませんでした。');
 
-    const result=await jsonp({
-      action:'playerCard.listMine',
-      idToken
-    });
-
+    const result=await jsonp({action:'playerCard.listMine',idToken});
     if(!result||result.status==='error'||result.success===false){
       throw new Error(result&&result.message?result.message:'選手カルテを取得できませんでした。');
     }
-
     render(result);
   }catch(error){
     showError(error&&error.message?error.message:String(error));
@@ -371,366 +333,294 @@ async function init(){
 }
 
 function render(data){
-  const player=data.player||{};
-  setText('playerName',player.name||player.playerName||'選手');
-  setText('playerCategory',player.category||'未設定');
-  setText('createdDate',formatDateOnly(data.generatedAt||new Date().toISOString()));
+  const p=data.player||{};
+  setText('playerName',p.name||p.playerName||'選手');
+  setText('playerCategory',p.category||'未設定');
+  setText('createdDate',formatJPDate(data.generatedAt||new Date().toISOString()));
+
+  const fb=data.feedback||{};
+  setText('writerName',fb.writerName||fb.createdBy||fb.coachName||fb.author||'未設定');
 
   renderBody(data.growth&&Array.isArray(data.growth.records)?data.growth.records:[]);
   renderAgility(data.agility&&Array.isArray(data.agility.records)?data.agility.records:[]);
   renderShooting(data.shooting||null);
-  renderFeedback(data.feedback||null);
+  renderShotChart(data.shooting||null);
+  renderFeedback(fb);
+  renderRecordAlert(data);
 
-  document.title=`${player.name||player.playerName||'選手'}_選手カルテ`;
+  document.title=`${p.name||p.playerName||'選手'}_選手カルテ`;
   showOnly('reportView');
 }
 
 function renderBody(records){
-  const box=document.getElementById('bodySummary');
+  const el=document.getElementById('bodySummary');
   if(!records.length){
-    box.innerHTML='<div class="note">記録はありません。</div>';
+    el.innerHTML='<div class="report-row"><span>記録</span><strong>未記録</strong></div>';
     return;
   }
-
   const sorted=[...records].sort((a,b)=>dateKey(a)-dateKey(b));
   const first=sorted[0]||{};
   const latest=sorted[sorted.length-1]||{};
-
   const rows=[
-    ['初回',`${formatShortDate(first.date||first.measuredAtIso)} / 身長 ${valueUnit(first.height,'cm')} / 体重 ${valueUnit(first.weight,'kg')}`],
-    ['最新',`${formatShortDate(latest.date||latest.measuredAtIso)} / 身長 ${valueUnit(latest.height,'cm')} / 体重 ${valueUnit(latest.weight,'kg')}`]
+    ['測定日',formatJPDate(latest.date||latest.measuredAtIso||latest.measuredAt||'')],
+    ['身長',unit(latest.height,'cm')],
+    ['体重',unit(latest.weight,'kg')]
   ];
+  const h1=num(first.height),h2=num(latest.height),w1=num(first.weight),w2=num(latest.weight);
+  if(Number.isFinite(h1)&&Number.isFinite(h2))rows.push(['身長 初回→現在',signed(h2-h1,'cm')]);
+  if(Number.isFinite(w1)&&Number.isFinite(w2))rows.push(['体重 初回→現在',signed(w2-w1,'kg')]);
 
-  const hd=number(latest.height)-number(first.height);
-  const wd=number(latest.weight)-number(first.weight);
-
-  if(Number.isFinite(hd)&&first.height!==''&&latest.height!==''){
-    rows.push(['身長変化',signed(hd,'cm')]);
-  }
-  if(Number.isFinite(wd)&&first.weight!==''&&latest.weight!==''){
-    rows.push(['体重変化',signed(wd,'kg')]);
-  }
-
-  box.innerHTML=rows.map(([k,v])=>rowHtml(k,v)).join('');
+  el.innerHTML=`<div class="report-list">${rows.map(([k,v])=>row(k,v)).join('')}</div>`;
 }
 
 function renderAgility(records){
-  const box=document.getElementById('agilitySummary');
+  const el=document.getElementById('agilitySummary');
   if(!records.length){
-    box.innerHTML='<div class="note">記録はありません。</div>';
+    el.innerHTML='<div class="report-row"><span>記録</span><strong>未記録</strong></div>';
     return;
   }
 
-  const grouped={};
+  const byName={};
   records.forEach(r=>{
     const name=String(r.event||r.type||r.item||r.measurement||r.name||'').trim();
     if(!name)return;
-    if(!grouped[name]||dateKey(r)>=dateKey(grouped[name])) grouped[name]=r;
+    if(!byName[name]||dateKey(r)>=dateKey(byName[name]))byName[name]=r;
   });
 
-  const rows=Object.entries(grouped)
-    .slice(0,8)
-    .map(([name,r])=>[
-      name,
-      `${agilityValue(r)}${r.date||r.measuredAt||r.measuredAtIso?` (${formatShortDate(r.date||r.measuredAt||r.measuredAtIso)})`:''}`
-    ]);
+  const cards=Object.entries(byName).map(([name,r])=>{
+    const value=agilityValue(r);
+    const date=formatJPDate(r.date||r.measuredAt||r.measuredAtIso||'');
+    return `<div class="agility-card">
+      <div class="name">${esc(name)}</div>
+      <div class="value">${esc(value)}</div>
+      <div class="sub">${esc(date||'日付なし')}</div>
+    </div>`;
+  });
 
-  box.innerHTML=rows.length
-    ? rows.map(([k,v])=>rowHtml(k,v)).join('')
-    : '<div class="note">表示できる記録がありません。</div>';
+  el.innerHTML=`<div class="agility-grid">${cards.join('')}</div>`;
 }
 
 function renderShooting(shooting){
-  const box=document.getElementById('shootingSummary');
+  const el=document.getElementById('shootingSummary');
   if(!shooting){
-    box.innerHTML='<div class="note">記録はありません。</div>';
+    el.innerHTML='<div class="report-row"><span>記録</span><strong>未記録</strong></div>';
     return;
   }
 
+  const rows=[];
   const total=shooting.total||{};
   const made=firstNumber(total.made,total.success,total.makes,total.hit);
   const attempts=firstNumber(total.attempts,total.shots,total.total,total.trials);
-  const records=firstNumber(total.records,shooting.records);
+  const latestDate=shooting.latestDate||shooting.lastRecordedAt||shooting.updatedAt||'';
 
-  const rows=[];
-  if(attempts!==null&&made!==null){
-    const pct=attempts>0?(made/attempts*100).toFixed(1):'0.0';
-    rows.push(['全体',`${made}/${attempts}本（${pct}%）`]);
-  }else if(records!==null){
-    rows.push(['記録数',`${records}件`]);
+  if(latestDate)rows.push(['最終記入日',formatJPDate(latestDate)]);
+  if(made!==null&&attempts!==null){
+    rows.push(['合計',`${made}本成功 / ${attempts}本試投 / 成功率 ${pct(made,attempts)}`]);
   }
 
   const types=Array.isArray(shooting.byType)?shooting.byType:[];
-  types.slice(0,8).forEach(item=>{
-    const label=String(item.type||item.shotType||item.name||'').trim();
-    if(!label)return;
+  types.forEach(item=>{
+    const name=String(item.type||item.shotType||item.name||'').trim();
+    if(!name)return;
     const m=firstNumber(item.made,item.success,item.makes,item.hit);
     const a=firstNumber(item.attempts,item.shots,item.total,item.trials);
-    if(m!==null&&a!==null){
-      const pct=a>0?(m/a*100).toFixed(1):'0.0';
-      rows.push([label,`${m}/${a}本（${pct}%）`]);
-    }
+    if(m!==null&&a!==null)rows.push([name,`${m}本成功 / ${a}本試投 / ${pct(m,a)}`]);
   });
 
-  box.innerHTML=rows.length
-    ? rows.map(([k,v])=>rowHtml(k,v)).join('')
-    : '<div class="note">シュート記録はありますが、集計表示できる項目がありません。</div>';
+  if(!rows.length)rows.push(['記録','シュート記録あり']);
+  el.innerHTML=`<div class="report-list">${rows.map(([k,v])=>row(k,v)).join('')}</div>`;
 }
 
-function renderFeedback(feedback){
-  if(!feedback){
-    setText('goodText','未記入');
-    setText('improvementText','未記入');
-    setText('directionText','未記入');
-    setText('overallText','未記入');
+function renderShotChart(shooting){
+  const el=document.getElementById('shotChartSummary');
+  const types=Array.isArray(shooting&&shooting.byType)?shooting.byType:[];
+  if(!types.length){
+    el.innerHTML='<div class="report-row"><span>チャート</span><strong>表示できる集計なし</strong></div>';
     return;
   }
 
+  const map={};
+  types.forEach(item=>{
+    const key=String(item.type||item.shotType||item.name||'').toLowerCase();
+    const m=firstNumber(item.made,item.success,item.makes,item.hit);
+    const a=firstNumber(item.attempts,item.shots,item.total,item.trials);
+    if(a===null||m===null)return;
+    const rate=a>0?m/a*100:0;
+    if(key.includes('3'))map.three={rate,m,a};
+    else if(key.includes('右'))map.right={rate,m,a};
+    else if(key.includes('左'))map.left={rate,m,a};
+    else if(key.includes('2'))map.mid={rate,m,a};
+  });
+
+  const dots=[];
+  if(map.three)dots.push(dot('50%','22%',map.three,'3P'));
+  if(map.left)dots.push(dot('28%','64%',map.left,'2P'));
+  if(map.mid)dots.push(dot('52%','56%',map.mid,'2P'));
+  if(map.right)dots.push(dot('74%','64%',map.right,'2P'));
+
+  if(!dots.length){
+    el.innerHTML='<div class="report-row"><span>チャート</span><strong>表示できる位置別集計なし</strong></div>';
+    return;
+  }
+
+  el.innerHTML=`<div class="shot-chart">
+    <svg viewBox="0 0 100 110" aria-hidden="true">
+      <rect x="1" y="1" width="98" height="108" fill="none" stroke="#fff" stroke-width="1.2"/>
+      <line x1="1" y1="22" x2="99" y2="22" stroke="#fff" stroke-width="1.2"/>
+      <path d="M38 22 A12 12 0 0 0 62 22" fill="none" stroke="#fff" stroke-width="1.2"/>
+      <rect x="34" y="75" width="32" height="34" fill="none" stroke="#fff" stroke-width="1.2"/>
+      <circle cx="50" cy="75" r="12" fill="none" stroke="#fff" stroke-width="1.2"/>
+      <path d="M22 109 A28 28 0 0 1 78 109" fill="none" stroke="#fff" stroke-width="1.2"/>
+      <line x1="44" y1="82" x2="56" y2="82" stroke="#fff" stroke-width="1.2"/>
+    </svg>
+    ${dots.join('')}
+  </div>`;
+}
+
+function dot(left,top,data,label){
+  const cls=data.rate<35?'low':data.rate<50?'mid':'high';
+  return `<div class="shot-dot ${cls}" style="left:${left};top:${top}">
+    <div>${Math.round(data.rate)}%<small>${esc(label)}<br>${data.m}/${data.a}</small></div>
+  </div>`;
+}
+
+function renderFeedback(feedback){
   const direct={
-    good:cleanRichText(feedback.goodPoints||''),
-    improve:cleanRichText(feedback.improvementPoints||''),
-    direction:cleanRichText(feedback.futureDirection||''),
-    summary:cleanRichText(feedback.overallComment||'')
+    good:clean(feedback.goodPoints||feedback.good||''),
+    improve:clean(feedback.improvementPoints||feedback.improvement||feedback.improve||''),
+    direction:clean(feedback.futureDirection||feedback.direction||''),
+    summary:clean(feedback.overallComment||feedback.summary||'')
   };
 
-  if(!direct.good||!direct.improve||!direct.direction||!direct.summary){
-    const parsed=parseFeedback(feedback.feedbackText||'');
-    direct.good=direct.good||parsed.good;
-    direct.improve=direct.improve||parsed.improve;
-    direct.direction=direct.direction||parsed.direction;
-    direct.summary=direct.summary||parsed.summary;
-  }
+  const parsed=parseFeedback(feedback.feedbackText||feedback.coachComment||'');
+  direct.good=direct.good||parsed.good;
+  direct.improve=direct.improve||parsed.improve;
+  direct.direction=direct.direction||parsed.direction;
+  direct.summary=direct.summary||parsed.summary||clean(feedback.feedbackText||feedback.coachComment||'');
 
   setText('goodText',direct.good||'未記入');
   setText('improvementText',direct.improve||'未記入');
   setText('directionText',direct.direction||'未記入');
-  setText('overallText',direct.summary||cleanRichText(feedback.feedbackText||'')||'未記入');
+  setText('overallText',direct.summary||'未記入');
 }
 
-function parseFeedback(text){
-  const raw=String(text||'')
-    .replace(/<br\s*\/?>/gi,'\n')
-    .replace(/\r\n?/g,'\n')
-    .trim();
-
-  const result={good:'',improve:'',direction:'',summary:''};
-  if(!raw)return result;
-
-  const aliases={
-    good:['いいところ','良いところ'],
-    improve:['改善点'],
-    direction:['方向性'],
-    summary:['総合所見']
-  };
-
-  const lines=raw.split('\n');
-  let current='';
-  const bucket={good:[],improve:[],direction:[],summary:[]};
-
-  for(const line of lines){
-    const normalized=normalizeHeading(line);
-    let hit='';
-    Object.entries(aliases).some(([key,list])=>{
-      if(list.includes(normalized)){hit=key;return true}
-      return false;
-    });
-    if(hit){current=hit;continue}
-    if(current)bucket[current].push(line);
+function renderRecordAlert(data){
+  const alerts=[];
+  const body=data.growth&&Array.isArray(data.growth.records)?data.growth.records:[];
+  if(body.length){
+    const latest=[...body].sort((a,b)=>dateKey(a)-dateKey(b)).at(-1);
+    const raw=latest&&(latest.date||latest.measuredAtIso||latest.measuredAt);
+    if(raw){
+      const days=daysAgo(raw);
+      if(days!==null&&days>=60)alerts.push(`身体測定：最新入力から${days}日経過しています。`);
+    }
   }
-
-  Object.keys(bucket).forEach(key=>{
-    result[key]=cleanRichText(bucket[key].join('\n'));
-  });
-
-  return result;
-}
-
-function normalizeHeading(line){
-  return String(line||'')
-    .replace(/^\s*#{1,6}\s*/,'')
-    .replace(/\*\*/g,'')
-    .replace(/^[【\[]?/,'')
-    .replace(/[】\]]?$/,'')
-    .replace(/[：:]$/,'')
-    .replace(/\s+/g,'')
-    .trim();
-}
-
-function cleanRichText(value){
-  return String(value||'')
-    .replace(/<br\s*\/?>/gi,'\n')
-    .replace(/<[^>]+>/g,'')
-    .replace(/^\s*#{1,6}\s*/gm,'')
-    .replace(/\*\*/g,'')
-    .trim();
-}
-
-function agilityValue(r){
-  const candidates=[
-    r.value,r.result,r.score,r.count,r.time,r.seconds,r.record,
-    r.shuttle,r.verticalJump,r.sideStep,r.lCone,r.ryuRun
-  ];
-  const found=candidates.find(v=>v!==undefined&&v!==null&&String(v).trim()!=='');
-  return found===undefined?'記録あり':String(found);
+  const el=document.getElementById('recordAlert');
+  if(alerts.length){
+    el.innerHTML=`<strong>記録について</strong><br>${alerts.map(esc).join('<br>')}`;
+    el.classList.remove('hidden');
+  }else{
+    el.classList.add('hidden');
+    el.innerHTML='';
+  }
 }
 
 function savePdf(){
-  // LINEアプリ内ブラウザでは window.print() が動作しない/制限されることがあります。
-  // LINE内で開いている場合は、同じ本人用LIFFを外部ブラウザ(Safari)で開き、
-  // Safari側でこのボタンを再度押してPDF保存/印刷します。
-  const inLineClient =
-    window.liff &&
-    typeof liff.isInClient === 'function' &&
-    liff.isInClient();
-
-  if(inLineClient){
-    const url = 'https://liff.line.me/2010789200-d4tyvqcE?openExternalBrowser=1';
-
-    if(typeof liff.openWindow === 'function'){
-      liff.openWindow({
-        url,
-        external:true
-      });
+  const inLine=window.liff&&typeof liff.isInClient==='function'&&liff.isInClient();
+  if(inLine){
+    const url='https://liff.line.me/2010789200-d4tyvqcE?openExternalBrowser=1';
+    if(typeof liff.openWindow==='function'){
+      liff.openWindow({url,external:true});
       return;
     }
-
-    location.href = url;
+    location.href=url;
     return;
   }
-
-  const oldTitle=document.title;
+  const old=document.title;
   const name=document.getElementById('playerName').textContent||'選手';
   const d=new Date();
-  const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-  document.title=`${name}_選手カルテ_${ym}`;
-
-  setTimeout(()=>{
-    window.print();
-    setTimeout(()=>{document.title=oldTitle},600);
-  },50);
+  document.title=`${name}_選手カルテ_${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  setTimeout(()=>{window.print();setTimeout(()=>document.title=old,600)},50);
 }
 
-function rowHtml(label,value){
-  return `<div class="data-row"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`;
-}
-
-function valueUnit(value,unit){
-  return value===undefined||value===null||String(value).trim()===''?'未記録':`${value}${unit}`;
-}
-
-function signed(value,unit){
-  if(!Number.isFinite(value))return '未記録';
-  const fixed=Math.abs(value-Math.round(value))<0.001?String(Math.round(value)):value.toFixed(1);
-  return `${value>0?'+':''}${fixed}${unit}`;
-}
-
-function number(v){
-  const n=Number(v);
-  return Number.isFinite(n)?n:NaN;
-}
-
-function firstNumber(...values){
-  for(const v of values){
-    if(v===undefined||v===null||String(v).trim()==='')continue;
-    const n=Number(v);
-    if(Number.isFinite(n))return n;
-  }
-  return null;
-}
-
-function dateKey(obj){
-  if(!obj)return 0;
-  const raw=typeof obj==='string'?obj:(obj.date||obj.measuredAt||obj.measuredAtIso||obj.createdAt||obj.updatedAt||'');
-  const time=Date.parse(String(raw||'').replace(/\//g,'-'));
-  return Number.isFinite(time)?time:0;
-}
-
-function formatShortDate(value){
-  const text=String(value||'').trim();
-  if(!text)return '日付なし';
-  const m=text.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
-  return m?`${Number(m[2])}/${Number(m[3])}`:text;
-}
-
-function formatDateOnly(value){
-  const d=new Date(value);
-  if(!Number.isNaN(d.getTime())){
-    return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
-  }
-  return String(value||'');
-}
-
-function setText(id,text){
-  document.getElementById(id).textContent=text==null?'':String(text);
-}
-
-function showOnly(id){
-  ['loadingView','reportView','errorView'].forEach(viewId=>{
-    document.getElementById(viewId).classList.toggle('hidden',viewId!==id);
+function parseFeedback(text){
+  const raw=String(text||'').replace(/<br\s*\/?>/gi,'\n').replace(/\r\n?/g,'\n').trim();
+  const result={good:'',improve:'',direction:'',summary:''};
+  if(!raw)return result;
+  const aliases={
+    good:['いいところ','良いところ','強み','評価できる点'],
+    improve:['改善点','課題','今後の課題'],
+    direction:['方向性','今後の方向性','取り組み方'],
+    summary:['総合所見','総評','まとめ']
+  };
+  const lookup={};
+  Object.entries(aliases).forEach(([k,list])=>list.forEach(v=>lookup[v]=k));
+  const bucket={good:[],improve:[],direction:[],summary:[]};
+  let current='';
+  raw.split('\n').forEach(line=>{
+    const h=String(line||'').replace(/^\s*#{1,6}\s*/,'').replace(/\*\*/g,'').replace(/[【】\[\]：:]/g,'').replace(/\s+/g,'').trim();
+    if(lookup[h]){current=lookup[h];return}
+    if(current)bucket[current].push(line);
   });
-  window.scrollTo({top:0,behavior:'instant'});
+  Object.keys(bucket).forEach(k=>result[k]=clean(bucket[k].join('\n')));
+  return result;
 }
 
-function showError(message){
-  let text=String(message||'');
-  if(text.includes('LINE')&&(text.includes('連携')||text.includes('選手'))){
-    text='このLINEアカウントは選手情報と連携されていません。コーチへ連絡してください。';
-  }
-  setText('errorText',text||'エラーが発生しました。');
-  showOnly('errorView');
+function clean(v){
+  return String(v||'')
+    .replace(/<br\s*\/?>/gi,'\n')
+    .replace(/<[^>]+>/g,'')
+    .replace(/^\s*#{1,6}\s*/gm,'')
+    .replace(/^\s*[-*・]\s*/gm,'')
+    .replace(/\*\*/g,'')
+    .trim();
 }
-
+function row(k,v){return `<div class="report-row"><span>${esc(k)}</span><strong>${esc(v)}</strong></div>`}
+function agilityValue(r){
+  const c=[r.value,r.result,r.score,r.count,r.time,r.seconds,r.record,r.shuttle,r.verticalJump,r.sideStep,r.lCone,r.ryuRun];
+  const v=c.find(x=>x!==undefined&&x!==null&&String(x).trim()!=='');
+  return v===undefined?'記録あり':String(v);
+}
+function unit(v,u){return v===undefined||v===null||String(v).trim()===''?'未記録':`${v}${u}`}
+function num(v){const n=Number(v);return Number.isFinite(n)?n:NaN}
+function signed(v,u){if(!Number.isFinite(v))return '未記録';const s=Math.abs(v-Math.round(v))<.001?String(Math.round(v)):v.toFixed(1);return `${v>0?'+':''}${s}${u}`}
+function pct(m,a){return `${a>0?(m/a*100).toFixed(1):'0.0'}%`}
+function firstNumber(...v){for(const x of v){if(x===undefined||x===null||String(x).trim()==='')continue;const n=Number(x);if(Number.isFinite(n))return n}return null}
+function dateKey(obj){
+  const raw=typeof obj==='string'?obj:(obj&&(obj.date||obj.measuredAt||obj.measuredAtIso||obj.createdAt||obj.updatedAt)||'');
+  const t=Date.parse(String(raw||'').replace(/\//g,'-'));
+  return Number.isFinite(t)?t:0;
+}
+function daysAgo(v){
+  const t=dateKey(String(v||''));
+  if(!t)return null;
+  return Math.max(0,Math.floor((Date.now()-t)/86400000));
+}
+function formatJPDate(v){
+  const s=String(v||'').trim();
+  if(!s)return '未設定';
+  const d=new Date(s.replace(/\//g,'-'));
+  if(!Number.isNaN(d.getTime()))return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+  const m=s.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
+  return m?`${m[1]}年${Number(m[2])}月${Number(m[3])}日`:s;
+}
+function setText(id,v){document.getElementById(id).textContent=v==null?'':String(v)}
+function showOnly(id){['loadingView','reportView','errorView'].forEach(x=>document.getElementById(x).classList.toggle('hidden',x!==id));window.scrollTo(0,0)}
+function showError(message){setText('errorText',message||'エラーが発生しました。');showOnly('errorView')}
 function jsonp(params,timeoutMs=25000){
   return new Promise((resolve,reject)=>{
-    const callback='__ninjaPlayerCard_'+Date.now()+'_'+Math.random().toString(36).slice(2);
-    const script=document.createElement('script');
-    const timer=setTimeout(()=>{
-      cleanup();
-      reject(new Error('サーバー通信がタイムアウトしました。'));
-    },timeoutMs);
-
-    function cleanup(){
-      clearTimeout(timer);
-      try{delete window[callback]}catch(_){}
-      if(script.parentNode)script.parentNode.removeChild(script);
-    }
-
-    window[callback]=data=>{
-      cleanup();
-      resolve(data);
-    };
-
-    const query=new URLSearchParams({
-      ...params,
-      callback,
-      _ts:String(Date.now())
-    }).toString();
-
-    script.src=GAS_URL+'?'+query;
-    script.onerror=()=>{
-      cleanup();
-      reject(new Error('Apps Scriptへ接続できませんでした。'));
-    };
-
-    document.head.appendChild(script);
+    const cb='__ninjaCard_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+    const s=document.createElement('script');
+    const timer=setTimeout(()=>{cleanup();reject(new Error('サーバー通信がタイムアウトしました。'))},timeoutMs);
+    function cleanup(){clearTimeout(timer);try{delete window[cb]}catch(_){}if(s.parentNode)s.parentNode.removeChild(s)}
+    window[cb]=data=>{cleanup();resolve(data)};
+    s.src=GAS_URL+'?'+new URLSearchParams({...params,callback:cb,_ts:String(Date.now())}).toString();
+    s.onerror=()=>{cleanup();reject(new Error('Apps Scriptへ接続できませんでした。'))};
+    document.head.appendChild(s);
   });
 }
-
-function withTimeout(promise,ms,message){
-  return Promise.race([
-    promise,
-    new Promise((_,reject)=>setTimeout(()=>reject(new Error(message)),ms))
-  ]);
-}
-
-function esc(value){
-  return String(value==null?'':value)
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;')
-    .replace(/'/g,'&#39;');
-}
+function withTimeout(p,ms,msg){return Promise.race([p,new Promise((_,r)=>setTimeout(()=>r(new Error(msg)),ms))])}
+function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 </script>
 </body>
 </html>
