@@ -1109,6 +1109,8 @@ async function init(){
       throw new Error('LINE認証情報を取得できませんでした。');
     }
 
+    await runPracticeSessionCreateTestIfRequested();
+
     buildScales();
     bindEvents();
 
@@ -1123,6 +1125,52 @@ async function init(){
     );
 
   }
+}
+
+/**
+ * v62.3 practiceSession.create 実POST確認
+ *
+ * 通常アクセスでは一切実行しません。
+ * URLに ?sessionCreateTest=1 が付いている場合のみ、
+ * 現在のLIFF IDトークンを使って1回だけPOSTします。
+ *
+ * レスポンスは no-cors のため画面側では読み取りません。
+ * 実行結果はApps Scriptの実行履歴で確認します。
+ */
+async function runPracticeSessionCreateTestIfRequested(){
+
+  const params =
+    new URLSearchParams(location.search);
+
+  if(
+    params.get('sessionCreateTest') !== '1'
+  ){
+    return;
+  }
+
+  const testKey =
+    'ninja_practice_session_create_test_v623';
+
+  if(
+    sessionStorage.getItem(testKey) === 'done'
+  ){
+    return;
+  }
+
+  await postOpaque({
+    action:'practiceSession.create',
+    idToken
+  });
+
+  sessionStorage.setItem(
+    testKey,
+    'done'
+  );
+
+  alert(
+    'practiceSession.create の実POSTを送信しました。\n' +
+    '次にGoogle Apps Scriptの「実行数」で結果を確認してください。'
+  );
 }
 
 async function reloadToday(){
