@@ -348,7 +348,7 @@
 
 <script>
 'use strict';
-const PLAYER_CARD_VERSION='v16';
+const PLAYER_CARD_VERSION='v17-session-auth';
 
 const LIFF_ID='2010789200-d4tyvqcE';
 const GAS_URL='https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
@@ -363,7 +363,23 @@ async function init(){
     const idToken=liff.getIDToken();
     if(!idToken)throw new Error('LINE認証情報を取得できませんでした。');
 
-    const result=await jsonp({action:'playerCard.listMine',idToken});
+    const session=await createPlayerSession(idToken);
+    const sessionToken=String(
+      session&&(
+        session.sessionToken||
+        (session.data&&session.data.sessionToken)
+      )||''
+    ).trim();
+
+    if(!sessionToken){
+      throw new Error('ログインセッションを取得できませんでした。');
+    }
+
+    const result=await jsonp({
+      action:'playerCard.listMine',
+      sessionToken
+    });
+
     if(!result||result.status==='error'||result.success===false){
       throw new Error(result&&result.message?result.message:'選手カルテを取得できませんでした。');
     }
@@ -894,6 +910,45 @@ function formatJPDate(v){
 function setText(id,v){document.getElementById(id).textContent=v==null?'':String(v)}
 function showOnly(id){['loadingView','reportView','errorView'].forEach(x=>document.getElementById(x).classList.toggle('hidden',x!==id));window.scrollTo(0,0)}
 function showError(message){setText('errorText',message||'エラーが発生しました。');showOnly('errorView')}
+
+async function createPlayerSession(idToken){
+  const response=await withTimeout(
+    fetch(GAS_URL,{
+      method:'POST',
+      headers:{
+        'Content-Type':'text/plain;charset=utf-8'
+      },
+      body:JSON.stringify({
+        action:'practiceSession.create',
+        idToken:String(idToken||'')
+      }),
+      redirect:'follow',
+      cache:'no-store'
+    }),
+    25000,
+    'ログインセッションの作成がタイムアウトしました。'
+  );
+
+  const text=await response.text();
+
+  let data;
+  try{
+    data=JSON.parse(text);
+  }catch(_){
+    throw new Error('ログインセッションの応答を確認できませんでした。');
+  }
+
+  if(!response.ok||!data||data.status==='error'||data.success===false){
+    throw new Error(
+      data&&data.message
+        ?data.message
+        :'ログインセッションを作成できませんでした。'
+    );
+  }
+
+  return data;
+}
+
 function jsonp(params,timeoutMs=25000){
   return new Promise((resolve,reject)=>{
     const cb='__ninjaCard_'+Date.now()+'_'+Math.random().toString(36).slice(2);
