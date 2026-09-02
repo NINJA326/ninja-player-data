@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1,viewport-fit=cover"
+  >
+  <title>NINJA POST確認</title>
+
+  <style>
+    *{
+      box-sizing:border-box;
+    }
+
+    body{
+      margin:0;
+      min-height:100vh;
+      display:grid;
+      place-items:center;
+      padding:20px;
+      background:#07101f;
+      color:#f4f7fb;
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Hiragino Sans",
+        "Yu Gothic",
+        sans-serif;
+    }
+
+    .card{
+      width:min(520px,100%);
+      padding:22px;
+      border:1px solid #29415f;
+      border-radius:16px;
+      background:#0f1d31;
+    }
+
+    h1{
+      margin:0 0 14px;
+      font-size:22px;
+    }
+
+    p{
+      line-height:1.7;
+      color:#b8c5d6;
+    }
+
+    button{
+      width:100%;
+      min-height:48px;
+      margin-top:10px;
+      border:0;
+      border-radius:12px;
+      background:#35c97b;
+      color:#052116;
+      font-size:16px;
+      font-weight:900;
+      cursor:pointer;
+    }
+
+    button:disabled{
+      opacity:.5;
+    }
+
+    pre{
+      margin:16px 0 0;
+      padding:14px;
+      min-height:90px;
+      overflow-wrap:anywhere;
+      white-space:pre-wrap;
+      border-radius:12px;
+      background:#07111f;
+      color:#dbeafe;
+      font-size:12px;
+      line-height:1.6;
+    }
+
+    .ok{
+      color:#86efac;
+    }
+
+    .error{
+      color:#fca5a5;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="card">
+    <h1>Apps Script POST確認</h1>
+
+    <p>
+      本番データは保存しません。
+      Apps ScriptのPOSTレスポンスを
+      GitHub Pages側で読み取れるかだけ確認します。
+    </p>
+
+    <button
+      id="testButton"
+      type="button"
+    >
+      POST確認
+    </button>
+
+    <pre id="result">
+まだ実行していません。
+    </pre>
+  </main>
+
+  <script>
+    'use strict';
+
+    const GAS_URL =
+      'https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
+
+    const button =
+      document.getElementById(
+        'testButton'
+      );
+
+    const resultNode =
+      document.getElementById(
+        'result'
+      );
+
+    button.addEventListener(
+      'click',
+      runTest
+    );
+
+    async function runTest() {
+      button.disabled = true;
+
+      showResult(
+        '確認中…',
+        ''
+      );
+
+      try {
+        const response =
+          await fetch(
+            GAS_URL,
+            {
+              method: 'POST',
+
+              headers: {
+                'Content-Type':
+                  'text/plain;charset=utf-8'
+              },
+
+              body:
+                JSON.stringify({
+                  action:
+                    '__POST_RESPONSE_TEST_ONLY__'
+                }),
+
+              redirect:
+                'follow',
+
+              cache:
+                'no-store'
+            }
+          );
+
+        const text =
+          await response.text();
+
+        showResult(
+          [
+            'POSTレスポンスを読み取れました。',
+            '',
+            'HTTP: ' +
+              response.status,
+            '',
+            text
+          ].join('\n'),
+          'ok'
+        );
+
+      } catch (error) {
+        showResult(
+          [
+            'POSTレスポンスを読み取れませんでした。',
+            '',
+            error &&
+            error.message
+              ? error.message
+              : String(error)
+          ].join('\n'),
+          'error'
+        );
+
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    function showResult(
+      message,
+      type
+    ) {
+      resultNode.textContent =
+        message;
+
+      resultNode.className =
+        type || '';
+    }
+  </script>
+</body>
+</html>
