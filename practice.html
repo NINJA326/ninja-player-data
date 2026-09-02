@@ -1068,6 +1068,7 @@ const GAS_URL =
 const HISTORY_LIMIT = 10;
 
 let idToken = '';
+let sessionToken = '';
 let todayState = null;
 let player = null;
 let currentMainView = 'loadingView';
@@ -1109,6 +1110,22 @@ async function init(){
       throw new Error('LINE認証情報を取得できませんでした。');
     }
 
+    const sessionResult =
+      await createPlayerSession(idToken);
+
+    sessionToken = String(
+      sessionResult &&
+      sessionResult.data &&
+      sessionResult.data.sessionToken ||
+      sessionResult &&
+      sessionResult.sessionToken ||
+      ''
+    ).trim();
+
+    if(!sessionToken){
+      throw new Error('ログインセッションを取得できませんでした。');
+    }
+
     buildScales();
     bindEvents();
 
@@ -1131,7 +1148,7 @@ async function reloadToday(){
 
   const result = await jsonp({
     action:'practiceReflectionToday',
-    idToken
+    sessionToken
   });
 
   if(
@@ -1993,7 +2010,7 @@ async function waitForState(
       await jsonp(
         {
           action:'practiceReflectionToday',
-          idToken,
+          sessionToken,
           _verify:String(Date.now())
         },
         20000
@@ -2017,6 +2034,58 @@ async function waitForState(
 /* =========================
    通信
 ========================= */
+
+async function createPlayerSession(idTokenValue){
+
+  const response = await withTimeout(
+    fetch(
+      GAS_URL,
+      {
+        method:'POST',
+        headers:{
+          'Content-Type':
+            'text/plain;charset=UTF-8'
+        },
+        body:JSON.stringify({
+          action:'practiceSession.create',
+          idToken:String(idTokenValue || '')
+        }),
+        redirect:'follow',
+        cache:'no-store',
+        credentials:'omit'
+      }
+    ),
+    25000,
+    'ログインセッションの作成がタイムアウトしました。'
+  );
+
+  const text = await response.text();
+
+  let data;
+
+  try{
+    data = JSON.parse(text);
+  }catch(_){
+    throw new Error(
+      'ログインセッションの応答を確認できませんでした。'
+    );
+  }
+
+  if(
+    !response.ok ||
+    !data ||
+    data.status === 'error' ||
+    data.success === false
+  ){
+    throw new Error(
+      data && data.message
+        ? data.message
+        : 'ログインセッションを作成できませんでした。'
+    );
+  }
+
+  return data;
+}
 
 async function postOpaque(payload){
 
