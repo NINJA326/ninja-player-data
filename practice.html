@@ -1109,31 +1109,6 @@ async function init(){
       throw new Error('LINE認証情報を取得できませんでした。');
     }
 
-    /*
-     * STEP10-4 一時テスト
-     * ?sessionRoundTripTest=1 の場合だけ、
-     * 正規LINE ID Tokenを使ったセッション往復テストを1回送信します。
-     *
-     * 通常URLでは一切実行されません。
-     */
-    if(
-      new URLSearchParams(
-        location.search
-      ).get('sessionRoundTripTest') === '1'
-    ){
-      await postOpaque({
-        action:'practiceSession.roundTripTest',
-        idToken
-      });
-
-      alert(
-        'practiceSession.roundTripTest の実POSTを送信しました。' +
-        '次にGoogle Apps Scriptの実行ログを確認してください。'
-      );
-
-      return;
-    }
-
     buildScales();
     bindEvents();
 
