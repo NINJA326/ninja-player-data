@@ -1839,7 +1839,7 @@ async function submitCheckIn(){
 
     await postOpaque({
       action:'practiceReflectionCheckIn',
-      idToken,
+      sessionToken,
       task,
       focus,
       condition:formState.condition,
