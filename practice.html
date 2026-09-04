@@ -1319,7 +1319,7 @@ async function openHistory(){
 
     const result = await jsonp({
       action:'practiceReflectionHistory',
-      idToken,
+      sessionToken,
       limit:String(HISTORY_LIMIT)
     });
 
