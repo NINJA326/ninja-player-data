@@ -1080,6 +1080,13 @@ const PRACTICE_SESSION_CACHE_MAX_AGE_MS =
 const PRACTICE_SESSION_CACHE_EXPIRY_MARGIN_MS =
   5 * 60 * 1000;
 
+const PRACTICE_TODAY_CACHE_KEY =
+  'ninja_practice_today_snapshot_v1';
+
+const PRACTICE_TODAY_CACHE_MAX_AGE_MS =
+  30 * 60 * 1000;
+
+let cachedTodayVisible = false;
 let todayState = null;
 let player = null;
 let currentMainView = 'loadingView';
@@ -1115,6 +1122,28 @@ async function init(){
       return;
     }
 
+    buildScales();
+    bindEvents();
+
+    const cachedToday =
+      await loadCachedTodaySnapshot();
+
+    if(cachedToday){
+      player =
+        cachedToday.player || null;
+
+      todayState =
+        cachedToday;
+
+      updatePlayerChip();
+      renderToday(
+        cachedToday
+      );
+
+      cachedTodayVisible =
+        true;
+    }
+
     sessionToken =
       await loadCachedPlayerSession();
 
@@ -1126,14 +1155,22 @@ async function init(){
         await refreshPlayerSession();
     }
 
-    buildScales();
-    bindEvents();
-
     try{
-      await reloadToday();
+      await reloadToday({
+        preserveView:
+          cachedTodayVisible
+      });
     }catch(error){
 
       if(!sessionTokenFromCache){
+        if(cachedTodayVisible){
+          console.warn(
+            '最新データの取得に失敗しました。',
+            error
+          );
+          return;
+        }
+
         throw error;
       }
 
@@ -1145,7 +1182,23 @@ async function init(){
       sessionTokenFromCache =
         false;
 
-      await reloadToday();
+      try{
+        await reloadToday({
+          preserveView:
+            cachedTodayVisible
+        });
+      }catch(retryError){
+
+        if(cachedTodayVisible){
+          console.warn(
+            '最新データの再取得に失敗しました。',
+            retryError
+          );
+          return;
+        }
+
+        throw retryError;
+      }
     }
 
   }catch(error){
@@ -1159,9 +1212,17 @@ async function init(){
   }
 }
 
-async function reloadToday(){
+async function reloadToday(options){
 
-  showOnly('loadingView');
+  const settings =
+    options &&
+    typeof options === 'object'
+      ? options
+      : {};
+
+  if(!settings.preserveView){
+    showOnly('loadingView');
+  }
 
   const result = await jsonp({
     action:'practiceReflectionToday',
@@ -1185,6 +1246,12 @@ async function reloadToday(){
 
   updatePlayerChip();
   renderToday(result);
+
+  cachedTodayVisible = true;
+
+  await saveCachedTodaySnapshot(
+    result
+  );
 }
 
 function renderToday(result){
@@ -2051,6 +2118,160 @@ async function waitForState(
 /* =========================
    通信
 ========================= */
+
+async function loadCachedTodaySnapshot(){
+
+  const currentFingerprint =
+    await getCurrentLineAccountFingerprint();
+
+  if(!currentFingerprint){
+    clearCachedTodaySnapshot();
+    return null;
+  }
+
+  let cached;
+
+  try{
+    cached =
+      JSON.parse(
+        localStorage.getItem(
+          PRACTICE_TODAY_CACHE_KEY
+        ) || 'null'
+      );
+  }catch(_){
+    clearCachedTodaySnapshot();
+    return null;
+  }
+
+  if(
+    !cached ||
+    typeof cached !== 'object'
+  ){
+    return null;
+  }
+
+  const accountFingerprint =
+    String(
+      cached.accountFingerprint || ''
+    ).trim();
+
+  const savedAtMs =
+    Number(
+      cached.savedAtMs || 0
+    );
+
+  const result =
+    cached.result &&
+    typeof cached.result === 'object'
+      ? cached.result
+      : null;
+
+  const now =
+    Date.now();
+
+  const cacheFresh =
+    savedAtMs > 0 &&
+    now - savedAtMs <
+      PRACTICE_TODAY_CACHE_MAX_AGE_MS;
+
+  const sameAccount =
+    accountFingerprint ===
+    currentFingerprint;
+
+  const sameDate =
+    result &&
+    String(result.date || '') ===
+      getLocalDateKey();
+
+  if(
+    !result ||
+    !cacheFresh ||
+    !sameAccount ||
+    !sameDate
+  ){
+    clearCachedTodaySnapshot();
+    return null;
+  }
+
+  return result;
+}
+
+
+async function saveCachedTodaySnapshot(
+  result
+){
+
+  if(
+    !result ||
+    typeof result !== 'object'
+  ){
+    return;
+  }
+
+  const accountFingerprint =
+    await getCurrentLineAccountFingerprint();
+
+  if(!accountFingerprint){
+    return;
+  }
+
+  const cacheData = {
+    accountFingerprint:
+      accountFingerprint,
+
+    savedAtMs:
+      Date.now(),
+
+    result:
+      result
+  };
+
+  try{
+    localStorage.setItem(
+      PRACTICE_TODAY_CACHE_KEY,
+      JSON.stringify(cacheData)
+    );
+  }catch(_){}
+}
+
+
+function clearCachedTodaySnapshot(){
+
+  try{
+    localStorage.removeItem(
+      PRACTICE_TODAY_CACHE_KEY
+    );
+  }catch(_){}
+}
+
+
+function getLocalDateKey(){
+
+  const now =
+    new Date();
+
+  const year =
+    now.getFullYear();
+
+  const month =
+    String(
+      now.getMonth() + 1
+    ).padStart(2,'0');
+
+  const day =
+    String(
+      now.getDate()
+    ).padStart(2,'0');
+
+  return (
+    year +
+    '-' +
+    month +
+    '-' +
+    day
+  );
+}
+
 
 async function loadCachedPlayerSession(){
 
