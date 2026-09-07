@@ -1069,6 +1069,17 @@ const HISTORY_LIMIT = 10;
 
 let idToken = '';
 let sessionToken = '';
+let sessionTokenFromCache = false;
+
+const PRACTICE_SESSION_CACHE_KEY =
+  'ninja_practice_player_session_v1';
+
+const PRACTICE_SESSION_CACHE_MAX_AGE_MS =
+  7 * 24 * 60 * 60 * 1000;
+
+const PRACTICE_SESSION_CACHE_EXPIRY_MARGIN_MS =
+  5 * 60 * 1000;
+
 let todayState = null;
 let player = null;
 let currentMainView = 'loadingView';
@@ -1104,32 +1115,38 @@ async function init(){
       return;
     }
 
-    idToken = liff.getIDToken();
+    sessionToken =
+      await loadCachedPlayerSession();
 
-    if(!idToken){
-      throw new Error('LINE認証情報を取得できませんでした。');
-    }
-
-    const sessionResult =
-      await createPlayerSession(idToken);
-
-    sessionToken = String(
-      sessionResult &&
-      sessionResult.data &&
-      sessionResult.data.sessionToken ||
-      sessionResult &&
-      sessionResult.sessionToken ||
-      ''
-    ).trim();
+    sessionTokenFromCache =
+      Boolean(sessionToken);
 
     if(!sessionToken){
-      throw new Error('ログインセッションを取得できませんでした。');
+      sessionToken =
+        await refreshPlayerSession();
     }
 
     buildScales();
     bindEvents();
 
-    await reloadToday();
+    try{
+      await reloadToday();
+    }catch(error){
+
+      if(!sessionTokenFromCache){
+        throw error;
+      }
+
+      clearCachedPlayerSession();
+
+      sessionToken =
+        await refreshPlayerSession();
+
+      sessionTokenFromCache =
+        false;
+
+      await reloadToday();
+    }
 
   }catch(error){
 
@@ -2034,6 +2051,269 @@ async function waitForState(
 /* =========================
    通信
 ========================= */
+
+async function loadCachedPlayerSession(){
+
+  const currentFingerprint =
+    await getCurrentLineAccountFingerprint();
+
+  if(!currentFingerprint){
+    clearCachedPlayerSession();
+    return '';
+  }
+
+  let cached;
+
+  try{
+    cached =
+      JSON.parse(
+        localStorage.getItem(
+          PRACTICE_SESSION_CACHE_KEY
+        ) || 'null'
+      );
+  }catch(_){
+    clearCachedPlayerSession();
+    return '';
+  }
+
+  if(
+    !cached ||
+    typeof cached !== 'object'
+  ){
+    return '';
+  }
+
+  const token =
+    String(
+      cached.sessionToken || ''
+    ).trim();
+
+  const accountFingerprint =
+    String(
+      cached.accountFingerprint || ''
+    ).trim();
+
+  const savedAtMs =
+    Number(
+      cached.savedAtMs || 0
+    );
+
+  const expiresAtMs =
+    Number(
+      cached.expiresAtMs || 0
+    );
+
+  const now =
+    Date.now();
+
+  const accountMatches =
+    accountFingerprint ===
+    currentFingerprint;
+
+  const clientCacheFresh =
+    savedAtMs > 0 &&
+    now - savedAtMs <
+      PRACTICE_SESSION_CACHE_MAX_AGE_MS;
+
+  const serverSessionFresh =
+    expiresAtMs > 0 &&
+    now +
+      PRACTICE_SESSION_CACHE_EXPIRY_MARGIN_MS <
+      expiresAtMs;
+
+  if(
+    !token ||
+    !accountMatches ||
+    !clientCacheFresh ||
+    !serverSessionFresh
+  ){
+    clearCachedPlayerSession();
+    return '';
+  }
+
+  return token;
+}
+
+
+async function refreshPlayerSession(){
+
+  idToken =
+    liff.getIDToken();
+
+  if(!idToken){
+    throw new Error(
+      'LINE認証情報を取得できませんでした。'
+    );
+  }
+
+  const sessionResult =
+    await createPlayerSession(
+      idToken
+    );
+
+  const token =
+    String(
+      sessionResult &&
+      sessionResult.data &&
+      sessionResult.data.sessionToken ||
+      sessionResult &&
+      sessionResult.sessionToken ||
+      ''
+    ).trim();
+
+  if(!token){
+    throw new Error(
+      'ログインセッションを取得できませんでした。'
+    );
+  }
+
+  sessionToken =
+    token;
+
+  await saveCachedPlayerSession(
+    sessionResult
+  );
+
+  return token;
+}
+
+
+async function saveCachedPlayerSession(
+  sessionResult
+){
+
+  const token =
+    String(
+      sessionResult &&
+      sessionResult.data &&
+      sessionResult.data.sessionToken ||
+      sessionResult &&
+      sessionResult.sessionToken ||
+      ''
+    ).trim();
+
+  const expiresAtText =
+    String(
+      sessionResult &&
+      sessionResult.data &&
+      sessionResult.data.expiresAt ||
+      sessionResult &&
+      sessionResult.expiresAt ||
+      ''
+    ).trim();
+
+  const expiresAtMs =
+    Date.parse(
+      expiresAtText
+    );
+
+  const accountFingerprint =
+    await getCurrentLineAccountFingerprint();
+
+  if(
+    !token ||
+    !accountFingerprint ||
+    !Number.isFinite(expiresAtMs)
+  ){
+    return;
+  }
+
+  const cacheData = {
+    sessionToken:
+      token,
+
+    accountFingerprint:
+      accountFingerprint,
+
+    savedAtMs:
+      Date.now(),
+
+    expiresAtMs:
+      expiresAtMs
+  };
+
+  try{
+    localStorage.setItem(
+      PRACTICE_SESSION_CACHE_KEY,
+      JSON.stringify(cacheData)
+    );
+  }catch(_){}
+}
+
+
+function clearCachedPlayerSession(){
+
+  try{
+    localStorage.removeItem(
+      PRACTICE_SESSION_CACHE_KEY
+    );
+  }catch(_){}
+}
+
+
+async function getCurrentLineAccountFingerprint(){
+
+  if(
+    !window.liff ||
+    typeof liff.getDecodedIDToken !==
+      'function'
+  ){
+    return '';
+  }
+
+  const decoded =
+    liff.getDecodedIDToken();
+
+  const lineUserId =
+    String(
+      decoded &&
+      decoded.sub ||
+      ''
+    ).trim();
+
+  if(!lineUserId){
+    return '';
+  }
+
+  return sha256Hex(
+    lineUserId
+  );
+}
+
+
+async function sha256Hex(value){
+
+  if(
+    !window.crypto ||
+    !window.crypto.subtle
+  ){
+    return '';
+  }
+
+  const bytes =
+    new TextEncoder()
+      .encode(
+        String(value || '')
+      );
+
+  const hash =
+    await crypto.subtle.digest(
+      'SHA-256',
+      bytes
+    );
+
+  return Array.from(
+    new Uint8Array(hash)
+  )
+    .map(
+      byte =>
+        byte
+          .toString(16)
+          .padStart(2,'0')
+    )
+    .join('');
+}
+
 
 async function createPlayerSession(idTokenValue){
 
