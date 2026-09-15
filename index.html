@@ -346,7 +346,7 @@
 'use strict';
 
 const FEEDBACK_PAGE_VERSION =
-  'v17-cache-first-guardian-player';
+  'v18-cache-first-silent-status';
 
 const LIFF_ID =
   '2010789200-osUDbuzD';
@@ -358,13 +358,13 @@ const GAS_URL =
   'https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
 
 const CACHE_VERSION =
-  'feedback-cache-v17';
+  'feedback-cache-v18';
 
 const CACHE_TTL_MS =
   14 * 24 * 60 * 60 * 1000;
 
 const FEEDBACK_CACHE_PREFIX =
-  'ninjaFeedbackCacheV17:';
+  'ninjaFeedbackCacheV18:';
 
 const GUARDIAN_DEFAULT_PLAYER_ID_KEY =
   'ninjaGuardianDefaultPlayerIdStep50';
@@ -453,8 +453,8 @@ async function init(){
       );
 
       setSyncStatus(
-        '前回表示した内容を先に表示しています。裏で最新情報を確認中です。',
-        'warning'
+        '',
+        ''
       );
     }else{
       setLoading(
@@ -474,7 +474,7 @@ async function init(){
     );
 
     setSyncStatus(
-      '最新情報に更新しました。',
+      '',
       ''
     );
 
@@ -1030,8 +1030,8 @@ function render(
     options.cached
   ){
     setSyncStatus(
-      '前回表示した内容です。最新情報を確認中です。',
-      'warning'
+      '',
+      ''
     );
   }
 }
