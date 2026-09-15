@@ -2,7 +2,10 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1,viewport-fit=cover"
+  >
   <meta name="theme-color" content="#07111f">
   <title>NINJA フィードバック</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -16,10 +19,14 @@
       --accent:#37cf82;
       --blue:#5aa7ff;
       --danger:#ff6b76;
+      --warning:#ffd166;
       --safe-bottom:env(safe-area-inset-bottom,0px);
     }
+
     *{box-sizing:border-box}
+
     html{background:var(--bg)}
+
     body{
       margin:0;
       min-height:100vh;
@@ -31,15 +38,26 @@
       -webkit-font-smoothing:antialiased;
       padding-bottom:calc(24px + var(--safe-bottom));
     }
-    button{-webkit-tap-highlight-color:transparent;font:inherit}
-    .app{max-width:620px;margin:0 auto;padding:14px}
+
+    button{
+      -webkit-tap-highlight-color:transparent;
+      font:inherit;
+    }
+
+    .app{
+      max-width:620px;
+      margin:0 auto;
+      padding:14px;
+    }
+
     .header{
       display:flex;
       align-items:flex-start;
       justify-content:space-between;
       gap:12px;
-      padding:10px 2px 16px;
+      padding:10px 2px 12px;
     }
+
     .brand small{
       display:block;
       color:var(--accent);
@@ -48,7 +66,13 @@
       letter-spacing:.16em;
       margin-bottom:5px;
     }
-    .brand h1{margin:0;font-size:22px}
+
+    .brand h1{
+      margin:0;
+      font-size:22px;
+      line-height:1.25;
+    }
+
     .player-chip{
       display:none;
       max-width:48%;
@@ -60,7 +84,32 @@
       padding:8px 10px;
       color:var(--muted);
       font-size:11px;
+      font-weight:800;
     }
+
+    .sync-status{
+      margin:0 0 12px;
+      padding:10px 12px;
+      border:1px solid rgba(90,167,255,.28);
+      border-radius:14px;
+      background:rgba(90,167,255,.08);
+      color:#cfe6ff;
+      font-size:12px;
+      line-height:1.55;
+    }
+
+    .sync-status.warning{
+      border-color:rgba(255,209,102,.32);
+      background:rgba(255,209,102,.08);
+      color:#ffe7a6;
+    }
+
+    .sync-status.error{
+      border-color:rgba(255,107,118,.34);
+      background:rgba(255,107,118,.09);
+      color:#ffd2d7;
+    }
+
     .card{
       margin-bottom:12px;
       padding:17px;
@@ -69,6 +118,7 @@
       background:rgba(13,25,42,.96);
       box-shadow:0 16px 42px rgba(0,0,0,.2);
     }
+
     .eyebrow{
       color:var(--blue);
       font-size:11px;
@@ -76,15 +126,32 @@
       letter-spacing:.12em;
       margin-bottom:7px;
     }
-    .title{margin:0 0 7px;font-size:26px;line-height:1.25}
-    .lead{margin:0;color:var(--muted);font-size:13px;line-height:1.7}
-    .list{display:grid;gap:11px}
+
+    .title{
+      margin:0 0 7px;
+      font-size:26px;
+      line-height:1.25;
+    }
+
+    .lead{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.7;
+    }
+
+    .list{
+      display:grid;
+      gap:11px;
+    }
+
     .advice{
       border:1px solid var(--line);
       border-radius:16px;
       background:#091729;
       padding:15px;
     }
+
     .advice-meta{
       display:flex;
       justify-content:space-between;
@@ -93,12 +160,14 @@
       color:var(--muted);
       font-size:11px;
     }
+
     .advice-text{
       font-size:15px;
       line-height:1.75;
       white-space:pre-wrap;
       word-break:break-word;
     }
+
     .coach{
       margin-top:11px;
       padding-top:10px;
@@ -106,13 +175,7 @@
       color:#c8d6e6;
       font-size:12px;
     }
-    .empty{
-      text-align:center;
-      padding:34px 16px;
-      color:var(--muted);
-      line-height:1.8;
-      font-size:13px;
-    }
+
     .loading{
       min-height:62vh;
       display:grid;
@@ -120,17 +183,30 @@
       text-align:center;
       color:var(--muted);
     }
+
     .spinner{
-      width:34px;height:34px;
+      width:34px;
+      height:34px;
       margin:0 auto 14px;
       border:3px solid #203450;
       border-top-color:var(--accent);
       border-radius:50%;
       animation:spin .8s linear infinite;
     }
-    @keyframes spin{to{transform:rotate(360deg)}}
+
+    @keyframes spin{
+      to{transform:rotate(360deg)}
+    }
+
     .hidden{display:none!important}
-    .error-title{color:#ff9ba3;font-weight:900;font-size:20px;margin-bottom:8px}
+
+    .error-title{
+      color:#ff9ba3;
+      font-weight:900;
+      font-size:20px;
+      margin-bottom:8px;
+    }
+
     .button{
       width:100%;
       min-height:50px;
@@ -141,27 +217,32 @@
       color:var(--text);
       font-weight:800;
     }
+
     .feedback-section-title{
       margin:0 0 10px;
       font-size:18px;
       font-weight:900;
     }
+
     .feedback-date{
       margin-top:10px;
       color:var(--muted);
       font-size:11px;
     }
+
     .feedback-grid{
       display:grid;
       gap:10px;
       margin-top:13px;
     }
+
     .feedback-block{
       padding:13px;
       border:1px solid var(--line);
       border-radius:14px;
       background:#091729;
     }
+
     .feedback-block small{
       display:block;
       margin-bottom:5px;
@@ -169,6 +250,7 @@
       font-size:11px;
       font-weight:900;
     }
+
     .feedback-block div{
       white-space:pre-wrap;
       word-break:break-word;
@@ -189,6 +271,7 @@
       cursor:pointer;
       -webkit-tap-highlight-color:transparent;
     }
+
     .player-card-link:active{
       transform:translateY(1px);
     }
@@ -204,11 +287,17 @@
     <div id="playerChip" class="player-chip"></div>
   </header>
 
+  <div
+    id="syncStatus"
+    class="sync-status hidden"
+    aria-live="polite"
+  ></div>
+
   <main>
     <section id="loadingView" class="loading">
       <div>
         <div class="spinner"></div>
-        <div>LINE認証とアドバイスを確認しています…</div>
+        <div id="loadingText">LINE認証とアドバイスを確認しています…</div>
       </div>
     </section>
 
@@ -220,6 +309,7 @@
         <div id="adviceText" class="advice-text"></div>
         <div id="adviceCoach" class="coach hidden"></div>
       </div>
+
       <button
         id="playerCardBtn"
         class="player-card-link"
@@ -234,14 +324,19 @@
         <h3 class="feedback-section-title">最新の選手カルテ</h3>
         <div id="latestFeedbackContent"></div>
       </div>
-
     </section>
 
     <section id="errorView" class="hidden">
       <div class="card">
         <div class="error-title">開けませんでした</div>
         <p id="errorText" class="lead"></p>
-        <button class="button" type="button" onclick="location.reload()">もう一度試す</button>
+        <button
+          class="button"
+          type="button"
+          onclick="location.reload()"
+        >
+          もう一度試す
+        </button>
       </div>
     </section>
   </main>
@@ -250,533 +345,1552 @@
 <script>
 'use strict';
 
-const FEEDBACK_PAGE_VERSION = 'v17-guardian-launch';
-const LIFF_ID = '2010789200-osUDbuzD';
-const PLAYER_CARD_LIFF_URL = 'https://liff.line.me/2010789200-d4tyvqcE?v=12';
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
+const FEEDBACK_PAGE_VERSION =
+  'v17-cache-first-guardian-player';
 
-let guardianLaunchContext = null;
-let currentIdToken = '';
+const LIFF_ID =
+  '2010789200-osUDbuzD';
 
-window.addEventListener('load', init);
-document.getElementById('playerCardBtn').addEventListener('click', openPlayerCard);
+const PLAYER_CARD_LIFF_URL =
+  'https://liff.line.me/2010789200-d4tyvqcE?v=12';
+
+const GAS_URL =
+  'https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
+
+const CACHE_VERSION =
+  'feedback-cache-v17';
+
+const CACHE_TTL_MS =
+  14 * 24 * 60 * 60 * 1000;
+
+const FEEDBACK_CACHE_PREFIX =
+  'ninjaFeedbackCacheV17:';
+
+const GUARDIAN_DEFAULT_PLAYER_ID_KEY =
+  'ninjaGuardianDefaultPlayerIdStep50';
+
+let currentIdToken =
+  '';
+
+let currentCacheScope =
+  '';
+
+let cachedViewShown =
+  false;
+
+window.addEventListener(
+  'load',
+  init
+);
+
+document
+  .getElementById('playerCardBtn')
+  .addEventListener(
+    'click',
+    openPlayerCard
+  );
 
 function openPlayerCard(){
-  if(guardianLaunchContext){
-    return;
-  }
-
-  location.href = PLAYER_CARD_LIFF_URL;
-}
-
-function getGuardianLaunchParams(){
-  const params = new URLSearchParams(location.search);
-
-  return {
-    launchToken:String(params.get('guardianLaunchToken') || '').trim(),
-    appKey:String(params.get('guardianLaunchApp') || '').trim()
-  };
-}
-
-function isOkResponse(result){
-  return !!result && (
-    result.status === 'ok' ||
-    result.ok === true ||
-    result.success === true
-  );
-}
-
-function getResponseData(result){
-  return result &&
-    typeof result === 'object' &&
-    result.data &&
-    typeof result.data === 'object'
-      ? result.data
-      : result;
-}
-
-function unwrapApiData(value){
-  let current = value;
-
-  for(let i = 0; i < 5; i += 1){
-    if(
-      current &&
-      typeof current === 'object' &&
-      !Array.isArray(current) &&
-      current.data &&
-      typeof current.data === 'object' &&
-      isOkResponse(current)
-    ){
-      current = current.data;
-      continue;
-    }
-
-    break;
-  }
-
-  return current && typeof current === 'object'
-    ? current
-    : {};
-}
-
-async function postJson(payload){
-  const response = await withTimeout(
-    fetch(GAS_URL,{
-      method:'POST',
-      headers:{
-        'Content-Type':'text/plain;charset=utf-8'
-      },
-      body:JSON.stringify(payload),
-      redirect:'follow',
-      cache:'no-store'
-    }),
-    25000,
-    'サーバー通信がタイムアウトしました。'
-  );
-
-  const text = await response.text();
-
-  let data;
-  try{
-    data = JSON.parse(text);
-  }catch(_){
-    throw new Error('サーバーの応答を確認できませんでした。');
-  }
-
-  if(!response.ok || !isOkResponse(data)){
-    throw new Error(
-      data && data.message
-        ? data.message
-        : 'サーバー通信に失敗しました。'
-    );
-  }
-
-  return data;
-}
-
-function getCurrentMonthKey(){
-  const now = new Date();
-
-  return String(now.getFullYear()) +
-    '-' +
-    String(now.getMonth() + 1).padStart(2,'0');
-}
-
-function normalizeGuardianPlayerViewResult(result,verifiedPlayer){
-  const data = unwrapApiData(result);
-
-  const player =
-    data.player ||
-    verifiedPlayer ||
-    {};
-
-  const adviceSource =
-    unwrapApiData(
-      data.coachAdvice ||
-      {}
-    );
-
-  const adviceRecords =
-    Array.isArray(adviceSource.records)
-      ? adviceSource.records
-      : Array.isArray(adviceSource.advice)
-        ? adviceSource.advice
-        : [];
-
-  const feedback =
-    data.feedback &&
-    typeof data.feedback === 'object'
-      ? data.feedback
-      : null;
-
-  return {
-    adviceResult:{
-      status:'ok',
-      success:true,
-      player:player,
-      records:adviceRecords
-    },
-
-    feedbackResult:{
-      status:'ok',
-      success:true,
-      feedback:feedback
-    }
-  };
-}
-
-async function loadGuardianFeedback(idToken,guardianLaunch){
-  if(guardianLaunch.appKey && guardianLaunch.appKey !== 'feedback'){
-    throw new Error('起動先アプリがフィードバックではありません。');
-  }
-
-  const verified = await postJson({
-    action:'guardian.externalAppLaunch.verify',
-    launchToken:guardianLaunch.launchToken,
-    appKey:'feedback'
-  });
-
-  const verifiedData = getResponseData(verified);
-  const player = verifiedData && verifiedData.player
-    ? verifiedData.player
-    : null;
-
-  if(!player || !player.playerId){
-    throw new Error('選手情報を確認できませんでした。');
-  }
-
-  guardianLaunchContext = {
-    playerId:String(player.playerId || '').trim(),
-    player:player
-  };
-
-  const result = await postJson({
-    action:'guardian.playerView',
-    idToken:idToken,
-    playerId:guardianLaunchContext.playerId,
-    month:getCurrentMonthKey(),
-    limit:20
-  });
-
-  const normalized =
-    normalizeGuardianPlayerViewResult(
-      result,
-      player
-    );
-
-  render(
-    normalized.adviceResult,
-    normalized.feedbackResult
-  );
-
-  const playerCardBtn =
-    document.getElementById('playerCardBtn');
-
-  if(playerCardBtn){
-    playerCardBtn.classList.add('hidden');
-  }
+  location.href =
+    PLAYER_CARD_LIFF_URL;
 }
 
 async function init(){
   try{
-    const guardianLaunch = getGuardianLaunchParams();
-
     if(!window.liff){
-      throw new Error('LIFF SDKを読み込めませんでした。');
+      throw new Error(
+        'LIFF SDKを読み込めませんでした。'
+      );
     }
 
+    setLoading(
+      'LINE認証を確認しています…'
+    );
+
     await withTimeout(
-      liff.init({liffId:LIFF_ID}),
+      liff.init({
+        liffId:
+          LIFF_ID,
+
+        withLoginOnExternalBrowser:
+          true
+      }),
       15000,
       'LINE認証の初期化がタイムアウトしました。'
     );
 
     if(!liff.isLoggedIn()){
-      liff.login({redirectUri:location.href.split('#')[0]});
+      liff.login({
+        redirectUri:
+          location.href.split('#')[0]
+      });
       return;
     }
 
-    const idToken = liff.getIDToken();
-    if(!idToken){
-      throw new Error('LINE認証情報を取得できませんでした。');
-    }
+    currentIdToken =
+      liff.getIDToken();
 
-    currentIdToken = idToken;
-
-    if(guardianLaunch.launchToken){
-      await loadGuardianFeedback(
-        idToken,
-        guardianLaunch
-      );
-
-      return;
-    }
-
-    const session = await createPlayerSession(idToken);
-    const sessionToken = String(
-      session && (
-        session.sessionToken ||
-        (session.data && session.data.sessionToken)
-      ) || ''
-    ).trim();
-
-    if(!sessionToken){
-      throw new Error('ログインセッションを取得できませんでした。');
-    }
-
-    const [adviceResult,feedbackResult] = await Promise.all([
-      jsonp({
-        action:'coachAdvice.listMine',
-        sessionToken,
-        limit:'1'
-      }),
-      jsonp({
-        action:'feedback.listMine',
-        sessionToken
-      })
-    ]);
-
-    if(!adviceResult || adviceResult.status === 'error' || adviceResult.success === false){
+    if(!currentIdToken){
       throw new Error(
-        adviceResult && adviceResult.message
-          ? adviceResult.message
-          : 'コーチアドバイスを取得できませんでした。'
+        'LINE認証情報を取得できませんでした。'
       );
     }
 
-    if(!feedbackResult || feedbackResult.status === 'error' || feedbackResult.success === false){
-      throw new Error(
-        feedbackResult && feedbackResult.message
-          ? feedbackResult.message
-          : '最新カルテ所見を取得できませんでした。'
+    currentCacheScope =
+      await createCacheScopeFromIdToken(
+        currentIdToken
+      );
+
+    const cached =
+      readCachedFeedback();
+
+    if(cached){
+      cachedViewShown =
+        true;
+
+      renderFromCache(
+        cached
+      );
+
+      setSyncStatus(
+        '前回表示した内容を先に表示しています。裏で最新情報を確認中です。',
+        'warning'
+      );
+    }else{
+      setLoading(
+        '保存データを確認しています…'
       );
     }
 
-    render(adviceResult,feedbackResult);
+    const fresh =
+      await loadFreshFeedback();
+
+    renderFresh(
+      fresh
+    );
+
+    saveCachedFeedback(
+      fresh
+    );
+
+    setSyncStatus(
+      '最新情報に更新しました。',
+      ''
+    );
 
   }catch(error){
-    showError(error && error.message ? error.message : String(error));
+    if(cachedViewShown){
+      setSyncStatus(
+        '最新情報の取得に失敗しました。前回表示した内容を残しています。' +
+          '時間をおいて、もう一度お試しください。',
+        'error'
+      );
+
+      console.error(
+        '[NINJA Feedback refresh failed]',
+        error
+      );
+
+      return;
+    }
+
+    showError(
+      error && error.message
+        ? error.message
+        : String(error)
+    );
   }
 }
 
-async function createPlayerSession(idToken){
-  const response = await withTimeout(
-    fetch(GAS_URL,{
-      method:'POST',
-      headers:{
-        'Content-Type':'text/plain;charset=utf-8'
-      },
-      body:JSON.stringify({
-        action:'practiceSession.create',
-        idToken:String(idToken || '')
-      }),
-      redirect:'follow',
-      cache:'no-store'
-    }),
-    25000,
-    'ログインセッションの作成がタイムアウトしました。'
-  );
+async function loadFreshFeedback(){
+  const guardianPlayerId =
+    readGuardianSelectedPlayerId();
 
-  const text = await response.text();
-
-  let data;
-  try{
-    data = JSON.parse(text);
-  }catch(_){
-    throw new Error('ログインセッションの応答を確認できませんでした。');
+  if(guardianPlayerId){
+    try{
+      return await loadGuardianFeedback(
+        currentIdToken,
+        guardianPlayerId
+      );
+    }catch(error){
+      console.warn(
+        '[NINJA Feedback guardian path failed]',
+        error
+      );
+    }
   }
 
-  if(!response.ok || !data || data.status === 'error' || data.success === false){
+  return await loadPlayerFeedback(
+    currentIdToken
+  );
+}
+
+async function loadGuardianFeedback(
+  idToken,
+  playerId
+){
+  const result =
+    await postApi(
+      {
+        action:
+          'guardian.playerFeedback',
+
+        idToken:
+          String(idToken || ''),
+
+        playerId:
+          String(playerId || '')
+      },
+      20000,
+      '保護者フィードバックの取得がタイムアウトしました。'
+    );
+
+  if(!isOk(result)){
     throw new Error(
-      data && data.message
-        ? data.message
-        : 'ログインセッションを作成できませんでした。'
+      getMessage(result) ||
+      '保護者フィードバックを取得できませんでした。'
+    );
+  }
+
+  const data =
+    unwrapData(result);
+
+  const player =
+    normalizePlayer(
+      data.player ||
+      result.player ||
+      {
+        playerId:
+          playerId
+      }
+    );
+
+  const feedback =
+    normalizeFeedback(
+      data.feedback ||
+      result.feedback ||
+      data
+    );
+
+  return {
+    mode:
+      'guardian',
+
+    player:
+      player,
+
+    records:
+      [],
+
+    feedback:
+      feedback,
+
+    fetchedAt:
+      new Date().toISOString()
+  };
+}
+
+async function loadPlayerFeedback(
+  idToken
+){
+  setLoading(
+    cachedViewShown
+      ? '最新情報を確認しています…'
+      : '本人情報を確認しています…'
+  );
+
+  const session =
+    await createPlayerSession(
+      idToken
+    );
+
+  const sessionToken =
+    String(
+      session &&
+      (
+        session.sessionToken ||
+        (
+          session.data &&
+          session.data.sessionToken
+        )
+      ) ||
+      ''
+    ).trim();
+
+  if(!sessionToken){
+    throw new Error(
+      'ログインセッションを取得できませんでした。'
+    );
+  }
+
+  const results =
+    await Promise.allSettled([
+      jsonp(
+        {
+          action:
+            'coachAdvice.listMine',
+
+          sessionToken:
+            sessionToken,
+
+          limit:
+            '1'
+        },
+        16000
+      ),
+      jsonp(
+        {
+          action:
+            'feedback.listMine',
+
+          sessionToken:
+            sessionToken
+        },
+        16000
+      )
+    ]);
+
+  const adviceResult =
+    results[0].status === 'fulfilled'
+      ? results[0].value
+      : null;
+
+  const feedbackResult =
+    results[1].status === 'fulfilled'
+      ? results[1].value
+      : null;
+
+  if(
+    !isOk(adviceResult) &&
+    !isOk(feedbackResult)
+  ){
+    const firstError =
+      results.find(function(item){
+        return item.status === 'rejected';
+      });
+
+    throw new Error(
+      firstError &&
+      firstError.reason &&
+      firstError.reason.message
+        ? firstError.reason.message
+        : 'フィードバックを取得できませんでした。'
+    );
+  }
+
+  const player =
+    normalizePlayer(
+      (
+        adviceResult &&
+        adviceResult.player
+      ) ||
+      (
+        feedbackResult &&
+        feedbackResult.player
+      ) ||
+      {}
+    );
+
+  const records =
+    adviceResult &&
+    Array.isArray(adviceResult.records)
+      ? adviceResult.records
+      : [];
+
+  const feedback =
+    feedbackResult
+      ? normalizeFeedback(
+          feedbackResult.feedback ||
+          unwrapData(feedbackResult).feedback ||
+          null
+        )
+      : null;
+
+  return {
+    mode:
+      'player',
+
+    player:
+      player,
+
+    records:
+      records,
+
+    feedback:
+      feedback,
+
+    fetchedAt:
+      new Date().toISOString()
+  };
+}
+
+async function createPlayerSession(
+  idToken
+){
+  const response =
+    await withTimeout(
+      fetch(
+        GAS_URL,
+        {
+          method:
+            'POST',
+
+          headers:
+            {
+              'Content-Type':
+                'text/plain;charset=utf-8'
+            },
+
+          body:
+            JSON.stringify({
+              action:
+                'practiceSession.create',
+
+              idToken:
+                String(idToken || '')
+            }),
+
+          redirect:
+            'follow',
+
+          cache:
+            'no-store'
+        }
+      ),
+      20000,
+      'ログインセッションの作成がタイムアウトしました。'
+    );
+
+  const text =
+    await response.text();
+
+  let data;
+
+  try{
+    data =
+      JSON.parse(
+        text
+      );
+  }catch(_){
+    throw new Error(
+      'ログインセッションの応答を確認できませんでした。'
+    );
+  }
+
+  if(
+    !response.ok ||
+    !isOk(data)
+  ){
+    throw new Error(
+      getMessage(data) ||
+      'ログインセッションを作成できませんでした。'
     );
   }
 
   return data;
 }
 
-function render(result,feedbackResult){
-  const player = result.player || {};
-  const records = Array.isArray(result.records) ? result.records : [];
+async function postApi(
+  payload,
+  timeoutMs,
+  timeoutMessage
+){
+  const response =
+    await withTimeout(
+      fetch(
+        GAS_URL,
+        {
+          method:
+            'POST',
 
-  const chip = document.getElementById('playerChip');
-  const chipText = [player.playerName,player.category].filter(Boolean).join(' / ');
-  if(chipText){
-    chip.textContent = chipText;
-    chip.style.display = 'block';
+          headers:
+            {
+              'Content-Type':
+                'text/plain;charset=utf-8'
+            },
+
+          body:
+            JSON.stringify(payload || {}),
+
+          redirect:
+            'follow',
+
+          cache:
+            'no-store'
+        }
+      ),
+      timeoutMs || 20000,
+      timeoutMessage || 'サーバー通信がタイムアウトしました。'
+    );
+
+  const text =
+    await response.text();
+
+  let data;
+
+  try{
+    data =
+      JSON.parse(
+        text
+      );
+  }catch(_){
+    throw new Error(
+      'サーバー応答を確認できませんでした。'
+    );
   }
 
-  const adviceDate = document.getElementById('adviceDate');
-  const adviceText = document.getElementById('adviceText');
-  const adviceCoach = document.getElementById('adviceCoach');
+  if(
+    !response.ok ||
+    !isOk(data)
+  ){
+    throw new Error(
+      getMessage(data) ||
+      'サーバー通信に失敗しました。'
+    );
+  }
+
+  return data;
+}
+
+function renderFromCache(
+  cache
+){
+  render(
+    {
+      mode:
+        cache.mode || 'cache',
+
+      player:
+        cache.player || {},
+
+      records:
+        Array.isArray(cache.records)
+          ? cache.records
+          : [],
+
+      feedback:
+        cache.feedback || null,
+
+      fetchedAt:
+        cache.fetchedAt || cache.savedAt || ''
+    },
+    {
+      cached:
+        true
+    }
+  );
+}
+
+function renderFresh(
+  data
+){
+  render(
+    data,
+    {
+      cached:
+        false
+    }
+  );
+}
+
+function render(
+  data,
+  options
+){
+  const source =
+    data || {};
+
+  const player =
+    normalizePlayer(
+      source.player || {}
+    );
+
+  const records =
+    Array.isArray(source.records)
+      ? source.records
+      : [];
+
+  const chip =
+    document.getElementById(
+      'playerChip'
+    );
+
+  const chipText =
+    [
+      player.playerName || player.name,
+      player.category
+    ]
+      .filter(Boolean)
+      .join(' / ');
+
+  if(chipText){
+    chip.textContent =
+      chipText;
+
+    chip.style.display =
+      'block';
+  }else{
+    chip.textContent =
+      '';
+
+    chip.style.display =
+      'none';
+  }
+
+  const adviceDate =
+    document.getElementById(
+      'adviceDate'
+    );
+
+  const adviceText =
+    document.getElementById(
+      'adviceText'
+    );
+
+  const adviceCoach =
+    document.getElementById(
+      'adviceCoach'
+    );
 
   if(!records.length){
-    adviceDate.classList.add('hidden');
-    adviceCoach.classList.add('hidden');
-    adviceText.textContent = 'まだコーチからのアドバイスはありません。';
+    adviceDate.classList.add(
+      'hidden'
+    );
+
+    adviceCoach.classList.add(
+      'hidden'
+    );
+
+    adviceText.textContent =
+      source.mode === 'guardian'
+        ? '保護者メニューから表示しています。コーチアドバイスは選手本人メニューで確認できます。'
+        : 'まだコーチからのアドバイスはありません。';
+
   }else{
-    const latestRecord = [...records].sort((a,b) => {
-      const aTime = Date.parse(String(a.updatedAt || a.createdAt || '').replace(/\//g,'-')) || 0;
-      const bTime = Date.parse(String(b.updatedAt || b.createdAt || '').replace(/\//g,'-')) || 0;
-      return bTime - aTime;
-    })[0];
+    const latestRecord =
+      records
+        .slice()
+        .sort(function(a,b){
+          const aTime =
+            Date.parse(
+              String(
+                a.updatedAt ||
+                a.createdAt ||
+                ''
+              ).replace(/\//g,'-')
+            ) || 0;
 
-    adviceDate.textContent = formatDate(latestRecord.updatedAt || latestRecord.createdAt);
-    adviceDate.classList.remove('hidden');
+          const bTime =
+            Date.parse(
+              String(
+                b.updatedAt ||
+                b.createdAt ||
+                ''
+              ).replace(/\//g,'-')
+            ) || 0;
 
-    adviceText.textContent = latestRecord.adviceText || '';
+          return bTime - aTime;
+        })[0];
 
-    adviceCoach.textContent = `コーチ：${latestRecord.createdBy || 'NINJA AIRS'}`;
-    adviceCoach.classList.remove('hidden');
+    adviceDate.textContent =
+      formatDate(
+        latestRecord.updatedAt ||
+        latestRecord.createdAt
+      );
+
+    adviceDate.classList.remove(
+      'hidden'
+    );
+
+    adviceText.textContent =
+      latestRecord.adviceText || '';
+
+    adviceCoach.textContent =
+      'コーチ：' +
+      (
+        latestRecord.createdBy ||
+        'NINJA AIRS'
+      );
+
+    adviceCoach.classList.remove(
+      'hidden'
+    );
   }
 
   renderLatestFeedback(
-    feedbackResult && feedbackResult.feedback
-      ? feedbackResult.feedback
-      : null
+    source.feedback || null
   );
 
-  showOnly('mainView');
+  showOnly(
+    'mainView'
+  );
+
+  if(
+    options &&
+    options.cached
+  ){
+    setSyncStatus(
+      '前回表示した内容です。最新情報を確認中です。',
+      'warning'
+    );
+  }
 }
 
+function renderLatestFeedback(
+  feedback
+){
+  const card =
+    document.getElementById(
+      'latestFeedbackCard'
+    );
 
-function renderLatestFeedback(feedback){
-  const card = document.getElementById('latestFeedbackCard');
-  const content = document.getElementById('latestFeedbackContent');
+  const content =
+    document.getElementById(
+      'latestFeedbackContent'
+    );
 
-  if(!feedback || !String(feedback.feedbackText || '').trim()){
-    card.classList.add('hidden');
-    content.innerHTML = '';
+  if(
+    !feedback ||
+    !String(
+      feedback.feedbackText || ''
+    ).trim()
+  ){
+    card.classList.add(
+      'hidden'
+    );
+
+    content.innerHTML =
+      '';
+
     return;
   }
 
-  const sections = parseFeedbackSections(feedback.feedbackText);
+  const sections =
+    parseFeedbackSections(
+      feedback.feedbackText
+    );
 
-  const items = [
-    ['いいところ',sections.good],
-    ['改善点',sections.improvement],
-    ['方向性',sections.direction],
-    ['総合所見',sections.summary]
-  ].filter(item => item[1]);
+  const items =
+    [
+      [
+        'いいところ',
+        sections.good
+      ],
+      [
+        '改善点',
+        sections.improvement
+      ],
+      [
+        '方向性',
+        sections.direction
+      ],
+      [
+        '総合所見',
+        sections.summary
+      ]
+    ]
+      .filter(function(item){
+        return item[1];
+      });
 
   if(items.length){
-    content.innerHTML = `
-      <div class="feedback-grid">
-        ${items.map(item => `
-          <div class="feedback-block">
-            <small>${esc(item[0])}</small>
-            <div>${esc(item[1])}</div>
-          </div>
-        `).join('')}
-      </div>
-      ${feedback.savedAt ? `<div class="feedback-date">更新：${esc(formatDate(feedback.savedAt))}</div>` : ''}
-    `;
+    content.innerHTML =
+      '<div class="feedback-grid">' +
+      items.map(function(item){
+        return (
+          '<div class="feedback-block">' +
+            '<small>' +
+              esc(item[0]) +
+            '</small>' +
+            '<div>' +
+              esc(item[1]) +
+            '</div>' +
+          '</div>'
+        );
+      }).join('') +
+      '</div>' +
+      (
+        feedback.savedAt
+          ? '<div class="feedback-date">更新：' +
+              esc(
+                formatDate(
+                  feedback.savedAt
+                )
+              ) +
+            '</div>'
+          : ''
+      );
+
   }else{
-    content.innerHTML = `
-      <div class="feedback-block">
-        <div>${esc(feedback.feedbackText)}</div>
-      </div>
-      ${feedback.savedAt ? `<div class="feedback-date">更新：${esc(formatDate(feedback.savedAt))}</div>` : ''}
-    `;
+    content.innerHTML =
+      '<div class="feedback-block">' +
+        '<div>' +
+          esc(
+            feedback.feedbackText
+          ) +
+        '</div>' +
+      '</div>' +
+      (
+        feedback.savedAt
+          ? '<div class="feedback-date">更新：' +
+              esc(
+                formatDate(
+                  feedback.savedAt
+                )
+              ) +
+            '</div>'
+          : ''
+      );
   }
 
-  card.classList.remove('hidden');
+  card.classList.remove(
+    'hidden'
+  );
 }
 
-function parseFeedbackSections(text){
-  const source = String(text || '').replace(/\r\n/g,'\n').trim();
-  const result = {good:'',improvement:'',direction:'',summary:''};
+function parseFeedbackSections(
+  text
+){
+  const source =
+    String(
+      text || ''
+    )
+      .replace(/\r\n/g,'\n')
+      .trim();
 
-  const matches = [...source.matchAll(
-    /(?:^|\n)\s*#{0,3}\s*(いいところ|改善点|方向性|総合所見)\s*(?:\n|$)/g
-  )];
+  const result =
+    {
+      good:
+        '',
 
-  if(!matches.length) return result;
+      improvement:
+        '',
 
-  matches.forEach((match,index)=>{
-    const start = match.index + match[0].length;
-    const end = index + 1 < matches.length ? matches[index + 1].index : source.length;
-    const body = source.slice(start,end).trim();
+      direction:
+        '',
 
-    if(match[1] === 'いいところ') result.good = body;
-    if(match[1] === '改善点') result.improvement = body;
-    if(match[1] === '方向性') result.direction = body;
-    if(match[1] === '総合所見') result.summary = body;
+      summary:
+        ''
+    };
+
+  const matches =
+    [
+      ...source.matchAll(
+        /(?:^|\n)\s*#{0,3}\s*(いいところ|改善点|方向性|総合所見)\s*(?:\n|$)/g
+      )
+    ];
+
+  if(!matches.length){
+    return result;
+  }
+
+  matches.forEach(function(match,index){
+    const start =
+      match.index +
+      match[0].length;
+
+    const end =
+      index + 1 < matches.length
+        ? matches[index + 1].index
+        : source.length;
+
+    const body =
+      source
+        .slice(
+          start,
+          end
+        )
+        .trim();
+
+    if(match[1] === 'いいところ'){
+      result.good =
+        body;
+    }
+
+    if(match[1] === '改善点'){
+      result.improvement =
+        body;
+    }
+
+    if(match[1] === '方向性'){
+      result.direction =
+        body;
+    }
+
+    if(match[1] === '総合所見'){
+      result.summary =
+        body;
+    }
   });
 
   return result;
 }
 
-function showError(message){
-  const text = String(message || '');
-  let friendly = text;
-
-  if(text.includes('LINE') && (text.includes('連携') || text.includes('選手'))){
-    friendly = 'このLINEアカウントは選手情報と連携されていません。コーチへ連絡してください。';
-  }else if(text.includes('認証')){
-    friendly = 'LINE認証を確認できませんでした。LINEからもう一度開いてください。';
+function readGuardianSelectedPlayerId(){
+  if(!currentCacheScope){
+    return '';
   }
 
-  document.getElementById('errorText').textContent = friendly;
-  showOnly('errorView');
+  const scopedKey =
+    GUARDIAN_DEFAULT_PLAYER_ID_KEY +
+    ':' +
+    currentCacheScope;
+
+  const scopedValue =
+    getLocalStorageValue(
+      scopedKey
+    );
+
+  if(scopedValue){
+    return scopedValue;
+  }
+
+  return getLocalStorageValue(
+    GUARDIAN_DEFAULT_PLAYER_ID_KEY
+  );
 }
 
-function showOnly(id){
-  ['loadingView','mainView','errorView'].forEach(viewId=>{
-    document.getElementById(viewId).classList.toggle('hidden',viewId !== id);
+async function createCacheScopeFromIdToken(
+  idToken
+){
+  const payload =
+    decodeJwtPayload(
+      idToken
+    );
+
+  const subject =
+    String(
+      payload.sub ||
+      payload.userId ||
+      ''
+    ).trim();
+
+  if(!subject){
+    return '';
+  }
+
+  return await sha256Hex(
+    subject
+  );
+}
+
+function decodeJwtPayload(
+  token
+){
+  const parts =
+    String(
+      token || ''
+    ).split('.');
+
+  if(parts.length < 2){
+    return {};
+  }
+
+  try{
+    const base64 =
+      parts[1]
+        .replace(/-/g,'+')
+        .replace(/_/g,'/');
+
+    const padded =
+      base64 +
+      '='.repeat(
+        (
+          4 - base64.length % 4
+        ) % 4
+      );
+
+    const binary =
+      atob(
+        padded
+      );
+
+    const bytes =
+      Uint8Array.from(
+        binary,
+        function(char){
+          return char.charCodeAt(0);
+        }
+      );
+
+    const json =
+      new TextDecoder()
+        .decode(
+          bytes
+        );
+
+    return JSON.parse(
+      json
+    );
+
+  }catch(_){
+    return {};
+  }
+}
+
+async function sha256Hex(
+  value
+){
+  const source =
+    String(
+      value || ''
+    );
+
+  try{
+    if(
+      window.crypto &&
+      window.crypto.subtle &&
+      window.TextEncoder
+    ){
+      const data =
+        new TextEncoder()
+          .encode(
+            source
+          );
+
+      const hash =
+        await window.crypto.subtle.digest(
+          'SHA-256',
+          data
+        );
+
+      return Array
+        .from(
+          new Uint8Array(hash)
+        )
+        .map(function(byte){
+          return byte
+            .toString(16)
+            .padStart(2,'0');
+        })
+        .join('');
+    }
+  }catch(_){}
+
+  return fallbackHash(
+    source
+  );
+}
+
+function fallbackHash(
+  source
+){
+  let hash =
+    5381;
+
+  const text =
+    String(
+      source || ''
+    );
+
+  for(let i = 0; i < text.length; i += 1){
+    hash =
+      ((hash << 5) + hash) ^
+      text.charCodeAt(i);
+  }
+
+  return String(
+    hash >>> 0
+  );
+}
+
+function getFeedbackCacheKey(){
+  if(!currentCacheScope){
+    return '';
+  }
+
+  return FEEDBACK_CACHE_PREFIX +
+    currentCacheScope;
+}
+
+function readCachedFeedback(){
+  const key =
+    getFeedbackCacheKey();
+
+  if(!key){
+    return null;
+  }
+
+  const raw =
+    getLocalStorageValue(
+      key
+    );
+
+  if(!raw){
+    return null;
+  }
+
+  try{
+    const cache =
+      JSON.parse(
+        raw
+      );
+
+    if(
+      !cache ||
+      cache.version !== CACHE_VERSION ||
+      !cache.savedAt ||
+      Date.now() - Number(cache.savedAt) > CACHE_TTL_MS
+    ){
+      localStorage.removeItem(
+        key
+      );
+
+      return null;
+    }
+
+    return cache.data || null;
+
+  }catch(_){
+    localStorage.removeItem(
+      key
+    );
+
+    return null;
+  }
+}
+
+function saveCachedFeedback(
+  data
+){
+  const key =
+    getFeedbackCacheKey();
+
+  if(!key || !data){
+    return;
+  }
+
+  const safeData =
+    {
+      mode:
+        String(data.mode || ''),
+
+      player:
+        normalizePlayer(
+          data.player || {}
+        ),
+
+      records:
+        Array.isArray(data.records)
+          ? data.records.slice(0,5)
+          : [],
+
+      feedback:
+        normalizeFeedback(
+          data.feedback || null
+        ),
+
+      fetchedAt:
+        data.fetchedAt ||
+        new Date().toISOString()
+    };
+
+  try{
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        version:
+          CACHE_VERSION,
+
+        savedAt:
+          Date.now(),
+
+        data:
+          safeData
+      })
+    );
+  }catch(error){
+    console.warn(
+      '[NINJA Feedback cache save skipped]',
+      error
+    );
+  }
+}
+
+function normalizePlayer(
+  player
+){
+  const source =
+    player || {};
+
+  return {
+    playerId:
+      String(
+        source.playerId || ''
+      ).trim(),
+
+    playerName:
+      String(
+        source.playerName ||
+        source.name ||
+        ''
+      ).trim(),
+
+    name:
+      String(
+        source.name ||
+        source.playerName ||
+        ''
+      ).trim(),
+
+    category:
+      String(
+        source.category || ''
+      ).trim()
+  };
+}
+
+function normalizeFeedback(
+  feedback
+){
+  if(!feedback){
+    return null;
+  }
+
+  const source =
+    feedback || {};
+
+  const feedbackText =
+    String(
+      source.feedbackText ||
+      source.text ||
+      source.content ||
+      ''
+    ).trim();
+
+  if(!feedbackText){
+    return null;
+  }
+
+  return {
+    feedbackText:
+      feedbackText,
+
+    savedAt:
+      String(
+        source.savedAt ||
+        source.updatedAt ||
+        source.createdAt ||
+        ''
+      ).trim()
+  };
+}
+
+function isOk(
+  result
+){
+  return !!(
+    result &&
+    (
+      result.status === 'ok' ||
+      result.ok === true ||
+      result.success === true
+    )
+  );
+}
+
+function unwrapData(
+  result
+){
+  if(
+    result &&
+    result.data &&
+    typeof result.data === 'object'
+  ){
+    return result.data;
+  }
+
+  return result || {};
+}
+
+function getMessage(
+  result
+){
+  return String(
+    result &&
+    result.message
+      ? result.message
+      : ''
+  ).trim();
+}
+
+function showError(
+  message
+){
+  const text =
+    String(
+      message || ''
+    );
+
+  let friendly =
+    text;
+
+  if(
+    text.includes('LINE') &&
+    (
+      text.includes('連携') ||
+      text.includes('選手')
+    )
+  ){
+    friendly =
+      'このLINEアカウントは選手情報と連携されていません。必要な場合は、選手または保護者登録を行ってください。';
+
+  }else if(text.includes('認証')){
+    friendly =
+      'LINE認証を確認できませんでした。LINEからもう一度開いてください。';
+  }
+
+  document
+    .getElementById('errorText')
+    .textContent =
+      friendly;
+
+  showOnly(
+    'errorView'
+  );
+}
+
+function showOnly(
+  id
+){
+  [
+    'loadingView',
+    'mainView',
+    'errorView'
+  ].forEach(function(viewId){
+    document
+      .getElementById(viewId)
+      .classList
+      .toggle(
+        'hidden',
+        viewId !== id
+      );
   });
-  window.scrollTo({top:0,behavior:'instant'});
+
+  window.scrollTo({
+    top:
+      0,
+
+    behavior:
+      'instant'
+  });
 }
 
-function jsonp(params,timeoutMs=20000){
-  return new Promise((resolve,reject)=>{
+function setLoading(
+  message
+){
+  const el =
+    document.getElementById(
+      'loadingText'
+    );
+
+  if(el){
+    el.textContent =
+      message || '';
+  }
+}
+
+function setSyncStatus(
+  message,
+  kind
+){
+  const el =
+    document.getElementById(
+      'syncStatus'
+    );
+
+  if(!el){
+    return;
+  }
+
+  el.textContent =
+    message || '';
+
+  el.classList.toggle(
+    'hidden',
+    !message
+  );
+
+  el.classList.toggle(
+    'warning',
+    kind === 'warning'
+  );
+
+  el.classList.toggle(
+    'error',
+    kind === 'error'
+  );
+}
+
+function jsonp(
+  params,
+  timeoutMs
+){
+  return new Promise(function(resolve,reject){
     const callback =
       '__ninjaFeedback_' +
       Date.now() +
       '_' +
-      Math.random().toString(36).slice(2);
+      Math.random()
+        .toString(36)
+        .slice(2);
 
-    const script = document.createElement('script');
+    const script =
+      document.createElement(
+        'script'
+      );
 
-    const timer = setTimeout(()=>{
-      cleanup();
-      reject(new Error('サーバー通信がタイムアウトしました。'));
-    },timeoutMs);
+    const timer =
+      setTimeout(function(){
+        cleanup();
+
+        reject(
+          new Error(
+            'サーバー通信がタイムアウトしました。'
+          )
+        );
+      },timeoutMs || 16000);
 
     function cleanup(){
-      clearTimeout(timer);
-      try{ delete window[callback]; }catch(_){}
-      if(script.parentNode) script.parentNode.removeChild(script);
+      clearTimeout(
+        timer
+      );
+
+      try{
+        delete window[callback];
+      }catch(_){}
+
+      if(script.parentNode){
+        script.parentNode.removeChild(
+          script
+        );
+      }
     }
 
-    window[callback] = data=>{
-      cleanup();
-      resolve(data);
-    };
+    window[callback] =
+      function(data){
+        cleanup();
+        resolve(data);
+      };
 
-    const query = new URLSearchParams({
-      ...params,
-      callback,
-      _ts:String(Date.now())
-    }).toString();
+    const query =
+      new URLSearchParams(
+        Object.assign(
+          {},
+          params,
+          {
+            callback:
+              callback,
 
-    script.src = GAS_URL + '?' + query;
+            _ts:
+              String(Date.now())
+          }
+        )
+      ).toString();
 
-    script.onerror = ()=>{
-      cleanup();
-      reject(new Error('Apps Scriptへ接続できませんでした。'));
-    };
+    script.src =
+      GAS_URL +
+      '?' +
+      query;
 
-    document.head.appendChild(script);
+    script.onerror =
+      function(){
+        cleanup();
+
+        reject(
+          new Error(
+            'Apps Scriptへ接続できませんでした。'
+          )
+        );
+      };
+
+    document.head.appendChild(
+      script
+    );
   });
 }
 
-function formatDate(value){
-  const text = String(value || '').trim();
-  const match = text.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})(?:\s+(\d{1,2}):(\d{2}))?/);
-  if(!match) return text;
+function formatDate(
+  value
+){
+  const text =
+    String(
+      value || ''
+    ).trim();
 
-  const month = Number(match[2]);
-  const day = Number(match[3]);
+  const match =
+    text.match(
+      /^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})(?:\s+(\d{1,2}):(\d{2}))?/
+    );
+
+  if(!match){
+    return text;
+  }
+
+  const month =
+    Number(
+      match[2]
+    );
+
+  const day =
+    Number(
+      match[3]
+    );
 
   return match[4]
-    ? `${month}月${day}日 ${match[4]}:${match[5]}`
-    : `${month}月${day}日`;
+    ? month +
+        '月' +
+        day +
+        '日 ' +
+        match[4] +
+        ':' +
+        match[5]
+    : month +
+        '月' +
+        day +
+        '日';
 }
 
-function withTimeout(promise,ms,message){
+function withTimeout(
+  promise,
+  ms,
+  message
+){
   return Promise.race([
     promise,
-    new Promise((_,reject)=>{
-      setTimeout(()=>reject(new Error(message)),ms);
+    new Promise(function(_,reject){
+      setTimeout(function(){
+        reject(
+          new Error(
+            message
+          )
+        );
+      },ms);
     })
   ]);
 }
 
-function esc(value){
-  return String(value == null ? '' : value)
+function getLocalStorageValue(
+  key
+){
+  try{
+    return String(
+      localStorage.getItem(key) ||
+      ''
+    ).trim();
+  }catch(_){
+    return '';
+  }
+}
+
+function esc(
+  value
+){
+  return String(
+    value == null
+      ? ''
+      : value
+  )
     .replace(/&/g,'&amp;')
     .replace(/</g,'&lt;')
     .replace(/>/g,'&gt;')
