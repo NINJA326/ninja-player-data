@@ -348,7 +348,7 @@
 
 <script>
 'use strict';
-const PLAYER_CARD_VERSION='v17-session-auth';
+const PLAYER_CARD_VERSION='v18-guardian-launch-token';
 
 const LIFF_ID='2010789200-d4tyvqcE';
 const GAS_URL='https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
@@ -358,35 +358,435 @@ window.addEventListener('load',init);
 async function init(){
   try{
     if(!window.liff)throw new Error('LIFF SDKを読み込めませんでした。');
-    await withTimeout(liff.init({liffId:LIFF_ID}),15000,'LINE認証の初期化がタイムアウトしました。');
-    if(!liff.isLoggedIn()){liff.login();return;}
+
+    const guardianLaunch =
+      getGuardianLaunchParams();
+
+    await withTimeout(
+      liff.init({liffId:LIFF_ID}),
+      15000,
+      'LINE認証の初期化がタイムアウトしました。'
+    );
+
+    if(!liff.isLoggedIn()){
+      liff.login({
+        redirectUri:
+          location.href.split('#')[0]
+      });
+      return;
+    }
+
     const idToken=liff.getIDToken();
     if(!idToken)throw new Error('LINE認証情報を取得できませんでした。');
 
-    const session=await createPlayerSession(idToken);
-    const sessionToken=String(
-      session&&(
-        session.sessionToken||
-        (session.data&&session.data.sessionToken)
-      )||''
-    ).trim();
+    if(guardianLaunch.launchToken){
+      await loadGuardianPlayerCard(
+        idToken,
+        guardianLaunch
+      );
 
-    if(!sessionToken){
-      throw new Error('ログインセッションを取得できませんでした。');
+      return;
     }
 
-    const result=await jsonp({
-      action:'playerCard.listMine',
-      sessionToken
-    });
+    await loadOwnPlayerCard(
+      idToken
+    );
 
-    if(!result||result.status==='error'||result.success===false){
-      throw new Error(result&&result.message?result.message:'選手カルテを取得できませんでした。');
-    }
-    render(result);
   }catch(error){
     showError(error&&error.message?error.message:String(error));
   }
+}
+
+
+function getGuardianLaunchParams(){
+  const params =
+    new URLSearchParams(
+      location.search
+    );
+
+  return {
+    launchToken:
+      String(
+        params.get('guardianLaunchToken') || ''
+      ).trim(),
+
+    appKey:
+      String(
+        params.get('guardianLaunchApp') || ''
+      ).trim()
+  };
+}
+
+
+async function loadOwnPlayerCard(idToken){
+  const session=await createPlayerSession(idToken);
+  const sessionToken=String(
+    session&&(
+      session.sessionToken||
+      (session.data&&session.data.sessionToken)
+    )||''
+  ).trim();
+
+  if(!sessionToken){
+    throw new Error('ログインセッションを取得できませんでした。');
+  }
+
+  const result=await jsonp({
+    action:'playerCard.listMine',
+    sessionToken
+  });
+
+  if(!result||result.status==='error'||result.success===false){
+    throw new Error(result&&result.message?result.message:'選手カルテを取得できませんでした。');
+  }
+
+  render(result);
+}
+
+
+async function loadGuardianPlayerCard(idToken,guardianLaunch){
+  if(
+    guardianLaunch.appKey &&
+    guardianLaunch.appKey !== 'playerCard'
+  ){
+    throw new Error('起動先アプリが選手カルテではありません。');
+  }
+
+  const verified =
+    await postJson({
+      action:
+        'guardian.externalAppLaunch.verify',
+
+      launchToken:
+        guardianLaunch.launchToken,
+
+      appKey:
+        'playerCard'
+    });
+
+  const verifiedData =
+    getResponseData(
+      verified
+    );
+
+  const verifiedPlayer =
+    verifiedData && verifiedData.player
+      ? verifiedData.player
+      : null;
+
+  if(
+    !verifiedPlayer ||
+    !verifiedPlayer.playerId
+  ){
+    throw new Error('選手情報を確認できませんでした。');
+  }
+
+  const result =
+    await postJson({
+      action:
+        'guardian.playerView',
+
+      idToken:
+        idToken,
+
+      playerId:
+        String(
+          verifiedPlayer.playerId || ''
+        ).trim(),
+
+      month:
+        getCurrentMonthKey(),
+
+      limit:
+        20
+    });
+
+  const normalized =
+    normalizeGuardianPlayerCardResult(
+      result,
+      verifiedPlayer
+    );
+
+  render(
+    normalized
+  );
+}
+
+
+function normalizeGuardianPlayerCardResult(result,verifiedPlayer){
+  const data =
+    unwrapApiData(
+      result
+    );
+
+  const player =
+    data.player ||
+    verifiedPlayer ||
+    {};
+
+  const growth =
+    normalizeNestedApiResult(
+      data.growth ||
+      data.body ||
+      data.bodyMeasurement ||
+      data.bodyMeasurements ||
+      {}
+    );
+
+  const agility =
+    normalizeNestedApiResult(
+      data.agility ||
+      data.agilityRecords ||
+      {}
+    );
+
+  const shooting =
+    normalizeNestedApiResult(
+      data.shooting ||
+      data.shootingRecords ||
+      {}
+    );
+
+  const feedback =
+    normalizeFeedbackForPlayerCard(
+      data.feedback ||
+      data.playerFeedback ||
+      {}
+    );
+
+  return {
+    success:
+      true,
+
+    status:
+      'ok',
+
+    player:
+      player,
+
+    generatedAt:
+      data.generatedAt ||
+      data.fetchedAt ||
+      new Date().toISOString(),
+
+    growth:
+      ensureRecordsObject(
+        growth
+      ),
+
+    agility:
+      ensureRecordsObject(
+        agility
+      ),
+
+    shooting:
+      normalizeShootingForPlayerCard(
+        shooting
+      ),
+
+    ranking:
+      data.ranking ||
+      data.rankings ||
+      null,
+
+    feedback:
+      feedback
+  };
+}
+
+
+function normalizeNestedApiResult(value){
+  const data =
+    unwrapApiData(
+      value
+    );
+
+  return data && typeof data === 'object'
+    ? data
+    : {};
+}
+
+
+function ensureRecordsObject(value){
+  const data =
+    normalizeNestedApiResult(
+      value
+    );
+
+  if(
+    Array.isArray(data)
+  ){
+    return {
+      records:
+        data
+    };
+  }
+
+  if(
+    Array.isArray(data.records)
+  ){
+    return data;
+  }
+
+  if(
+    Array.isArray(data.items)
+  ){
+    return Object.assign(
+      {},
+      data,
+      {
+        records:
+          data.items
+      }
+    );
+  }
+
+  return Object.assign(
+    {},
+    data,
+    {
+      records:
+        []
+    }
+  );
+}
+
+
+function normalizeShootingForPlayerCard(value){
+  const data =
+    normalizeNestedApiResult(
+      value
+    );
+
+  if(
+    Array.isArray(data)
+  ){
+    return {
+      records:
+        data
+    };
+  }
+
+  return data;
+}
+
+
+function normalizeFeedbackForPlayerCard(value){
+  const data =
+    normalizeNestedApiResult(
+      value
+    );
+
+  if(
+    data.feedback &&
+    typeof data.feedback === 'object'
+  ){
+    return data.feedback;
+  }
+
+  return data;
+}
+
+
+function getCurrentMonthKey(){
+  const now =
+    new Date();
+
+  return String(
+    now.getFullYear()
+  ) +
+  '-' +
+  String(
+    now.getMonth() + 1
+  ).padStart(2,'0');
+}
+
+
+function isOkResponse(result){
+  return !!result && (
+    result.status === 'ok' ||
+    result.ok === true ||
+    result.success === true
+  );
+}
+
+
+function getResponseData(result){
+  return result &&
+    typeof result === 'object' &&
+    result.data &&
+    typeof result.data === 'object'
+      ? result.data
+      : result;
+}
+
+
+function unwrapApiData(value){
+  let current =
+    value;
+
+  for(let i=0;i<6;i+=1){
+    if(
+      current &&
+      typeof current === 'object' &&
+      !Array.isArray(current) &&
+      current.data &&
+      typeof current.data === 'object'
+    ){
+      current =
+        current.data;
+
+      continue;
+    }
+
+    break;
+  }
+
+  return current && typeof current === 'object'
+    ? current
+    : {};
+}
+
+
+async function postJson(payload){
+  const response =
+    await withTimeout(
+      fetch(GAS_URL,{
+        method:'POST',
+        headers:{
+          'Content-Type':'text/plain;charset=utf-8'
+        },
+        body:JSON.stringify(payload),
+        redirect:'follow',
+        cache:'no-store'
+      }),
+      25000,
+      'サーバー通信がタイムアウトしました。'
+    );
+
+  const text =
+    await response.text();
+
+  let data;
+
+  try{
+    data =
+      JSON.parse(
+        text
+      );
+  }catch(_){
+    throw new Error('サーバーの応答を確認できませんでした。');
+  }
+
+  if(!response.ok||!isOkResponse(data)){
+    throw new Error(
+      data&&data.message
+        ? data.message
+        : 'サーバー通信に失敗しました。'
+    );
+  }
+
+  return data;
 }
 
 function render(data){
