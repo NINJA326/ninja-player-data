@@ -346,7 +346,7 @@
 'use strict';
 
 const FEEDBACK_PAGE_VERSION =
-  'v19-hide-player-card-link-for-guardian';
+  'v20-guardian-player-card-launch';
 
 const LIFF_ID =
   '2010789200-osUDbuzD';
@@ -358,13 +358,13 @@ const GAS_URL =
   'https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
 
 const CACHE_VERSION =
-  'feedback-cache-v18';
+  'feedback-cache-v20';
 
 const CACHE_TTL_MS =
   14 * 24 * 60 * 60 * 1000;
 
 const FEEDBACK_CACHE_PREFIX =
-  'ninjaFeedbackCacheV18:';
+  'ninjaFeedbackCacheV20:';
 
 const GUARDIAN_DEFAULT_PLAYER_ID_KEY =
   'ninjaGuardianDefaultPlayerIdStep50';
@@ -381,6 +381,9 @@ let cachedViewShown =
 let currentViewMode =
   '';
 
+let currentGuardianPlayerId =
+  '';
+
 window.addEventListener(
   'load',
   init
@@ -393,15 +396,109 @@ document
     openPlayerCard
   );
 
-function openPlayerCard(){
+async function openPlayerCard(){
   if (
     currentViewMode === 'guardian'
   ) {
+    await openGuardianPlayerCard();
     return;
   }
 
   location.href =
     PLAYER_CARD_LIFF_URL;
+}
+
+
+async function openGuardianPlayerCard(){
+  if (!currentIdToken) {
+    showError(
+      'LINE認証情報を取得できませんでした。LINEからもう一度開いてください。'
+    );
+
+    return;
+  }
+
+  const playerId =
+    String(
+      currentGuardianPlayerId || ''
+    ).trim();
+
+  if (!playerId) {
+    showError(
+      '選手情報を確認できませんでした。保護者トップから開き直してください。'
+    );
+
+    return;
+  }
+
+  const button =
+    document.getElementById(
+      'playerCardBtn'
+    );
+
+  if (button) {
+    button.disabled =
+      true;
+
+    button.textContent =
+      '選手カルテを開いています…';
+  }
+
+  try {
+    const result =
+      await postApi(
+        {
+          action:
+            'guardian.externalAppLaunch.create',
+
+          idToken:
+            currentIdToken,
+
+          playerId:
+            playerId,
+
+          appKey:
+            'playerCard'
+        },
+        20000,
+        '選手カルテを開く準備がタイムアウトしました。'
+      );
+
+    const data =
+      unwrapData(
+        result
+      );
+
+    const launchUrl =
+      String(
+        data.launchUrl ||
+        result.launchUrl ||
+        ''
+      ).trim();
+
+    if (!launchUrl) {
+      throw new Error(
+        '選手カルテの起動URLを取得できませんでした。'
+      );
+    }
+
+    location.href =
+      launchUrl;
+  } catch (error) {
+    if (button) {
+      button.disabled =
+        false;
+
+      button.textContent =
+        '選手カルテを見る';
+    }
+
+    showError(
+      error && error.message
+        ? error.message
+        : String(error)
+    );
+  }
 }
 
 async function init(){
@@ -861,36 +958,6 @@ async function postApi(
   return data;
 }
 
-function updatePlayerCardButton(
-  mode
-){
-  const button =
-    document.getElementById(
-      'playerCardBtn'
-    );
-
-  if (!button) {
-    return;
-  }
-
-  const isGuardian =
-    String(mode || '') === 'guardian';
-
-  button.classList.toggle(
-    'hidden',
-    isGuardian
-  );
-
-  button.disabled =
-    isGuardian;
-
-  button.setAttribute(
-    'aria-hidden',
-    isGuardian ? 'true' : 'false'
-  );
-}
-
-
 function renderFromCache(
   cache
 ){
@@ -944,9 +1011,17 @@ function render(
       source.mode || ''
     );
 
-  updatePlayerCardButton(
-    currentViewMode
-  );
+  const playerForMode =
+    normalizePlayer(
+      source.player || {}
+    );
+
+  currentGuardianPlayerId =
+    currentViewMode === 'guardian'
+      ? String(
+          playerForMode.playerId || ''
+        ).trim()
+      : '';
 
   const player =
     normalizePlayer(
@@ -1011,7 +1086,7 @@ function render(
 
     adviceText.textContent =
       source.mode === 'guardian'
-        ? '保護者メニューから表示しています。最新カルテ所見は下部に表示されます。'
+        ? '保護者メニューから表示しています。コーチアドバイスは選手本人メニューで確認できます。'
         : 'まだコーチからのアドバイスはありません。';
 
   }else{
@@ -1068,6 +1143,28 @@ function render(
   renderLatestFeedback(
     source.feedback || null
   );
+
+  const button =
+    document.getElementById(
+      'playerCardBtn'
+    );
+
+  if (button) {
+    button.disabled =
+      false;
+
+    button.textContent =
+      '選手カルテを見る';
+
+    button.classList.remove(
+      'hidden'
+    );
+
+    button.setAttribute(
+      'aria-hidden',
+      'false'
+    );
+  }
 
   showOnly(
     'mainView'
