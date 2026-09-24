@@ -348,10 +348,15 @@
 
 <script>
 'use strict';
-const PLAYER_CARD_VERSION='v18-guardian-launch-token';
+const PLAYER_CARD_VERSION='v19-guardian-timeout-extended';
 
 const LIFF_ID='2010789200-d4tyvqcE';
 const GAS_URL='https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
+
+const GUARDIAN_VERIFY_TIMEOUT_MS=20000;
+const GUARDIAN_PLAYER_VIEW_TIMEOUT_MS=60000;
+const PLAYER_SESSION_TIMEOUT_MS=30000;
+const PLAYER_CARD_JSONP_TIMEOUT_MS=60000;
 
 window.addEventListener('load',init);
 
@@ -380,6 +385,10 @@ async function init(){
     if(!idToken)throw new Error('LINE認証情報を取得できませんでした。');
 
     if(guardianLaunch.launchToken){
+      setLoadingText(
+        '保護者権限でカルテを読み込んでいます…'
+      );
+
       await loadGuardianPlayerCard(
         idToken,
         guardianLaunch
@@ -387,6 +396,10 @@ async function init(){
 
       return;
     }
+
+    setLoadingText(
+      'カルテを読み込んでいます…'
+    );
 
     await loadOwnPlayerCard(
       idToken
@@ -453,16 +466,20 @@ async function loadGuardianPlayerCard(idToken,guardianLaunch){
   }
 
   const verified =
-    await postJson({
-      action:
-        'guardian.externalAppLaunch.verify',
+    await postJson(
+      {
+        action:
+          'guardian.externalAppLaunch.verify',
 
-      launchToken:
-        guardianLaunch.launchToken,
+        launchToken:
+          guardianLaunch.launchToken,
 
-      appKey:
-        'playerCard'
-    });
+        appKey:
+          'playerCard'
+      },
+      GUARDIAN_VERIFY_TIMEOUT_MS,
+      '保護者起動情報の確認がタイムアウトしました。'
+    );
 
   const verifiedData =
     getResponseData(
@@ -481,25 +498,33 @@ async function loadGuardianPlayerCard(idToken,guardianLaunch){
     throw new Error('選手情報を確認できませんでした。');
   }
 
+  setLoadingText(
+    'カルテデータを読み込んでいます…'
+  );
+
   const result =
-    await postJson({
-      action:
-        'guardian.playerView',
+    await postJson(
+      {
+        action:
+          'guardian.playerView',
 
-      idToken:
-        idToken,
+        idToken:
+          idToken,
 
-      playerId:
-        String(
-          verifiedPlayer.playerId || ''
-        ).trim(),
+        playerId:
+          String(
+            verifiedPlayer.playerId || ''
+          ).trim(),
 
-      month:
-        getCurrentMonthKey(),
+        month:
+          getCurrentMonthKey(),
 
-      limit:
-        20
-    });
+        limit:
+          20
+      },
+      GUARDIAN_PLAYER_VIEW_TIMEOUT_MS,
+      'カルテデータの取得がタイムアウトしました。もう一度お試しください。'
+    );
 
   const normalized =
     normalizeGuardianPlayerCardResult(
@@ -748,7 +773,7 @@ function unwrapApiData(value){
 }
 
 
-async function postJson(payload){
+async function postJson(payload,timeoutMs,timeoutMessage){
   const response =
     await withTimeout(
       fetch(GAS_URL,{
@@ -760,8 +785,8 @@ async function postJson(payload){
         redirect:'follow',
         cache:'no-store'
       }),
-      25000,
-      'サーバー通信がタイムアウトしました。'
+      timeoutMs || 60000,
+      timeoutMessage || 'サーバー通信がタイムアウトしました。'
     );
 
   const text =
@@ -1307,6 +1332,13 @@ function formatJPDate(v){
   const m=s.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
   return m?`${m[1]}年${Number(m[2])}月${Number(m[3])}日`:s;
 }
+function setLoadingText(message){
+  const view=document.getElementById('loadingView');
+  if(!view)return;
+  const nodes=view.querySelectorAll('div');
+  const target=nodes&&nodes.length?nodes[nodes.length-1]:null;
+  if(target)target.textContent=message||'';
+}
 function setText(id,v){document.getElementById(id).textContent=v==null?'':String(v)}
 function showOnly(id){['loadingView','reportView','errorView'].forEach(x=>document.getElementById(x).classList.toggle('hidden',x!==id));window.scrollTo(0,0)}
 function showError(message){setText('errorText',message||'エラーが発生しました。');showOnly('errorView')}
@@ -1325,7 +1357,7 @@ async function createPlayerSession(idToken){
       redirect:'follow',
       cache:'no-store'
     }),
-    25000,
+    PLAYER_SESSION_TIMEOUT_MS,
     'ログインセッションの作成がタイムアウトしました。'
   );
 
@@ -1349,7 +1381,7 @@ async function createPlayerSession(idToken){
   return data;
 }
 
-function jsonp(params,timeoutMs=25000){
+function jsonp(params,timeoutMs=PLAYER_CARD_JSONP_TIMEOUT_MS){
   return new Promise((resolve,reject)=>{
     const cb='__ninjaCard_'+Date.now()+'_'+Math.random().toString(36).slice(2);
     const s=document.createElement('script');
