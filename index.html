@@ -275,6 +275,16 @@
     .player-card-link:active{
       transform:translateY(1px);
     }
+    .guardian-note{
+      margin:10px 0 0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.7;
+    }
+
+    .guardian-main-card .title{
+      font-size:24px;
+    }
   </style>
 </head>
 <body>
@@ -346,7 +356,7 @@
 'use strict';
 
 const FEEDBACK_PAGE_VERSION =
-  'v20-guardian-player-card-launch';
+  'v21-guardian-feedback-clean-home';
 
 const LIFF_ID =
   '2010789200-osUDbuzD';
@@ -358,13 +368,13 @@ const GAS_URL =
   'https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
 
 const CACHE_VERSION =
-  'feedback-cache-v20';
+  'feedback-cache-v21';
 
 const CACHE_TTL_MS =
   14 * 24 * 60 * 60 * 1000;
 
 const FEEDBACK_CACHE_PREFIX =
-  'ninjaFeedbackCacheV20:';
+  'ninjaFeedbackCacheV21:';
 
 const GUARDIAN_DEFAULT_PLAYER_ID_KEY =
   'ninjaGuardianDefaultPlayerIdStep50';
@@ -1084,12 +1094,67 @@ function render(
       'hidden'
     );
 
-    adviceText.textContent =
+    const titleEl =
+      document.querySelector(
+        '#mainView .card .title'
+      );
+
+    const eyebrowEl =
+      document.querySelector(
+        '#mainView .card .eyebrow'
+      );
+
+    if (
       source.mode === 'guardian'
-        ? '保護者メニューから表示しています。コーチアドバイスは選手本人メニューで確認できます。'
-        : 'まだコーチからのアドバイスはありません。';
+    ) {
+      if (titleEl) {
+        titleEl.textContent =
+          '選手カルテ';
+      }
+
+      if (eyebrowEl) {
+        eyebrowEl.textContent =
+          'PLAYER CARD';
+      }
+
+      adviceText.textContent =
+        '身体測定・アジリティ・シュート・コーチ所見を確認できます。';
+    } else {
+      if (titleEl) {
+        titleEl.textContent =
+          'コーチからのアドバイス';
+      }
+
+      if (eyebrowEl) {
+        eyebrowEl.textContent =
+          'COACH ADVICE';
+      }
+
+      adviceText.textContent =
+        'まだコーチからのアドバイスはありません。';
+    }
 
   }else{
+    const titleEl =
+      document.querySelector(
+        '#mainView .card .title'
+      );
+
+    const eyebrowEl =
+      document.querySelector(
+        '#mainView .card .eyebrow'
+      );
+
+    if (titleEl) {
+      titleEl.textContent =
+        'コーチからのアドバイス';
+    }
+
+    if (eyebrowEl) {
+      eyebrowEl.textContent =
+        'COACH ADVICE';
+    }
+
     const latestRecord =
       records
         .slice()
