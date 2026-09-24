@@ -346,7 +346,7 @@
 'use strict';
 
 const FEEDBACK_PAGE_VERSION =
-  'v18-cache-first-silent-status';
+  'v19-hide-player-card-link-for-guardian';
 
 const LIFF_ID =
   '2010789200-osUDbuzD';
@@ -378,6 +378,9 @@ let currentCacheScope =
 let cachedViewShown =
   false;
 
+let currentViewMode =
+  '';
+
 window.addEventListener(
   'load',
   init
@@ -391,6 +394,12 @@ document
   );
 
 function openPlayerCard(){
+  if (
+    currentViewMode === 'guardian'
+  ) {
+    return;
+  }
+
   location.href =
     PLAYER_CARD_LIFF_URL;
 }
@@ -852,6 +861,36 @@ async function postApi(
   return data;
 }
 
+function updatePlayerCardButton(
+  mode
+){
+  const button =
+    document.getElementById(
+      'playerCardBtn'
+    );
+
+  if (!button) {
+    return;
+  }
+
+  const isGuardian =
+    String(mode || '') === 'guardian';
+
+  button.classList.toggle(
+    'hidden',
+    isGuardian
+  );
+
+  button.disabled =
+    isGuardian;
+
+  button.setAttribute(
+    'aria-hidden',
+    isGuardian ? 'true' : 'false'
+  );
+}
+
+
 function renderFromCache(
   cache
 ){
@@ -899,6 +938,15 @@ function render(
 ){
   const source =
     data || {};
+
+  currentViewMode =
+    String(
+      source.mode || ''
+    );
+
+  updatePlayerCardButton(
+    currentViewMode
+  );
 
   const player =
     normalizePlayer(
@@ -963,7 +1011,7 @@ function render(
 
     adviceText.textContent =
       source.mode === 'guardian'
-        ? '保護者メニューから表示しています。コーチアドバイスは選手本人メニューで確認できます。'
+        ? '保護者メニューから表示しています。最新カルテ所見は下部に表示されます。'
         : 'まだコーチからのアドバイスはありません。';
 
   }else{
