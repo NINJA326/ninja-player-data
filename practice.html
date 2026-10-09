@@ -415,6 +415,11 @@
       padding-top:12px;
     }
 
+    .commitment-create:not([open]),
+    .commitment-completed:not([open]){
+      padding-top:10px;
+    }
+
     .commitment-create summary,
     .commitment-completed summary{
       cursor:pointer;
@@ -422,6 +427,9 @@
       font-size:13px;
       font-weight:900;
       list-style:none;
+      min-height:42px;
+      display:flex;
+      align-items:center;
     }
 
     .commitment-create summary::-webkit-details-marker,
@@ -823,7 +831,7 @@
       <div id="commitmentActiveList" class="commitment-list"></div>
 
       <details class="commitment-create">
-        <summary>新しく決める</summary>
+        <summary>＋ 新しく決める</summary>
 
         <div class="commitment-field">
           <label for="commitmentTitle">こだわること</label>
@@ -854,7 +862,7 @@
       </details>
 
       <details class="commitment-completed">
-        <summary>できたことリスト</summary>
+        <summary>成長リスト</summary>
         <div id="commitmentCompletedList" class="commitment-list"></div>
       </details>
 
@@ -1254,7 +1262,7 @@ const LIFF_ID = '2010789200-zlXQJwx5';
 const GAS_URL =
   'https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
 
-const PRACTICE_CHECK_PAGE_VERSION = 'v1.2-practice-commitment-ui';
+const PRACTICE_CHECK_PAGE_VERSION = 'v1.3-practice-commitment-compact-growth-list';
 
 const HISTORY_LIMIT = 10;
 
@@ -2065,6 +2073,8 @@ function bindEvents(){
 
 function bindCommitmentEvents(){
 
+  closeCommitmentDetails();
+
   updateCommitmentSpanOptions();
 
   const spanType =
@@ -2110,6 +2120,18 @@ function bindCommitmentEvents(){
       }
     );
   }
+}
+
+
+function closeCommitmentDetails(){
+
+  document
+    .querySelectorAll(
+      '.commitment-create,.commitment-completed'
+    )
+    .forEach(details=>{
+      details.open = false;
+    });
 }
 
 
@@ -2266,7 +2288,7 @@ function renderPracticeCommitments(){
   if(!commitmentState.active.length){
     activeList.innerHTML = `
       <div class="commitment-empty">
-        まず1つ、自分で続けることを決めよう。
+        今のこだわりはまだありません。必要な時だけ「＋ 新しく決める」を開いてください。
       </div>
     `;
   }else{
@@ -2305,7 +2327,8 @@ function renderPracticeCommitments(){
           <div class="commitment-item completed">
             <div class="commitment-text">${esc(record.title)}</div>
             <div class="commitment-meta">
-              完了：${esc(record.completedAt || '')}
+              できた日：${esc(commitmentCompletedDateLabel(record))}
+              / 期間：${esc(commitmentSpanLabel(record))}
             </div>
           </div>
         `)
@@ -2361,6 +2384,8 @@ async function submitPracticeCommitment(){
     await sleep(800);
 
     document.getElementById('commitmentTitle').value = '';
+
+    closeCommitmentDetails();
 
     await loadPracticeCommitments();
 
@@ -2423,8 +2448,10 @@ async function completePracticeCommitment(
 
     await loadPracticeCommitments();
 
+    openCommitmentGrowthList();
+
     showMessage(
-      'できたことリストに入れました。',
+      '成長リストに入れました。',
       false
     );
 
@@ -2446,6 +2473,61 @@ async function completePracticeCommitment(
     }
 
   }
+}
+
+
+function openCommitmentGrowthList(){
+
+  const growth =
+    document.querySelector(
+      '.commitment-completed'
+    );
+
+  const create =
+    document.querySelector(
+      '.commitment-create'
+    );
+
+  if(create){
+    create.open = false;
+  }
+
+  if(growth){
+    growth.open = true;
+  }
+}
+
+
+function commitmentCompletedDateLabel(record){
+
+  const raw =
+    String(
+      record &&
+      (
+        record.completedAt ||
+        record.updatedAt ||
+        ''
+      ) ||
+      ''
+    ).trim();
+
+  if(!raw){
+    return '';
+  }
+
+  const normalized =
+    raw.replace(/\//g,'-');
+
+  const m =
+    normalized.match(
+      /^(\d{4})-(\d{1,2})-(\d{1,2})/
+    );
+
+  if(!m){
+    return raw;
+  }
+
+  return `${Number(m[2])}月${Number(m[3])}日`;
 }
 
 
