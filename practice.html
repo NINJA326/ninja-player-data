@@ -1262,7 +1262,7 @@ const LIFF_ID = '2010789200-zlXQJwx5';
 const GAS_URL =
   'https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
 
-const PRACTICE_CHECK_PAGE_VERSION = 'v1.4-practice-commitment-growth-date-range';
+const PRACTICE_CHECK_PAGE_VERSION = 'v1.5-practice-commitment-local-cache';
 
 const HISTORY_LIMIT = 10;
 
@@ -1284,6 +1284,12 @@ const PRACTICE_TODAY_CACHE_KEY =
 
 const PRACTICE_TODAY_CACHE_MAX_AGE_MS =
   12 * 60 * 60 * 1000;
+
+const PRACTICE_COMMITMENT_CACHE_KEY =
+  'ninja_practice_commitments_snapshot_v1';
+
+const PRACTICE_COMMITMENT_CACHE_MAX_AGE_MS =
+  14 * 24 * 60 * 60 * 1000;
 
 let cachedTodayVisible = false;
 let todayState = null;
@@ -1464,7 +1470,12 @@ async function reloadToday(options){
 
   await restoreFormDraft();
 
-  loadPracticeCommitments();
+  await restoreCachedPracticeCommitments();
+
+  loadPracticeCommitments({
+    silent:
+      true
+  });
 
   cachedTodayVisible = true;
 
@@ -2185,7 +2196,13 @@ function updateCommitmentSpanOptions(){
 }
 
 
-async function loadPracticeCommitments(){
+async function loadPracticeCommitments(options){
+
+  const settings =
+    options &&
+    typeof options === 'object'
+      ? options
+      : {};
 
   if(
     !sessionToken ||
@@ -2199,7 +2216,10 @@ async function loadPracticeCommitments(){
   const status =
     document.getElementById('commitmentStatus');
 
-  if(status){
+  if(
+    status &&
+    !settings.silent
+  ){
     status.classList.remove('error');
     status.textContent =
       '読み込み中…';
@@ -2243,12 +2263,23 @@ async function loadPracticeCommitments(){
 
     renderPracticeCommitments();
 
+    await saveCachedPracticeCommitments(
+      result
+    );
+
   }catch(error){
 
-    if(status){
+    if(
+      status &&
+      !settings.silent
+    ){
       status.classList.add('error');
       status.textContent =
         '自分のこだわりを読み込めませんでした。練習チェックはそのまま使えます。';
+    }
+
+    if(!settings.silent){
+      clearCachedPracticeCommitments();
     }
 
   }finally{
@@ -2256,6 +2287,125 @@ async function loadPracticeCommitments(){
     commitmentState.loading = false;
 
   }
+}
+
+
+async function restoreCachedPracticeCommitments(){
+
+  const accountFingerprint =
+    await getCurrentLineAccountFingerprint();
+
+  if(!accountFingerprint){
+    clearCachedPracticeCommitments();
+
+    renderPracticeCommitments();
+
+    return;
+  }
+
+  let cached;
+
+  try{
+    cached =
+      JSON.parse(
+        localStorage.getItem(
+          PRACTICE_COMMITMENT_CACHE_KEY
+        ) || 'null'
+      );
+  }catch(_){
+    clearCachedPracticeCommitments();
+
+    renderPracticeCommitments();
+
+    return;
+  }
+
+  if(
+    !cached ||
+    typeof cached !== 'object'
+  ){
+    renderPracticeCommitments();
+
+    return;
+  }
+
+  const sameAccount =
+    String(cached.accountFingerprint || '') ===
+    accountFingerprint;
+
+  const fresh =
+    Number(cached.savedAtMs || 0) > 0 &&
+    Date.now() - Number(cached.savedAtMs || 0) <
+      PRACTICE_COMMITMENT_CACHE_MAX_AGE_MS;
+
+  if(
+    !sameAccount ||
+    !fresh
+  ){
+    clearCachedPracticeCommitments();
+
+    renderPracticeCommitments();
+
+    return;
+  }
+
+  commitmentState.active =
+    Array.isArray(cached.active)
+      ? cached.active
+      : [];
+
+  commitmentState.completed =
+    Array.isArray(cached.completed)
+      ? cached.completed
+      : [];
+
+  renderPracticeCommitments();
+}
+
+
+async function saveCachedPracticeCommitments(result){
+
+  const accountFingerprint =
+    await getCurrentLineAccountFingerprint();
+
+  if(!accountFingerprint){
+    return;
+  }
+
+  const cacheData = {
+    accountFingerprint:
+      accountFingerprint,
+
+    savedAtMs:
+      Date.now(),
+
+    active:
+      Array.isArray(result && result.active)
+        ? result.active
+        : [],
+
+    completed:
+      Array.isArray(result && result.completed)
+        ? result.completed
+        : []
+  };
+
+  try{
+    localStorage.setItem(
+      PRACTICE_COMMITMENT_CACHE_KEY,
+      JSON.stringify(cacheData)
+    );
+  }catch(_){}
+}
+
+
+function clearCachedPracticeCommitments(){
+
+  try{
+    localStorage.removeItem(
+      PRACTICE_COMMITMENT_CACHE_KEY
+    );
+  }catch(_){}
 }
 
 
