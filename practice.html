@@ -324,6 +324,142 @@
       margin-top:10px;
     }
 
+    .commitment-card{
+      border-color:rgba(55,207,130,.32);
+      background:linear-gradient(180deg,rgba(13,25,42,.98),rgba(9,23,41,.98));
+    }
+
+    .commitment-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+    }
+
+    .commitment-title{
+      margin:0;
+      font-size:20px;
+      font-weight:900;
+      line-height:1.35;
+    }
+
+    .commitment-status{
+      margin:8px 0 12px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.6;
+    }
+
+    .commitment-status.error{
+      color:#ff9ba3;
+    }
+
+    .commitment-list{
+      display:grid;
+      gap:9px;
+      margin-top:10px;
+    }
+
+    .commitment-empty{
+      padding:12px;
+      border:1px dashed rgba(158,176,199,.35);
+      border-radius:14px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.6;
+      background:rgba(8,21,37,.55);
+    }
+
+    .commitment-item{
+      padding:13px;
+      border:1px solid #284467;
+      border-radius:15px;
+      background:#081525;
+    }
+
+    .commitment-item.completed{
+      opacity:.78;
+    }
+
+    .commitment-text{
+      white-space:pre-wrap;
+      line-height:1.6;
+      font-size:14px;
+      font-weight:800;
+    }
+
+    .commitment-meta{
+      margin-top:7px;
+      color:var(--muted);
+      font-size:11px;
+      line-height:1.5;
+    }
+
+    .commitment-complete-btn{
+      width:100%;
+      min-height:44px;
+      border:0;
+      border-radius:13px;
+      background:rgba(55,207,130,.18);
+      color:#8af0b5;
+      font-weight:900;
+      margin-top:10px;
+      cursor:pointer;
+    }
+
+    .commitment-create,
+    .commitment-completed{
+      margin-top:12px;
+      border-top:1px solid rgba(34,54,83,.75);
+      padding-top:12px;
+    }
+
+    .commitment-create summary,
+    .commitment-completed summary{
+      cursor:pointer;
+      color:#dceaff;
+      font-size:13px;
+      font-weight:900;
+      list-style:none;
+    }
+
+    .commitment-create summary::-webkit-details-marker,
+    .commitment-completed summary::-webkit-details-marker{
+      display:none;
+    }
+
+    .commitment-field{
+      margin-top:12px;
+    }
+
+    .commitment-field label{
+      display:block;
+      font-size:12px;
+      font-weight:900;
+      margin-bottom:6px;
+      color:#dceaff;
+    }
+
+    .commitment-span{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:9px;
+      margin-top:10px;
+    }
+
+    .commitment-span select{
+      width:100%;
+      border:1px solid var(--line);
+      border-radius:13px;
+      background:#081525;
+      color:var(--text);
+      padding:12px;
+      outline:none;
+      font-size:16px;
+    }
+
+
     .today-plan{
       padding:15px;
       border-radius:16px;
@@ -670,6 +806,59 @@
         <div>LINE認証と今日の記録を確認しています…</div>
       </div>
     </section>
+
+    <div id="commitmentPanel" class="card commitment-card hidden">
+
+      <div class="commitment-head">
+        <div>
+          <div class="eyebrow">MY RULE</div>
+          <h2 class="commitment-title">自分のこだわり</h2>
+        </div>
+      </div>
+
+      <div id="commitmentStatus" class="commitment-status">
+        読み込み中…
+      </div>
+
+      <div id="commitmentActiveList" class="commitment-list"></div>
+
+      <details class="commitment-create">
+        <summary>新しく決める</summary>
+
+        <div class="commitment-field">
+          <label for="commitmentTitle">こだわること</label>
+          <textarea
+            id="commitmentTitle"
+            maxlength="200"
+            placeholder="例：リバウンドに必ず入る"
+          ></textarea>
+        </div>
+
+        <div class="commitment-span">
+          <select id="commitmentSpanType" aria-label="期間の種類">
+            <option value="day">日</option>
+            <option value="month" selected>か月</option>
+            <option value="year">年</option>
+          </select>
+
+          <select id="commitmentSpanValue" aria-label="期間"></select>
+        </div>
+
+        <button
+          id="commitmentCreateBtn"
+          class="secondary"
+          type="button"
+        >
+          保存する
+        </button>
+      </details>
+
+      <details class="commitment-completed">
+        <summary>できたことリスト</summary>
+        <div id="commitmentCompletedList" class="commitment-list"></div>
+      </details>
+
+    </div>
 
     <!-- CHECK IN -->
     <section id="checkInView" class="hidden">
@@ -1065,6 +1254,8 @@ const LIFF_ID = '2010789200-zlXQJwx5';
 const GAS_URL =
   'https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
 
+const PRACTICE_CHECK_PAGE_VERSION = 'v1.2-practice-commitment-ui';
+
 const HISTORY_LIMIT = 10;
 
 let idToken = '';
@@ -1084,12 +1275,25 @@ const PRACTICE_TODAY_CACHE_KEY =
   'ninja_practice_today_snapshot_v1';
 
 const PRACTICE_TODAY_CACHE_MAX_AGE_MS =
-  30 * 60 * 1000;
+  12 * 60 * 60 * 1000;
 
 let cachedTodayVisible = false;
 let todayState = null;
 let player = null;
 let currentMainView = 'loadingView';
+let formDraftSaveTimer = null;
+
+const commitmentState = {
+  active: [],
+  completed: [],
+  loading: false
+};
+
+const PRACTICE_FORM_DRAFT_CACHE_KEY =
+  'ninja_practice_form_draft_v1';
+
+const PRACTICE_FORM_DRAFT_CACHE_MAX_AGE_MS =
+  24 * 60 * 60 * 1000;
 
 const formState = {
   health: 0,
@@ -1124,6 +1328,7 @@ async function init(){
 
     buildScales();
     bindEvents();
+    bindFormDraftAutosave();
 
     const cachedToday =
       await loadCachedTodaySnapshot();
@@ -1139,6 +1344,8 @@ async function init(){
       renderToday(
         cachedToday
       );
+
+      await restoreFormDraft();
 
       cachedTodayVisible =
         true;
@@ -1246,6 +1453,10 @@ async function reloadToday(options){
 
   updatePlayerChip();
   renderToday(result);
+
+  await restoreFormDraft();
+
+  loadPracticeCommitments();
 
   cachedTodayVisible = true;
 
@@ -1740,6 +1951,8 @@ function buildScale(
 
         button.classList.add('active');
 
+        saveFormDraftSoon();
+
       }
     );
 
@@ -1796,6 +2009,8 @@ function bindEvents(){
 
           }
 
+          saveFormDraftSoon();
+
         }
       );
 
@@ -1839,7 +2054,424 @@ function bindEvents(){
       'click',
       backFromHistory
     );
+
+  bindCommitmentEvents();
 }
+
+
+/* =========================
+   自分のこだわり
+========================= */
+
+function bindCommitmentEvents(){
+
+  updateCommitmentSpanOptions();
+
+  const spanType =
+    document.getElementById('commitmentSpanType');
+
+  if(spanType){
+    spanType.addEventListener(
+      'change',
+      updateCommitmentSpanOptions
+    );
+  }
+
+  const createBtn =
+    document.getElementById('commitmentCreateBtn');
+
+  if(createBtn){
+    createBtn.addEventListener(
+      'click',
+      submitPracticeCommitment
+    );
+  }
+
+  const activeList =
+    document.getElementById('commitmentActiveList');
+
+  if(activeList){
+    activeList.addEventListener(
+      'click',
+      event=>{
+        const button =
+          event.target.closest(
+            '[data-complete-commitment]'
+          );
+
+        if(!button){
+          return;
+        }
+
+        completePracticeCommitment(
+          button.dataset.completeCommitment,
+          button
+        );
+      }
+    );
+  }
+}
+
+
+function updateCommitmentSpanOptions(){
+
+  const typeEl =
+    document.getElementById('commitmentSpanType');
+
+  const valueEl =
+    document.getElementById('commitmentSpanValue');
+
+  if(
+    !typeEl ||
+    !valueEl
+  ){
+    return;
+  }
+
+  const type =
+    typeEl.value || 'month';
+
+  let max = 1;
+  let selected = '1';
+
+  if(type === 'day'){
+    max = 30;
+    selected = '7';
+  }else if(type === 'month'){
+    max = 11;
+    selected = '1';
+  }else{
+    max = 1;
+    selected = '1';
+  }
+
+  valueEl.innerHTML =
+    Array
+      .from(
+        {
+          length:
+            max
+        },
+        (_,index)=>String(index + 1)
+      )
+      .map(value=>`
+        <option value="${esc(value)}"${value === selected ? ' selected' : ''}>
+          ${esc(value)}
+        </option>
+      `)
+      .join('');
+}
+
+
+async function loadPracticeCommitments(){
+
+  if(
+    !sessionToken ||
+    commitmentState.loading
+  ){
+    return;
+  }
+
+  commitmentState.loading = true;
+
+  const status =
+    document.getElementById('commitmentStatus');
+
+  if(status){
+    status.classList.remove('error');
+    status.textContent =
+      '読み込み中…';
+  }
+
+  try{
+
+    const result =
+      await jsonp(
+        {
+          action:
+            'practiceCommitment.listMine',
+
+          sessionToken:
+            sessionToken
+        },
+        15000
+      );
+
+    if(
+      !result ||
+      result.status === 'error' ||
+      result.success === false
+    ){
+      throw new Error(
+        result && result.message
+          ? result.message
+          : '自分のこだわりを取得できませんでした。'
+      );
+    }
+
+    commitmentState.active =
+      Array.isArray(result.active)
+        ? result.active
+        : [];
+
+    commitmentState.completed =
+      Array.isArray(result.completed)
+        ? result.completed
+        : [];
+
+    renderPracticeCommitments();
+
+  }catch(error){
+
+    if(status){
+      status.classList.add('error');
+      status.textContent =
+        '自分のこだわりを読み込めませんでした。練習チェックはそのまま使えます。';
+    }
+
+  }finally{
+
+    commitmentState.loading = false;
+
+  }
+}
+
+
+function renderPracticeCommitments(){
+
+  const status =
+    document.getElementById('commitmentStatus');
+
+  const activeList =
+    document.getElementById('commitmentActiveList');
+
+  const completedList =
+    document.getElementById('commitmentCompletedList');
+
+  if(
+    !activeList ||
+    !completedList
+  ){
+    return;
+  }
+
+  if(status){
+    status.classList.remove('error');
+    status.textContent =
+      commitmentState.active.length
+        ? '今こだわること'
+        : '今のこだわりはまだありません。';
+  }
+
+  if(!commitmentState.active.length){
+    activeList.innerHTML = `
+      <div class="commitment-empty">
+        まず1つ、自分で続けることを決めよう。
+      </div>
+    `;
+  }else{
+    activeList.innerHTML =
+      commitmentState.active
+        .map(record=>`
+          <div class="commitment-item">
+            <div class="commitment-text">${esc(record.title)}</div>
+            <div class="commitment-meta">
+              期間：${esc(commitmentSpanLabel(record))}
+              ${record.dueDate ? ' / 期限：' + esc(formatDateJa(record.dueDate)) : ''}
+            </div>
+            <button
+              type="button"
+              class="commitment-complete-btn"
+              data-complete-commitment="${esc(record.commitmentId)}"
+            >
+              できた
+            </button>
+          </div>
+        `)
+        .join('');
+  }
+
+  if(!commitmentState.completed.length){
+    completedList.innerHTML = `
+      <div class="commitment-empty">
+        まだ完了したこだわりはありません。
+      </div>
+    `;
+  }else{
+    completedList.innerHTML =
+      commitmentState.completed
+        .slice(0,10)
+        .map(record=>`
+          <div class="commitment-item completed">
+            <div class="commitment-text">${esc(record.title)}</div>
+            <div class="commitment-meta">
+              完了：${esc(record.completedAt || '')}
+            </div>
+          </div>
+        `)
+        .join('');
+  }
+}
+
+
+async function submitPracticeCommitment(){
+
+  const title =
+    value('commitmentTitle');
+
+  const spanType =
+    value('commitmentSpanType');
+
+  const spanValue =
+    value('commitmentSpanValue');
+
+  if(!title){
+    return showMessage(
+      '自分のこだわりを入力してください。',
+      true
+    );
+  }
+
+  const btn =
+    document.getElementById('commitmentCreateBtn');
+
+  btn.disabled = true;
+  btn.textContent =
+    '保存しています…';
+
+  try{
+
+    await postOpaque({
+      action:
+        'practiceCommitment.create',
+
+      sessionToken:
+        sessionToken,
+
+      title:
+        title,
+
+      spanType:
+        spanType,
+
+      spanValue:
+        spanValue
+    });
+
+    await sleep(800);
+
+    document.getElementById('commitmentTitle').value = '';
+
+    await loadPracticeCommitments();
+
+    showMessage(
+      '自分のこだわりを保存しました。',
+      false
+    );
+
+  }catch(error){
+
+    showMessage(
+      error && error.message
+        ? error.message
+        : '自分のこだわりを保存できませんでした。',
+      true
+    );
+
+  }finally{
+
+    btn.disabled = false;
+    btn.textContent =
+      '保存する';
+
+  }
+}
+
+
+async function completePracticeCommitment(
+  commitmentId,
+  button
+){
+
+  const id =
+    String(commitmentId || '').trim();
+
+  if(!id){
+    return;
+  }
+
+  if(button){
+    button.disabled = true;
+    button.textContent =
+      '完了中…';
+  }
+
+  try{
+
+    await postOpaque({
+      action:
+        'practiceCommitment.complete',
+
+      sessionToken:
+        sessionToken,
+
+      commitmentId:
+        id
+    });
+
+    await sleep(800);
+
+    await loadPracticeCommitments();
+
+    showMessage(
+      'できたことリストに入れました。',
+      false
+    );
+
+  }catch(error){
+
+    showMessage(
+      error && error.message
+        ? error.message
+        : '完了にできませんでした。',
+      true
+    );
+
+  }finally{
+
+    if(button){
+      button.disabled = false;
+      button.textContent =
+        'できた';
+    }
+
+  }
+}
+
+
+function commitmentSpanLabel(record){
+
+  const type =
+    String(record && record.spanType || '');
+
+  const value =
+    Number(record && record.spanValue || 0);
+
+  if(type === 'day'){
+    return `${value}日`;
+  }
+
+  if(type === 'month'){
+    return `${value}か月`;
+  }
+
+  if(type === 'year'){
+    return '1年';
+  }
+
+  return '';
+}
+
 
 /* =========================
    チェックイン
@@ -1950,6 +2582,8 @@ async function submitCheckIn(){
       false
     );
 
+    clearFormDraft();
+
     await reloadToday();
 
   }catch(error){
@@ -2049,6 +2683,8 @@ async function submitCheckOut(){
       false
     );
 
+    clearFormDraft();
+
     await reloadToday();
 
   }catch(error){
@@ -2068,6 +2704,376 @@ async function submitCheckOut(){
 
   }
 }
+
+
+/* =========================
+   入力途中の端末保存
+========================= */
+
+function bindFormDraftAutosave(){
+
+  [
+    'task',
+    'focus',
+    'injuryPart',
+    'injuryStatus',
+    'goodPoint',
+    'improvement',
+    'nextAction'
+  ].forEach(id=>{
+
+    const el =
+      document.getElementById(id);
+
+    if(!el){
+      return;
+    }
+
+    el.addEventListener(
+      'input',
+      saveFormDraftSoon
+    );
+
+    el.addEventListener(
+      'change',
+      saveFormDraftSoon
+    );
+
+  });
+}
+
+function saveFormDraftSoon(){
+
+  clearTimeout(
+    formDraftSaveTimer
+  );
+
+  formDraftSaveTimer =
+    setTimeout(
+      saveFormDraft,
+      250
+    );
+}
+
+async function saveFormDraft(){
+
+  const accountFingerprint =
+    await getCurrentLineAccountFingerprint();
+
+  if(!accountFingerprint){
+    return;
+  }
+
+  const draft = {
+    health:
+      formState.health || 0,
+
+    injury:
+      formState.injury || '',
+
+    condition:
+      formState.condition || 0,
+
+    achievement:
+      formState.achievement || 0,
+
+    task:
+      value('task'),
+
+    focus:
+      value('focus'),
+
+    injuryPart:
+      value('injuryPart'),
+
+    injuryStatus:
+      value('injuryStatus'),
+
+    goodPoint:
+      value('goodPoint'),
+
+    improvement:
+      value('improvement'),
+
+    nextAction:
+      value('nextAction')
+  };
+
+  const hasText =
+    Object
+      .keys(draft)
+      .some(key=>{
+        const item =
+          draft[key];
+
+        if(typeof item === 'number'){
+          return item > 0;
+        }
+
+        return String(item || '').trim() !== '';
+      });
+
+  if(!hasText){
+    clearFormDraft();
+    return;
+  }
+
+  const cacheData = {
+    accountFingerprint:
+      accountFingerprint,
+
+    date:
+      getLocalDateKey(),
+
+    savedAtMs:
+      Date.now(),
+
+    draft:
+      draft
+  };
+
+  try{
+    localStorage.setItem(
+      PRACTICE_FORM_DRAFT_CACHE_KEY,
+      JSON.stringify(cacheData)
+    );
+  }catch(_){}
+}
+
+async function restoreFormDraft(){
+
+  const accountFingerprint =
+    await getCurrentLineAccountFingerprint();
+
+  if(!accountFingerprint){
+    return;
+  }
+
+  let cached;
+
+  try{
+    cached =
+      JSON.parse(
+        localStorage.getItem(
+          PRACTICE_FORM_DRAFT_CACHE_KEY
+        ) || 'null'
+      );
+  }catch(_){
+    clearFormDraft();
+    return;
+  }
+
+  if(
+    !cached ||
+    typeof cached !== 'object'
+  ){
+    return;
+  }
+
+  const sameAccount =
+    String(cached.accountFingerprint || '') ===
+    accountFingerprint;
+
+  const sameDate =
+    String(cached.date || '') ===
+    getLocalDateKey();
+
+  const fresh =
+    Number(cached.savedAtMs || 0) > 0 &&
+    Date.now() - Number(cached.savedAtMs || 0) <
+      PRACTICE_FORM_DRAFT_CACHE_MAX_AGE_MS;
+
+  const draft =
+    cached.draft &&
+    typeof cached.draft === 'object'
+      ? cached.draft
+      : null;
+
+  if(
+    !sameAccount ||
+    !sameDate ||
+    !fresh ||
+    !draft
+  ){
+    clearFormDraft();
+    return;
+  }
+
+  restoreInputValue(
+    'task',
+    draft.task
+  );
+
+  restoreInputValue(
+    'focus',
+    draft.focus
+  );
+
+  restoreInputValue(
+    'injuryPart',
+    draft.injuryPart
+  );
+
+  restoreInputValue(
+    'injuryStatus',
+    draft.injuryStatus
+  );
+
+  restoreInputValue(
+    'goodPoint',
+    draft.goodPoint
+  );
+
+  restoreInputValue(
+    'improvement',
+    draft.improvement
+  );
+
+  restoreInputValue(
+    'nextAction',
+    draft.nextAction
+  );
+
+  restoreScaleValue(
+    'healthScale',
+    'health',
+    draft.health
+  );
+
+  restoreScaleValue(
+    'conditionScale',
+    'condition',
+    draft.condition
+  );
+
+  restoreScaleValue(
+    'achievementScale',
+    'achievement',
+    draft.achievement
+  );
+
+  restoreInjuryValue(
+    draft.injury
+  );
+}
+
+function restoreInputValue(id,text){
+
+  const el =
+    document.getElementById(id);
+
+  if(!el){
+    return;
+  }
+
+  const value =
+    String(text || '');
+
+  if(value){
+    el.value =
+      value;
+  }
+}
+
+function restoreScaleValue(
+  containerId,
+  key,
+  rawValue
+){
+
+  const value =
+    Number(rawValue || 0);
+
+  if(!value){
+    return;
+  }
+
+  formState[key] =
+    value;
+
+  const box =
+    document.getElementById(
+      containerId
+    );
+
+  if(!box){
+    return;
+  }
+
+  [...box.children]
+    .forEach(button=>{
+
+      const isTarget =
+        String(button.textContent || '')
+          .trim()
+          .startsWith(
+            String(value)
+          );
+
+      button.classList.toggle(
+        'active',
+        isTarget
+      );
+
+    });
+}
+
+function restoreInjuryValue(value){
+
+  const injury =
+    String(value || '');
+
+  if(!injury){
+    return;
+  }
+
+  formState.injury =
+    injury;
+
+  document
+    .querySelectorAll('[data-injury]')
+    .forEach(button=>{
+
+      button.classList.toggle(
+        'active',
+        button.dataset.injury === injury
+      );
+
+    });
+
+  const fields =
+    document.getElementById(
+      'injuryFields'
+    );
+
+  if(!fields){
+    return;
+  }
+
+  if(injury === 'あり'){
+    fields.classList.remove(
+      'hidden'
+    );
+  }else{
+    fields.classList.add(
+      'hidden'
+    );
+  }
+}
+
+function clearFormDraft(){
+
+  clearTimeout(
+    formDraftSaveTimer
+  );
+
+  try{
+    localStorage.removeItem(
+      PRACTICE_FORM_DRAFT_CACHE_KEY
+    );
+  }catch(_){}
+}
+
 
 /* =========================
    保存確認
@@ -2744,6 +3750,20 @@ function showOnly(id){
 
     }
   );
+
+  const commitmentPanel =
+    document.getElementById('commitmentPanel');
+
+  if(commitmentPanel){
+    commitmentPanel.classList.toggle(
+      'hidden',
+      [
+        'checkInView',
+        'checkOutView',
+        'doneView'
+      ].indexOf(id) < 0
+    );
+  }
 
   currentMainView = id;
 
