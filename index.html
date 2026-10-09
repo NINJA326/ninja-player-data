@@ -2,24 +2,25 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <meta
-    name="viewport"
-    content="width=device-width,initial-scale=1,viewport-fit=cover"
-  >
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#07111f">
-  <title>NINJA フィードバック</title>
+  <title>NINJA 練習チェック</title>
+
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
   <style>
     :root{
       --bg:#07111f;
       --panel:#0d192a;
+      --panel2:#111f33;
       --line:#223653;
       --text:#f5f8fc;
       --muted:#9eb0c7;
       --accent:#37cf82;
-      --blue:#5aa7ff;
+      --accent2:#5aa7ff;
       --danger:#ff6b76;
-      --warning:#ffd166;
+      --warn:#ffca67;
+      --radius:20px;
       --safe-bottom:env(safe-area-inset-bottom,0px);
     }
 
@@ -31,31 +32,29 @@
       margin:0;
       min-height:100vh;
       background:
-        radial-gradient(circle at 85% 0%,rgba(90,167,255,.12),transparent 28%),
-        linear-gradient(180deg,#07111f,#091625);
+        radial-gradient(circle at 85% 0%,rgba(55,207,130,.12),transparent 28%),
+        linear-gradient(180deg,#07111f 0%,#091625 100%);
       color:var(--text);
       font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue","Yu Gothic",Meiryo,sans-serif;
       -webkit-font-smoothing:antialiased;
-      padding-bottom:calc(24px + var(--safe-bottom));
+      padding-bottom:calc(28px + var(--safe-bottom));
     }
 
-    button{
-      -webkit-tap-highlight-color:transparent;
-      font:inherit;
-    }
+    button,input,textarea{font:inherit}
+    button{-webkit-tap-highlight-color:transparent}
 
     .app{
       max-width:620px;
       margin:0 auto;
-      padding:14px;
+      padding:14px 14px 28px;
     }
 
     .header{
+      padding:10px 2px 18px;
       display:flex;
       align-items:flex-start;
       justify-content:space-between;
       gap:12px;
-      padding:10px 2px 12px;
     }
 
     .brand small{
@@ -70,114 +69,545 @@
     .brand h1{
       margin:0;
       font-size:22px;
-      line-height:1.25;
+      letter-spacing:.02em;
     }
 
     .player-chip{
       display:none;
-      max-width:48%;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
       border:1px solid var(--line);
       border-radius:999px;
       padding:8px 10px;
       color:var(--muted);
       font-size:11px;
-      font-weight:800;
-    }
-
-    .sync-status{
-      margin:0 0 12px;
-      padding:10px 12px;
-      border:1px solid rgba(90,167,255,.28);
-      border-radius:14px;
-      background:rgba(90,167,255,.08);
-      color:#cfe6ff;
-      font-size:12px;
-      line-height:1.55;
-    }
-
-    .sync-status.warning{
-      border-color:rgba(255,209,102,.32);
-      background:rgba(255,209,102,.08);
-      color:#ffe7a6;
-    }
-
-    .sync-status.error{
-      border-color:rgba(255,107,118,.34);
-      background:rgba(255,107,118,.09);
-      color:#ffd2d7;
+      white-space:nowrap;
+      max-width:46%;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
 
     .card{
-      margin-bottom:12px;
-      padding:17px;
-      border:1px solid var(--line);
-      border-radius:18px;
       background:rgba(13,25,42,.96);
-      box-shadow:0 16px 42px rgba(0,0,0,.2);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:18px;
+      box-shadow:0 18px 45px rgba(0,0,0,.22);
+      margin-bottom:14px;
     }
 
+    .hidden{display:none!important}
+
     .eyebrow{
-      color:var(--blue);
+      color:var(--accent);
       font-size:11px;
       font-weight:900;
       letter-spacing:.12em;
-      margin-bottom:7px;
+      margin-bottom:8px;
     }
 
     .title{
-      margin:0 0 7px;
-      font-size:26px;
+      font-size:28px;
+      font-weight:900;
       line-height:1.25;
+      margin:0 0 8px;
     }
 
     .lead{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.7;
       margin:0;
+    }
+
+    .date{
+      display:inline-flex;
+      margin-top:12px;
+      padding:7px 10px;
+      border-radius:999px;
+      background:#13233a;
+      color:#c8d6e6;
+      font-size:12px;
+      font-weight:800;
+    }
+
+    .section{
+      padding:4px 0 20px;
+      margin-bottom:18px;
+      border-bottom:1px solid rgba(34,54,83,.7);
+    }
+
+    .section:last-child{
+      border-bottom:0;
+      margin-bottom:0;
+      padding-bottom:0;
+    }
+
+    .label{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-weight:900;
+      font-size:16px;
+      margin-bottom:5px;
+    }
+
+    .number{
+      width:28px;
+      height:28px;
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      background:#1b304b;
+      color:#fff;
+      font-size:12px;
+      flex:0 0 auto;
+    }
+
+    .hint{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.6;
+      margin:0 0 10px 36px;
+    }
+
+    textarea{
+      width:100%;
+      min-height:116px;
+      resize:vertical;
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:#081525;
+      color:var(--text);
+      padding:15px;
+      outline:none;
+      line-height:1.7;
+      font-size:16px;
+    }
+
+    textarea:focus{
+      border-color:#4d8fc7;
+      box-shadow:0 0 0 3px rgba(90,167,255,.12);
+    }
+
+    textarea::placeholder{color:#64778f}
+
+    .scale{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:7px;
+      margin-top:10px;
+    }
+
+    .scale button{
+      min-height:54px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#0a1728;
+      color:#dce7f4;
+      font-weight:900;
+      cursor:pointer;
+    }
+
+    .scale button small{
+      display:block;
+      color:var(--muted);
+      font-size:9px;
+      margin-top:3px;
+      font-weight:700;
+    }
+
+    .scale button.active{
+      background:var(--accent);
+      border-color:var(--accent);
+      color:#042116;
+      transform:translateY(-1px);
+    }
+
+    .scale button.active small{color:#174b38}
+
+    .injury-toggle{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:10px;
+    }
+
+    .injury-toggle button{
+      min-height:52px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:#0a1728;
+      color:var(--text);
+      font-weight:900;
+    }
+
+    .injury-toggle button.active.none{
+      background:rgba(55,207,130,.16);
+      border-color:var(--accent);
+      color:#75e5a8;
+    }
+
+    .injury-toggle button.active.yes{
+      background:rgba(255,107,118,.15);
+      border-color:var(--danger);
+      color:#ff9ba3;
+    }
+
+    .injury-fields{
+      margin-top:12px;
+      padding:13px;
+      border:1px solid rgba(255,107,118,.35);
+      background:rgba(255,107,118,.06);
+      border-radius:15px;
+    }
+
+    .injury-fields label{
+      display:block;
+      font-size:12px;
+      font-weight:900;
+      margin:10px 0 6px;
+    }
+
+    .injury-fields input,
+    .injury-fields textarea{
+      width:100%;
+      border:1px solid var(--line);
+      background:#081525;
+      color:var(--text);
+      border-radius:13px;
+      padding:13px;
+      outline:none;
+      font-size:16px;
+    }
+
+    .injury-fields textarea{min-height:88px}
+
+    .primary{
+      width:100%;
+      min-height:58px;
+      border:0;
+      border-radius:16px;
+      background:linear-gradient(135deg,#35ce81,#49db94);
+      color:#052116;
+      font-size:17px;
+      font-weight:900;
+      cursor:pointer;
+      box-shadow:0 12px 28px rgba(55,207,130,.18);
+    }
+
+    .primary:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+      box-shadow:none;
+    }
+
+    .secondary{
+      width:100%;
+      min-height:50px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#13233a;
+      color:var(--text);
+      font-weight:800;
+      cursor:pointer;
+      margin-top:9px;
+    }
+
+    .history-button{
+      width:100%;
+      min-height:52px;
+      border:1px solid #31547d;
+      border-radius:15px;
+      background:#0b1b2f;
+      color:#dceaff;
+      font-weight:900;
+      cursor:pointer;
+      margin-top:10px;
+    }
+
+    .today-plan{
+      padding:15px;
+      border-radius:16px;
+      background:#091729;
+      border:1px solid #284467;
+      margin:14px 0 18px;
+    }
+
+    .today-plan small{
+      display:block;
+      color:var(--accent2);
+      font-weight:900;
+      font-size:11px;
+      margin-bottom:5px;
+    }
+
+    .today-plan p{
+      margin:0 0 12px;
+      line-height:1.65;
+      font-size:14px;
+      white-space:pre-wrap;
+    }
+
+    .today-plan p:last-child{margin-bottom:0}
+
+    .condition-box{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:9px;
+      margin-top:10px;
+    }
+
+    .condition-mini{
+      padding:11px;
+      border-radius:13px;
+      border:1px solid var(--line);
+      background:#0a1728;
+    }
+
+    .condition-mini small{
+      color:var(--muted);
+      display:block;
+      font-size:10px;
+    }
+
+    .condition-mini strong{
+      display:block;
+      margin-top:4px;
+    }
+
+    .warning{
+      margin-top:10px;
+      border:1px solid rgba(255,202,103,.45);
+      background:rgba(255,202,103,.07);
+      color:#ffd98c;
+      border-radius:14px;
+      padding:12px;
+      font-size:12px;
+      line-height:1.6;
+    }
+
+    .done-mark{
+      width:72px;
+      height:72px;
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      background:rgba(55,207,130,.14);
+      color:var(--accent);
+      font-size:34px;
+      margin:4px auto 18px;
+      border:1px solid rgba(55,207,130,.35);
+    }
+
+    .done-title{
+      text-align:center;
+      font-size:27px;
+      font-weight:900;
+      margin-bottom:7px;
+    }
+
+    .done-text{
+      text-align:center;
       color:var(--muted);
       font-size:13px;
       line-height:1.7;
     }
 
-    .list{
-      display:grid;
-      gap:11px;
+    .summary{
+      margin-top:17px;
+      padding:14px;
+      border:1px solid var(--line);
+      border-radius:15px;
+      background:#091729;
     }
 
-    .advice{
+    .summary-row{margin-bottom:13px}
+    .summary-row:last-child{margin-bottom:0}
+
+    .summary-row small{
+      display:block;
+      color:var(--muted);
+      font-size:10px;
+      margin-bottom:3px;
+    }
+
+    .summary-row div{
+      line-height:1.6;
+      font-size:14px;
+      white-space:pre-wrap;
+    }
+
+    /* 過去の振り返り */
+    .history-list{
+      display:grid;
+      gap:10px;
+      margin-top:16px;
+    }
+
+    .history-item{
       border:1px solid var(--line);
       border-radius:16px;
       background:#091729;
-      padding:15px;
+      overflow:hidden;
     }
 
-    .advice-meta{
+    .history-head{
+      width:100%;
+      border:0;
+      background:transparent;
+      color:var(--text);
+      padding:15px;
+      text-align:left;
+      cursor:pointer;
       display:flex;
+      align-items:center;
       justify-content:space-between;
-      gap:10px;
-      margin-bottom:10px;
+      gap:12px;
+    }
+
+    .history-head-main{
+      min-width:0;
+    }
+
+    .history-date{
+      display:block;
+      font-size:15px;
+      font-weight:900;
+    }
+
+    .history-preview{
+      display:block;
+      margin-top:5px;
       color:var(--muted);
       font-size:11px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
 
-    .advice-text{
-      font-size:15px;
-      line-height:1.75;
+    .history-arrow{
+      color:var(--accent2);
+      font-size:20px;
+      font-weight:900;
+      transition:transform .2s ease;
+      flex:0 0 auto;
+    }
+
+    .history-item.open .history-arrow{
+      transform:rotate(90deg);
+    }
+
+    .history-detail{
+      display:none;
+      padding:0 15px 15px;
+    }
+
+    .history-item.open .history-detail{
+      display:block;
+    }
+
+    .history-detail-inner{
+      padding-top:14px;
+      border-top:1px solid var(--line);
+    }
+
+    .history-block{
+      margin-bottom:14px;
+    }
+
+    .history-block:last-child{
+      margin-bottom:0;
+    }
+
+    .history-block small{
+      display:block;
+      color:var(--muted);
+      font-size:10px;
+      font-weight:800;
+      margin-bottom:4px;
+    }
+
+    .history-block div{
+      font-size:14px;
+      line-height:1.65;
       white-space:pre-wrap;
       word-break:break-word;
     }
 
-    .coach{
-      margin-top:11px;
-      padding-top:10px;
-      border-top:1px solid rgba(34,54,83,.75);
-      color:#c8d6e6;
-      font-size:12px;
+    .history-status{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+      margin-bottom:14px;
+    }
+
+    .history-status-box{
+      padding:10px;
+      border-radius:12px;
+      background:#0d1d31;
+      border:1px solid var(--line);
+    }
+
+    .history-status-box small{
+      display:block;
+      color:var(--muted);
+      font-size:9px;
+    }
+
+    .history-status-box strong{
+      display:block;
+      margin-top:4px;
+      font-size:13px;
+    }
+
+    .history-empty{
+      text-align:center;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.7;
+      padding:28px 10px;
+    }
+
+    .history-loading{
+      text-align:center;
+      color:var(--muted);
+      font-size:13px;
+      padding:26px 10px;
+    }
+
+    .message{
+      display:none;
+      position:fixed;
+      left:14px;
+      right:14px;
+      bottom:calc(14px + var(--safe-bottom));
+      max-width:592px;
+      margin:auto;
+      z-index:50;
+      border-radius:14px;
+      padding:13px 15px;
+      background:#17263a;
+      border:1px solid var(--line);
+      color:var(--text);
+      font-size:13px;
+      box-shadow:0 10px 35px rgba(0,0,0,.35);
+    }
+
+    .message.error{
+      display:block;
+      background:#35151d;
+      border-color:#71313d;
+      color:#ffc4ca;
+    }
+
+    .message.ok{
+      display:block;
+      background:#0f3225;
+      border-color:#246746;
+      color:#a9efc8;
     }
 
     .loading{
-      min-height:62vh;
+      min-height:66vh;
       display:grid;
       place-items:center;
       text-align:center;
@@ -187,349 +617,508 @@
     .spinner{
       width:34px;
       height:34px;
-      margin:0 auto 14px;
       border:3px solid #203450;
       border-top-color:var(--accent);
       border-radius:50%;
       animation:spin .8s linear infinite;
+      margin:0 auto 14px;
     }
 
     @keyframes spin{
       to{transform:rotate(360deg)}
     }
 
-    .hidden{display:none!important}
-
-    .error-title{
-      color:#ff9ba3;
-      font-weight:900;
-      font-size:20px;
-      margin-bottom:8px;
-    }
-
-    .button{
-      width:100%;
-      min-height:50px;
-      margin-top:14px;
-      border:1px solid var(--line);
-      border-radius:14px;
-      background:#13233a;
-      color:var(--text);
-      font-weight:800;
-    }
-
-    .feedback-section-title{
-      margin:0 0 10px;
-      font-size:18px;
-      font-weight:900;
-    }
-
-    .feedback-date{
-      margin-top:10px;
-      color:var(--muted);
-      font-size:11px;
-    }
-
-    .feedback-grid{
-      display:grid;
-      gap:10px;
+    .tiny{
+      font-size:10px;
+      color:#6f829a;
+      text-align:center;
       margin-top:13px;
     }
 
-    .feedback-block{
-      padding:13px;
-      border:1px solid var(--line);
-      border-radius:14px;
-      background:#091729;
-    }
+    @media(max-width:380px){
+      .app{
+        padding-left:10px;
+        padding-right:10px;
+      }
 
-    .feedback-block small{
-      display:block;
-      margin-bottom:5px;
-      color:var(--blue);
-      font-size:11px;
-      font-weight:900;
-    }
-
-    .feedback-block div{
-      white-space:pre-wrap;
-      word-break:break-word;
-      font-size:14px;
-      line-height:1.7;
-    }
-
-    .player-card-link{
-      width:100%;
-      min-height:52px;
-      margin:14px 0 4px;
-      border:1px solid var(--accent);
-      border-radius:14px;
-      background:var(--accent);
-      color:#052116;
-      font-size:15px;
-      font-weight:900;
-      cursor:pointer;
-      -webkit-tap-highlight-color:transparent;
-    }
-
-    .player-card-link:active{
-      transform:translateY(1px);
-    }
-    .guardian-note{
-      margin:10px 0 0;
-      color:var(--muted);
-      font-size:13px;
-      line-height:1.7;
-    }
-
-    .guardian-main-card .title{
-      font-size:24px;
+      .card{padding:15px}
+      .title{font-size:25px}
+      .scale{gap:5px}
+      .scale button{min-height:50px}
     }
   </style>
 </head>
+
 <body>
+
 <div class="app">
+
   <header class="header">
     <div class="brand">
       <small>NINJA AIRS</small>
-      <h1>フィードバック</h1>
+      <h1>練習チェック</h1>
     </div>
+
     <div id="playerChip" class="player-chip"></div>
   </header>
 
-  <div
-    id="syncStatus"
-    class="sync-status hidden"
-    aria-live="polite"
-  ></div>
-
   <main>
+
     <section id="loadingView" class="loading">
       <div>
         <div class="spinner"></div>
-        <div id="loadingText">LINE認証とアドバイスを確認しています…</div>
+        <div>LINE認証と今日の記録を確認しています…</div>
       </div>
     </section>
 
-    <section id="mainView" class="hidden">
+    <!-- CHECK IN -->
+    <section id="checkInView" class="hidden">
+
       <div class="card">
-        <div class="eyebrow">COACH ADVICE</div>
-        <h2 class="title">コーチからのアドバイス</h2>
-        <div id="adviceDate" class="advice-meta hidden"></div>
-        <div id="adviceText" class="advice-text"></div>
-        <div id="adviceCoach" class="coach hidden"></div>
+        <div class="eyebrow">CHECK IN</div>
+        <h2 class="title">今日の自分を決める</h2>
+        <p class="lead">
+          練習が始まる前に、今日やることを自分の言葉で決めよう。
+        </p>
+        <div id="todayDate1" class="date"></div>
+
+        <button class="history-button" type="button" data-open-history>
+          過去の振り返りを見る
+        </button>
       </div>
 
-      <button
-        id="playerCardBtn"
-        class="player-card-link"
-        type="button"
-        aria-label="選手カルテを見る"
-      >
-        選手カルテを見る
-      </button>
-
-      <div id="latestFeedbackCard" class="card hidden">
-        <div class="eyebrow">PLAYER CARD</div>
-        <h3 class="feedback-section-title">最新の選手カルテ</h3>
-        <div id="latestFeedbackContent"></div>
-      </div>
-    </section>
-
-    <section id="errorView" class="hidden">
       <div class="card">
-        <div class="error-title">開けませんでした</div>
-        <p id="errorText" class="lead"></p>
+
+        <div class="section">
+          <div class="label">
+            <span class="number">1</span>
+            今日の体調
+          </div>
+
+          <p class="hint">
+            身体の調子を1〜5で選んでください。
+          </p>
+
+          <div id="healthScale" class="scale"></div>
+        </div>
+
+        <div class="section">
+
+          <div class="label">
+            <span class="number">2</span>
+            痛み・怪我はある？
+          </div>
+
+          <p class="hint">
+            少しでも気になるところがあれば「あり」にしてください。
+          </p>
+
+          <div class="injury-toggle">
+            <button type="button" class="none" data-injury="なし">
+              なし
+            </button>
+
+            <button type="button" class="yes" data-injury="あり">
+              あり
+            </button>
+          </div>
+
+          <div id="injuryFields" class="injury-fields hidden">
+
+            <label for="injuryPart">
+              どこが気になる？
+            </label>
+
+            <input
+              id="injuryPart"
+              maxlength="200"
+              placeholder="例：右足首"
+            >
+
+            <label for="injuryStatus">
+              どんな状態？
+            </label>
+
+            <textarea
+              id="injuryStatus"
+              maxlength="500"
+              placeholder="痛みや違和感の状態を書いてください"
+            ></textarea>
+
+          </div>
+
+        </div>
+
+        <div class="section">
+
+          <div class="label">
+            <span class="number">3</span>
+            今日やるべきこと
+          </div>
+
+          <p class="hint">
+            今日の練習で「自分がやる」と決めることを書こう。
+          </p>
+
+          <textarea
+            id="task"
+            maxlength="500"
+            placeholder="自分の言葉で書く"
+          ></textarea>
+
+        </div>
+
+        <div class="section">
+
+          <div class="label">
+            <span class="number">4</span>
+            今日意識すること
+          </div>
+
+          <p class="hint">
+            やるべきことを実行するために、何を意識する？
+          </p>
+
+          <textarea
+            id="focus"
+            maxlength="500"
+            placeholder="自分の言葉で書く"
+          ></textarea>
+
+        </div>
+
+        <div class="section">
+
+          <div class="label">
+            <span class="number">5</span>
+            今の気持ち・準備度
+          </div>
+
+          <p class="hint">
+            練習へ向かう今の自分を1〜5で選ぼう。
+          </p>
+
+          <div id="conditionScale" class="scale"></div>
+
+        </div>
+
         <button
-          class="button"
+          id="checkInBtn"
+          class="primary"
+          type="button"
+        >
+          チェックインする
+        </button>
+
+        <div class="tiny">
+          入力内容は本人の振り返りとして保存され、コーチの選手カルテ作成にも活用されます。
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- CHECK OUT -->
+    <section id="checkOutView" class="hidden">
+
+      <div class="card">
+
+        <div class="eyebrow">CHECK OUT</div>
+
+        <h2 class="title">
+          今日を振り返る
+        </h2>
+
+        <p class="lead">
+          練習前に自分で決めたことを見返してから、今日を自分の言葉で振り返ろう。
+        </p>
+
+        <div id="todayDate2" class="date"></div>
+
+        <button class="history-button" type="button" data-open-history>
+          過去の振り返りを見る
+        </button>
+
+        <div id="todayPlan" class="today-plan"></div>
+
+        <div id="todayCondition" class="condition-box"></div>
+
+        <div
+          id="injuryWarning"
+          class="warning hidden"
+        ></div>
+
+      </div>
+
+      <div class="card">
+
+        <div class="section">
+
+          <div class="label">
+            <span class="number">1</span>
+            今日よかったこと
+          </div>
+
+          <p class="hint">
+            できたこと、成長したこと、良かった判断などを書こう。
+          </p>
+
+          <textarea
+            id="goodPoint"
+            maxlength="800"
+            placeholder="今日、自分で良かったと思うこと"
+          ></textarea>
+
+        </div>
+
+        <div class="section">
+
+          <div class="label">
+            <span class="number">2</span>
+            もっと良くできること
+          </div>
+
+          <p class="hint">
+            もう一度同じ練習をするなら、何を変える？
+          </p>
+
+          <textarea
+            id="improvement"
+            maxlength="800"
+            placeholder="次はもっと良くできること"
+          ></textarea>
+
+        </div>
+
+        <div class="section">
+
+          <div class="label">
+            <span class="number">3</span>
+            次の練習でやること
+          </div>
+
+          <p class="hint">
+            今日の振り返りを、次の行動につなげよう。
+          </p>
+
+          <textarea
+            id="nextAction"
+            maxlength="800"
+            placeholder="次に自分がやること"
+          ></textarea>
+
+        </div>
+
+        <div class="section">
+
+          <div class="label">
+            <span class="number">4</span>
+            今日の達成度
+          </div>
+
+          <p class="hint">
+            練習前に決めたことに対して1〜5で振り返ろう。
+          </p>
+
+          <div
+            id="achievementScale"
+            class="scale"
+          ></div>
+
+        </div>
+
+        <button
+          id="checkOutBtn"
+          class="primary"
+          type="button"
+        >
+          チェックアウトする
+        </button>
+
+      </div>
+
+    </section>
+
+    <!-- DONE -->
+    <section id="doneView" class="hidden">
+
+      <div class="card">
+
+        <div class="done-mark">✓</div>
+
+        <div class="done-title">
+          今日の振り返り完了
+        </div>
+
+        <div class="done-text">
+          書いたことは次の練習につながる記録として残っています。
+        </div>
+
+        <div
+          id="doneSummary"
+          class="summary"
+        ></div>
+
+        <button class="history-button" type="button" data-open-history>
+          過去の振り返りを見る
+        </button>
+
+        <button
+          id="closeBtn"
+          class="secondary"
+          type="button"
+        >
+          閉じる
+        </button>
+
+      </div>
+
+    </section>
+
+    <!-- HISTORY -->
+    <section id="historyView" class="hidden">
+
+      <div class="card">
+
+        <div class="eyebrow">
+          HISTORY
+        </div>
+
+        <h2 class="title">
+          過去の振り返り
+        </h2>
+
+        <p class="lead">
+          自分がこれまで何を考え、何に取り組んできたかを振り返ることができます。
+        </p>
+
+        <button
+          id="historyBackBtn"
+          class="secondary"
+          type="button"
+        >
+          今日の練習に戻る
+        </button>
+
+      </div>
+
+      <div class="card">
+
+        <div id="historyLoading" class="history-loading hidden">
+          過去の記録を読み込んでいます…
+        </div>
+
+        <div id="historyEmpty" class="history-empty hidden">
+          まだ過去の振り返り記録はありません。
+        </div>
+
+        <div id="historyList" class="history-list"></div>
+
+      </div>
+
+    </section>
+
+    <!-- ERROR -->
+    <section id="errorView" class="hidden">
+
+      <div class="card">
+
+        <div
+          class="eyebrow"
+          style="color:var(--danger)"
+        >
+          ERROR
+        </div>
+
+        <h2 class="title">
+          開けませんでした
+        </h2>
+
+        <p
+          id="errorText"
+          class="lead"
+        ></p>
+
+        <button
+          class="secondary"
           type="button"
           onclick="location.reload()"
         >
           もう一度試す
         </button>
+
       </div>
+
     </section>
+
   </main>
+
 </div>
+
+<div id="message" class="message"></div>
 
 <script>
 'use strict';
 
-const FEEDBACK_PAGE_VERSION =
-  'v21-guardian-feedback-clean-home';
-
-const LIFF_ID =
-  '2010789200-osUDbuzD';
-
-const PLAYER_CARD_LIFF_URL =
-  'https://liff.line.me/2010789200-d4tyvqcE?v=12';
+const LIFF_ID = '2010789200-zlXQJwx5';
 
 const GAS_URL =
   'https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
 
-const CACHE_VERSION =
-  'feedback-cache-v21';
+const PRACTICE_CHECK_PAGE_VERSION = 'v1.1-local-first-draft';
 
-const CACHE_TTL_MS =
-  14 * 24 * 60 * 60 * 1000;
+const HISTORY_LIMIT = 10;
 
-const FEEDBACK_CACHE_PREFIX =
-  'ninjaFeedbackCacheV21:';
+let idToken = '';
+let sessionToken = '';
+let sessionTokenFromCache = false;
 
-const GUARDIAN_DEFAULT_PLAYER_ID_KEY =
-  'ninjaGuardianDefaultPlayerIdStep50';
+const PRACTICE_SESSION_CACHE_KEY =
+  'ninja_practice_player_session_v1';
 
-let currentIdToken =
-  '';
+const PRACTICE_SESSION_CACHE_MAX_AGE_MS =
+  7 * 24 * 60 * 60 * 1000;
 
-let currentCacheScope =
-  '';
+const PRACTICE_SESSION_CACHE_EXPIRY_MARGIN_MS =
+  5 * 60 * 1000;
 
-let cachedViewShown =
-  false;
+const PRACTICE_TODAY_CACHE_KEY =
+  'ninja_practice_today_snapshot_v1';
 
-let currentViewMode =
-  '';
+const PRACTICE_TODAY_CACHE_MAX_AGE_MS =
+  12 * 60 * 60 * 1000;
 
-let currentGuardianPlayerId =
-  '';
+let cachedTodayVisible = false;
+let todayState = null;
+let player = null;
+let currentMainView = 'loadingView';
+let formDraftSaveTimer = null;
 
-window.addEventListener(
-  'load',
-  init
-);
+const PRACTICE_FORM_DRAFT_CACHE_KEY =
+  'ninja_practice_form_draft_v1';
 
-document
-  .getElementById('playerCardBtn')
-  .addEventListener(
-    'click',
-    openPlayerCard
-  );
+const PRACTICE_FORM_DRAFT_CACHE_MAX_AGE_MS =
+  24 * 60 * 60 * 1000;
 
-async function openPlayerCard(){
-  if (
-    currentViewMode === 'guardian'
-  ) {
-    await openGuardianPlayerCard();
-    return;
-  }
+const formState = {
+  health: 0,
+  injury: '',
+  condition: 0,
+  achievement: 0
+};
 
-  location.href =
-    PLAYER_CARD_LIFF_URL;
-}
-
-
-async function openGuardianPlayerCard(){
-  if (!currentIdToken) {
-    showError(
-      'LINE認証情報を取得できませんでした。LINEからもう一度開いてください。'
-    );
-
-    return;
-  }
-
-  const playerId =
-    String(
-      currentGuardianPlayerId || ''
-    ).trim();
-
-  if (!playerId) {
-    showError(
-      '選手情報を確認できませんでした。保護者トップから開き直してください。'
-    );
-
-    return;
-  }
-
-  const button =
-    document.getElementById(
-      'playerCardBtn'
-    );
-
-  if (button) {
-    button.disabled =
-      true;
-
-    button.textContent =
-      '選手カルテを開いています…';
-  }
-
-  try {
-    const result =
-      await postApi(
-        {
-          action:
-            'guardian.externalAppLaunch.create',
-
-          idToken:
-            currentIdToken,
-
-          playerId:
-            playerId,
-
-          appKey:
-            'playerCard'
-        },
-        20000,
-        '選手カルテを開く準備がタイムアウトしました。'
-      );
-
-    const data =
-      unwrapData(
-        result
-      );
-
-    const launchUrl =
-      String(
-        data.launchUrl ||
-        result.launchUrl ||
-        ''
-      ).trim();
-
-    if (!launchUrl) {
-      throw new Error(
-        '選手カルテの起動URLを取得できませんでした。'
-      );
-    }
-
-    location.href =
-      launchUrl;
-  } catch (error) {
-    if (button) {
-      button.disabled =
-        false;
-
-      button.textContent =
-        '選手カルテを見る';
-    }
-
-    showError(
-      error && error.message
-        ? error.message
-        : String(error)
-    );
-  }
-}
+window.addEventListener('load', init);
 
 async function init(){
   try{
-    if(!window.liff){
-      throw new Error(
-        'LIFF SDKを読み込めませんでした。'
-      );
-    }
 
-    setLoading(
-      'LINE認証を確認しています…'
-    );
+    if(!window.liff){
+      throw new Error('LIFF SDKを読み込めませんでした。');
+    }
 
     await withTimeout(
       liff.init({
-        liffId:
-          LIFF_ID,
-
-        withLoginOnExternalBrowser:
-          true
+        liffId:LIFF_ID
       }),
       15000,
       'LINE認証の初期化がタイムアウトしました。'
@@ -537,356 +1126,1838 @@ async function init(){
 
     if(!liff.isLoggedIn()){
       liff.login({
-        redirectUri:
-          location.href.split('#')[0]
+        redirectUri:location.href.split('#')[0]
       });
       return;
     }
 
-    currentIdToken =
-      liff.getIDToken();
+    buildScales();
+    bindEvents();
+    bindFormDraftAutosave();
 
-    if(!currentIdToken){
-      throw new Error(
-        'LINE認証情報を取得できませんでした。'
+    const cachedToday =
+      await loadCachedTodaySnapshot();
+
+    if(cachedToday){
+      player =
+        cachedToday.player || null;
+
+      todayState =
+        cachedToday;
+
+      updatePlayerChip();
+      renderToday(
+        cachedToday
       );
-    }
 
-    currentCacheScope =
-      await createCacheScopeFromIdToken(
-        currentIdToken
-      );
+      await restoreFormDraft();
 
-    const cached =
-      readCachedFeedback();
-
-    if(cached){
-      cachedViewShown =
+      cachedTodayVisible =
         true;
-
-      renderFromCache(
-        cached
-      );
-
-      setSyncStatus(
-        '',
-        ''
-      );
-    }else{
-      setLoading(
-        '保存データを確認しています…'
-      );
     }
 
-    const fresh =
-      await loadFreshFeedback();
+    sessionToken =
+      await loadCachedPlayerSession();
 
-    renderFresh(
-      fresh
-    );
+    sessionTokenFromCache =
+      Boolean(sessionToken);
 
-    saveCachedFeedback(
-      fresh
-    );
+    if(!sessionToken){
+      sessionToken =
+        await refreshPlayerSession();
+    }
 
-    setSyncStatus(
-      '',
-      ''
-    );
+    try{
+      await reloadToday({
+        preserveView:
+          cachedTodayVisible
+      });
+    }catch(error){
+
+      if(!sessionTokenFromCache){
+        if(cachedTodayVisible){
+          console.warn(
+            '最新データの取得に失敗しました。',
+            error
+          );
+          return;
+        }
+
+        throw error;
+      }
+
+      clearCachedPlayerSession();
+
+      sessionToken =
+        await refreshPlayerSession();
+
+      sessionTokenFromCache =
+        false;
+
+      try{
+        await reloadToday({
+          preserveView:
+            cachedTodayVisible
+        });
+      }catch(retryError){
+
+        if(cachedTodayVisible){
+          console.warn(
+            '最新データの再取得に失敗しました。',
+            retryError
+          );
+          return;
+        }
+
+        throw retryError;
+      }
+    }
 
   }catch(error){
-    if(cachedViewShown){
-      setSyncStatus(
-        '最新情報の取得に失敗しました。前回表示した内容を残しています。' +
-          '時間をおいて、もう一度お試しください。',
-        'error'
-      );
 
-      console.error(
-        '[NINJA Feedback refresh failed]',
-        error
-      );
-
-      return;
-    }
-
-    showError(
+    showFatal(
       error && error.message
         ? error.message
         : String(error)
     );
+
   }
 }
 
-async function loadFreshFeedback(){
-  const guardianPlayerId =
-    readGuardianSelectedPlayerId();
+async function reloadToday(options){
 
-  if(guardianPlayerId){
-    try{
-      return await loadGuardianFeedback(
-        currentIdToken,
-        guardianPlayerId
+  const settings =
+    options &&
+    typeof options === 'object'
+      ? options
+      : {};
+
+  if(!settings.preserveView){
+    showOnly('loadingView');
+  }
+
+  const result = await jsonp({
+    action:'practiceReflectionToday',
+    sessionToken
+  });
+
+  if(
+    !result ||
+    result.status === 'error' ||
+    result.success === false
+  ){
+    throw new Error(
+      result && result.message
+        ? result.message
+        : '今日の記録を取得できませんでした。'
+    );
+  }
+
+  player = result.player || null;
+  todayState = result;
+
+  updatePlayerChip();
+  renderToday(result);
+
+  await restoreFormDraft();
+
+  cachedTodayVisible = true;
+
+  await saveCachedTodaySnapshot(
+    result
+  );
+}
+
+function renderToday(result){
+
+  const dateText = formatDateJa(result.date);
+
+  setText('todayDate1',dateText);
+  setText('todayDate2',dateText);
+
+  if(result.state === 'NOT_CHECKED_IN'){
+    showOnly('checkInView');
+    return;
+  }
+
+  if(result.state === 'CHECKED_IN'){
+    renderCheckOutIntro(result.record);
+    showOnly('checkOutView');
+    return;
+  }
+
+  if(result.state === 'CHECKED_OUT'){
+    renderDone(result.record);
+    showOnly('doneView');
+    return;
+  }
+
+  throw new Error(
+    '今日の入力状態を確認できませんでした。'
+  );
+}
+
+function renderCheckOutIntro(record){
+
+  const ci =
+    record && record.checkIn
+      ? record.checkIn
+      : {};
+
+  document.getElementById('todayPlan').innerHTML = `
+    <small>今日やるべきこと</small>
+    <p>${esc(ci.task || '未記入')}</p>
+
+    <small>今日意識すること</small>
+    <p>${esc(ci.focus || '未記入')}</p>
+  `;
+
+  document.getElementById('todayCondition').innerHTML = `
+    <div class="condition-mini">
+      <small>体調</small>
+      <strong>${esc(scoreText(ci.health))}</strong>
+    </div>
+
+    <div class="condition-mini">
+      <small>練習前の準備度</small>
+      <strong>${esc(scoreText(ci.condition))}</strong>
+    </div>
+  `;
+
+  const warning =
+    document.getElementById('injuryWarning');
+
+  if(ci.injury === 'あり'){
+
+    warning.classList.remove('hidden');
+
+    warning.textContent =
+      `痛み・怪我：あり` +
+      `${ci.injuryPart ? ' / ' + ci.injuryPart : ''}` +
+      `${ci.injuryStatus ? ' / ' + ci.injuryStatus : ''}`;
+
+  }else{
+
+    warning.classList.add('hidden');
+    warning.textContent = '';
+
+  }
+}
+
+function renderDone(record){
+
+  const ci =
+    record && record.checkIn
+      ? record.checkIn
+      : {};
+
+  const co =
+    record && record.checkOut
+      ? record.checkOut
+      : {};
+
+  document.getElementById('doneSummary').innerHTML = `
+    <div class="summary-row">
+      <small>今日やるべきこと</small>
+      <div>${esc(ci.task || '未記入')}</div>
+    </div>
+
+    <div class="summary-row">
+      <small>よかったこと</small>
+      <div>${esc(co.goodPoint || '未記入')}</div>
+    </div>
+
+    <div class="summary-row">
+      <small>もっと良くできること</small>
+      <div>${esc(co.improvement || '未記入')}</div>
+    </div>
+
+    <div class="summary-row">
+      <small>次の練習でやること</small>
+      <div>${esc(co.nextAction || '未記入')}</div>
+    </div>
+
+    <div class="summary-row">
+      <small>達成度</small>
+      <div>${esc(scoreText(co.achievement))}</div>
+    </div>
+  `;
+}
+
+/* =========================
+   過去の振り返り
+========================= */
+
+async function openHistory(){
+
+  const previousView = currentMainView;
+
+  if(previousView !== 'historyView'){
+    document
+      .getElementById('historyBackBtn')
+      .dataset.returnView = previousView;
+  }
+
+  showOnly('historyView');
+
+  const list =
+    document.getElementById('historyList');
+
+  const loading =
+    document.getElementById('historyLoading');
+
+  const empty =
+    document.getElementById('historyEmpty');
+
+  list.innerHTML = '';
+  empty.classList.add('hidden');
+  loading.classList.remove('hidden');
+
+  try{
+
+    const result = await jsonp({
+      action:'practiceReflectionHistory',
+      sessionToken,
+      limit:String(HISTORY_LIMIT)
+    });
+
+    if(
+      !result ||
+      result.status === 'error' ||
+      result.success === false
+    ){
+      throw new Error(
+        result && result.message
+          ? result.message
+          : '過去の振り返りを取得できませんでした。'
       );
-    }catch(error){
-      console.warn(
-        '[NINJA Feedback guardian path failed]',
-        error
+    }
+
+    const records = Array.isArray(result.records)
+      ? result.records
+      : [];
+
+    renderHistory(records);
+
+  }catch(error){
+
+    list.innerHTML = '';
+
+    empty.classList.remove('hidden');
+    empty.textContent =
+      '過去の振り返りを取得できませんでした。今日の練習チェックはそのまま利用できます。';
+
+    showMessage(
+      error && error.message
+        ? error.message
+        : '過去の振り返りを取得できませんでした。',
+      true
+    );
+
+  }finally{
+
+    loading.classList.add('hidden');
+
+  }
+}
+
+function renderHistory(records){
+
+  const list =
+    document.getElementById('historyList');
+
+  const empty =
+    document.getElementById('historyEmpty');
+
+  list.innerHTML = '';
+
+  if(!records.length){
+
+    empty.classList.remove('hidden');
+    return;
+
+  }
+
+  empty.classList.add('hidden');
+
+  records.forEach(record=>{
+
+    const ci =
+      record && record.checkIn
+        ? record.checkIn
+        : {};
+
+    const co =
+      record && record.checkOut
+        ? record.checkOut
+        : {};
+
+    const item =
+      document.createElement('article');
+
+    item.className = 'history-item';
+
+    const preview =
+      co.nextAction ||
+      co.goodPoint ||
+      ci.task ||
+      '振り返り記録';
+
+    item.innerHTML = `
+      <button
+        type="button"
+        class="history-head"
+        aria-expanded="false"
+      >
+        <span class="history-head-main">
+          <span class="history-date">
+            ${esc(formatDateJa(record.date))}
+          </span>
+
+          <span class="history-preview">
+            ${esc(preview)}
+          </span>
+        </span>
+
+        <span class="history-arrow">›</span>
+      </button>
+
+      <div class="history-detail">
+
+        <div class="history-detail-inner">
+
+          <div class="history-status">
+
+            <div class="history-status-box">
+              <small>体調</small>
+              <strong>
+                ${esc(scoreText(ci.health))}
+              </strong>
+            </div>
+
+            <div class="history-status-box">
+              <small>準備度</small>
+              <strong>
+                ${esc(scoreText(ci.condition))}
+              </strong>
+            </div>
+
+            <div class="history-status-box">
+              <small>達成度</small>
+              <strong>
+                ${esc(scoreText(co.achievement))}
+              </strong>
+            </div>
+
+            <div class="history-status-box">
+              <small>痛み・怪我</small>
+              <strong>
+                ${esc(ci.injury || '未記録')}
+              </strong>
+            </div>
+
+          </div>
+
+          ${historyBlock(
+            '今日やるべきこと',
+            ci.task
+          )}
+
+          ${historyBlock(
+            '今日意識すること',
+            ci.focus
+          )}
+
+          ${
+            ci.injury === 'あり'
+              ? historyBlock(
+                  '痛み・怪我の部位',
+                  ci.injuryPart
+                )
+              : ''
+          }
+
+          ${
+            ci.injury === 'あり'
+              ? historyBlock(
+                  '痛み・怪我の状態',
+                  ci.injuryStatus
+                )
+              : ''
+          }
+
+          ${historyBlock(
+            '今日よかったこと',
+            co.goodPoint
+          )}
+
+          ${historyBlock(
+            'もっと良くできること',
+            co.improvement
+          )}
+
+          ${historyBlock(
+            '次の練習でやること',
+            co.nextAction
+          )}
+
+        </div>
+
+      </div>
+    `;
+
+    const head =
+      item.querySelector('.history-head');
+
+    head.addEventListener('click',()=>{
+
+      const isOpen =
+        item.classList.toggle('open');
+
+      head.setAttribute(
+        'aria-expanded',
+        isOpen ? 'true' : 'false'
+      );
+
+    });
+
+    list.appendChild(item);
+
+  });
+}
+
+function historyBlock(label,text){
+
+  return `
+    <div class="history-block">
+      <small>${esc(label)}</small>
+      <div>${esc(text || '未記入')}</div>
+    </div>
+  `;
+}
+
+function backFromHistory(){
+
+  const btn =
+    document.getElementById('historyBackBtn');
+
+  const returnView =
+    btn.dataset.returnView || resolveTodayView();
+
+  if(
+    ['checkInView','checkOutView','doneView']
+      .includes(returnView)
+  ){
+    showOnly(returnView);
+    return;
+  }
+
+  showOnly(resolveTodayView());
+}
+
+function resolveTodayView(){
+
+  if(!todayState){
+    return 'loadingView';
+  }
+
+  if(todayState.state === 'NOT_CHECKED_IN'){
+    return 'checkInView';
+  }
+
+  if(todayState.state === 'CHECKED_IN'){
+    return 'checkOutView';
+  }
+
+  if(todayState.state === 'CHECKED_OUT'){
+    return 'doneView';
+  }
+
+  return 'loadingView';
+}
+
+/* =========================
+   スケール
+========================= */
+
+function buildScales(){
+
+  buildScale(
+    'healthScale',
+    'health',
+    [
+      ['1','かなり悪い'],
+      ['2','少し悪い'],
+      ['3','普通'],
+      ['4','良い'],
+      ['5','かなり良い']
+    ]
+  );
+
+  buildScale(
+    'conditionScale',
+    'condition',
+    [
+      ['1','低い'],
+      ['2','やや低い'],
+      ['3','普通'],
+      ['4','高い'],
+      ['5','かなり高い']
+    ]
+  );
+
+  buildScale(
+    'achievementScale',
+    'achievement',
+    [
+      ['1','できなかった'],
+      ['2','少し'],
+      ['3','半分くらい'],
+      ['4','できた'],
+      ['5','かなりできた']
+    ]
+  );
+}
+
+function buildScale(
+  containerId,
+  key,
+  labels
+){
+
+  const box =
+    document.getElementById(containerId);
+
+  box.innerHTML = '';
+
+  labels.forEach(([value,label])=>{
+
+    const button =
+      document.createElement('button');
+
+    button.type = 'button';
+
+    button.innerHTML =
+      `${value}<small>${esc(label)}</small>`;
+
+    button.addEventListener(
+      'click',
+      ()=>{
+
+        formState[key] =
+          Number(value);
+
+        [...box.children]
+          .forEach(
+            x=>x.classList.remove('active')
+          );
+
+        button.classList.add('active');
+
+        saveFormDraftSoon();
+
+      }
+    );
+
+    box.appendChild(button);
+
+  });
+}
+
+/* =========================
+   イベント
+========================= */
+
+function bindEvents(){
+
+  document
+    .querySelectorAll('[data-injury]')
+    .forEach(button=>{
+
+      button.addEventListener(
+        'click',
+        ()=>{
+
+          formState.injury =
+            button.dataset.injury || '';
+
+          document
+            .querySelectorAll('[data-injury]')
+            .forEach(
+              x=>x.classList.remove('active')
+            );
+
+          button.classList.add('active');
+
+          const fields =
+            document.getElementById(
+              'injuryFields'
+            );
+
+          if(formState.injury === 'あり'){
+
+            fields.classList.remove('hidden');
+
+          }else{
+
+            fields.classList.add('hidden');
+
+            document.getElementById(
+              'injuryPart'
+            ).value = '';
+
+            document.getElementById(
+              'injuryStatus'
+            ).value = '';
+
+          }
+
+          saveFormDraftSoon();
+
+        }
+      );
+
+    });
+
+  document
+    .getElementById('checkInBtn')
+    .addEventListener(
+      'click',
+      submitCheckIn
+    );
+
+  document
+    .getElementById('checkOutBtn')
+    .addEventListener(
+      'click',
+      submitCheckOut
+    );
+
+  document
+    .getElementById('closeBtn')
+    .addEventListener(
+      'click',
+      closeLiff
+    );
+
+  document
+    .querySelectorAll('[data-open-history]')
+    .forEach(button=>{
+
+      button.addEventListener(
+        'click',
+        openHistory
+      );
+
+    });
+
+  document
+    .getElementById('historyBackBtn')
+    .addEventListener(
+      'click',
+      backFromHistory
+    );
+}
+
+/* =========================
+   チェックイン
+========================= */
+
+async function submitCheckIn(){
+
+  const task =
+    value('task');
+
+  const focus =
+    value('focus');
+
+  const injuryPart =
+    value('injuryPart');
+
+  const injuryStatus =
+    value('injuryStatus');
+
+  if(!formState.health){
+    return showMessage(
+      '今日の体調を1〜5で選んでください。',
+      true
+    );
+  }
+
+  if(!formState.injury){
+    return showMessage(
+      '痛み・怪我の有無を選んでください。',
+      true
+    );
+  }
+
+  if(formState.injury === 'あり'){
+
+    if(!injuryPart){
+      return showMessage(
+        '痛み・怪我の部位を書いてください。',
+        true
+      );
+    }
+
+    if(!injuryStatus){
+      return showMessage(
+        '痛み・怪我の状態を書いてください。',
+        true
       );
     }
   }
 
-  return await loadPlayerFeedback(
-    currentIdToken
-  );
-}
-
-async function loadGuardianFeedback(
-  idToken,
-  playerId
-){
-  const result =
-    await postApi(
-      {
-        action:
-          'guardian.playerFeedback',
-
-        idToken:
-          String(idToken || ''),
-
-        playerId:
-          String(playerId || '')
-      },
-      20000,
-      '保護者フィードバックの取得がタイムアウトしました。'
-    );
-
-  if(!isOk(result)){
-    throw new Error(
-      getMessage(result) ||
-      '保護者フィードバックを取得できませんでした。'
+  if(!task){
+    return showMessage(
+      '「今日やるべきこと」を自分の言葉で書いてください。',
+      true
     );
   }
 
-  const data =
-    unwrapData(result);
+  if(!focus){
+    return showMessage(
+      '「今日意識すること」を自分の言葉で書いてください。',
+      true
+    );
+  }
 
-  const player =
-    normalizePlayer(
-      data.player ||
-      result.player ||
-      {
-        playerId:
-          playerId
-      }
+  if(!formState.condition){
+    return showMessage(
+      '今の気持ち・準備度を1〜5で選んでください。',
+      true
+    );
+  }
+
+  const btn =
+    document.getElementById('checkInBtn');
+
+  btn.disabled = true;
+  btn.textContent = '保存しています…';
+
+  hideMessage();
+
+  try{
+
+    await postOpaque({
+      action:'practiceReflectionCheckIn',
+      sessionToken,
+      task,
+      focus,
+      condition:formState.condition,
+      health:formState.health,
+      injury:formState.injury,
+      injuryPart,
+      injuryStatus
+    });
+
+    const confirmed =
+      await waitForState(
+        'CHECKED_IN',
+        6
+      );
+
+    if(!confirmed){
+      throw new Error(
+        '保存確認に時間がかかっています。もう一度開いて確認してください。'
+      );
+    }
+
+    showMessage(
+      'チェックインしました。',
+      false
     );
 
-  const feedback =
-    normalizeFeedback(
-      data.feedback ||
-      result.feedback ||
-      data
+    clearFormDraft();
+
+    await reloadToday();
+
+  }catch(error){
+
+    showMessage(
+      error && error.message
+        ? error.message
+        : 'チェックインできませんでした。',
+      true
     );
 
-  return {
-    mode:
-      'guardian',
+  }finally{
 
-    player:
-      player,
+    btn.disabled = false;
+    btn.textContent =
+      'チェックインする';
 
-    records:
-      [],
-
-    feedback:
-      feedback,
-
-    fetchedAt:
-      new Date().toISOString()
-  };
+  }
 }
 
-async function loadPlayerFeedback(
-  idToken
-){
-  setLoading(
-    cachedViewShown
-      ? '最新情報を確認しています…'
-      : '本人情報を確認しています…'
+/* =========================
+   チェックアウト
+========================= */
+
+async function submitCheckOut(){
+
+  const goodPoint =
+    value('goodPoint');
+
+  const improvement =
+    value('improvement');
+
+  const nextAction =
+    value('nextAction');
+
+  if(!goodPoint){
+    return showMessage(
+      '「今日よかったこと」を書いてください。',
+      true
+    );
+  }
+
+  if(!improvement){
+    return showMessage(
+      '「もっと良くできること」を書いてください。',
+      true
+    );
+  }
+
+  if(!nextAction){
+    return showMessage(
+      '「次の練習でやること」を書いてください。',
+      true
+    );
+  }
+
+  if(!formState.achievement){
+    return showMessage(
+      '今日の達成度を1〜5で選んでください。',
+      true
+    );
+  }
+
+  const btn =
+    document.getElementById('checkOutBtn');
+
+  btn.disabled = true;
+  btn.textContent = '保存しています…';
+
+  hideMessage();
+
+  try{
+
+    await postOpaque({
+      action:'practiceReflectionCheckOut',
+      sessionToken,
+      goodPoint,
+      improvement,
+      nextAction,
+      achievement:formState.achievement
+    });
+
+    const confirmed =
+      await waitForState(
+        'CHECKED_OUT',
+        6
+      );
+
+    if(!confirmed){
+      throw new Error(
+        '保存確認に時間がかかっています。もう一度開いて確認してください。'
+      );
+    }
+
+    showMessage(
+      'チェックアウトしました。',
+      false
+    );
+
+    clearFormDraft();
+
+    await reloadToday();
+
+  }catch(error){
+
+    showMessage(
+      error && error.message
+        ? error.message
+        : 'チェックアウトできませんでした。',
+      true
+    );
+
+  }finally{
+
+    btn.disabled = false;
+    btn.textContent =
+      'チェックアウトする';
+
+  }
+}
+
+
+/* =========================
+   入力途中の端末保存
+========================= */
+
+function bindFormDraftAutosave(){
+
+  [
+    'task',
+    'focus',
+    'injuryPart',
+    'injuryStatus',
+    'goodPoint',
+    'improvement',
+    'nextAction'
+  ].forEach(id=>{
+
+    const el =
+      document.getElementById(id);
+
+    if(!el){
+      return;
+    }
+
+    el.addEventListener(
+      'input',
+      saveFormDraftSoon
+    );
+
+    el.addEventListener(
+      'change',
+      saveFormDraftSoon
+    );
+
+  });
+}
+
+function saveFormDraftSoon(){
+
+  clearTimeout(
+    formDraftSaveTimer
   );
 
-  const session =
+  formDraftSaveTimer =
+    setTimeout(
+      saveFormDraft,
+      250
+    );
+}
+
+async function saveFormDraft(){
+
+  const accountFingerprint =
+    await getCurrentLineAccountFingerprint();
+
+  if(!accountFingerprint){
+    return;
+  }
+
+  const draft = {
+    health:
+      formState.health || 0,
+
+    injury:
+      formState.injury || '',
+
+    condition:
+      formState.condition || 0,
+
+    achievement:
+      formState.achievement || 0,
+
+    task:
+      value('task'),
+
+    focus:
+      value('focus'),
+
+    injuryPart:
+      value('injuryPart'),
+
+    injuryStatus:
+      value('injuryStatus'),
+
+    goodPoint:
+      value('goodPoint'),
+
+    improvement:
+      value('improvement'),
+
+    nextAction:
+      value('nextAction')
+  };
+
+  const hasText =
+    Object
+      .keys(draft)
+      .some(key=>{
+        const item =
+          draft[key];
+
+        if(typeof item === 'number'){
+          return item > 0;
+        }
+
+        return String(item || '').trim() !== '';
+      });
+
+  if(!hasText){
+    clearFormDraft();
+    return;
+  }
+
+  const cacheData = {
+    accountFingerprint:
+      accountFingerprint,
+
+    date:
+      getLocalDateKey(),
+
+    savedAtMs:
+      Date.now(),
+
+    draft:
+      draft
+  };
+
+  try{
+    localStorage.setItem(
+      PRACTICE_FORM_DRAFT_CACHE_KEY,
+      JSON.stringify(cacheData)
+    );
+  }catch(_){}
+}
+
+async function restoreFormDraft(){
+
+  const accountFingerprint =
+    await getCurrentLineAccountFingerprint();
+
+  if(!accountFingerprint){
+    return;
+  }
+
+  let cached;
+
+  try{
+    cached =
+      JSON.parse(
+        localStorage.getItem(
+          PRACTICE_FORM_DRAFT_CACHE_KEY
+        ) || 'null'
+      );
+  }catch(_){
+    clearFormDraft();
+    return;
+  }
+
+  if(
+    !cached ||
+    typeof cached !== 'object'
+  ){
+    return;
+  }
+
+  const sameAccount =
+    String(cached.accountFingerprint || '') ===
+    accountFingerprint;
+
+  const sameDate =
+    String(cached.date || '') ===
+    getLocalDateKey();
+
+  const fresh =
+    Number(cached.savedAtMs || 0) > 0 &&
+    Date.now() - Number(cached.savedAtMs || 0) <
+      PRACTICE_FORM_DRAFT_CACHE_MAX_AGE_MS;
+
+  const draft =
+    cached.draft &&
+    typeof cached.draft === 'object'
+      ? cached.draft
+      : null;
+
+  if(
+    !sameAccount ||
+    !sameDate ||
+    !fresh ||
+    !draft
+  ){
+    clearFormDraft();
+    return;
+  }
+
+  restoreInputValue(
+    'task',
+    draft.task
+  );
+
+  restoreInputValue(
+    'focus',
+    draft.focus
+  );
+
+  restoreInputValue(
+    'injuryPart',
+    draft.injuryPart
+  );
+
+  restoreInputValue(
+    'injuryStatus',
+    draft.injuryStatus
+  );
+
+  restoreInputValue(
+    'goodPoint',
+    draft.goodPoint
+  );
+
+  restoreInputValue(
+    'improvement',
+    draft.improvement
+  );
+
+  restoreInputValue(
+    'nextAction',
+    draft.nextAction
+  );
+
+  restoreScaleValue(
+    'healthScale',
+    'health',
+    draft.health
+  );
+
+  restoreScaleValue(
+    'conditionScale',
+    'condition',
+    draft.condition
+  );
+
+  restoreScaleValue(
+    'achievementScale',
+    'achievement',
+    draft.achievement
+  );
+
+  restoreInjuryValue(
+    draft.injury
+  );
+}
+
+function restoreInputValue(id,text){
+
+  const el =
+    document.getElementById(id);
+
+  if(!el){
+    return;
+  }
+
+  const value =
+    String(text || '');
+
+  if(value){
+    el.value =
+      value;
+  }
+}
+
+function restoreScaleValue(
+  containerId,
+  key,
+  rawValue
+){
+
+  const value =
+    Number(rawValue || 0);
+
+  if(!value){
+    return;
+  }
+
+  formState[key] =
+    value;
+
+  const box =
+    document.getElementById(
+      containerId
+    );
+
+  if(!box){
+    return;
+  }
+
+  [...box.children]
+    .forEach(button=>{
+
+      const isTarget =
+        String(button.textContent || '')
+          .trim()
+          .startsWith(
+            String(value)
+          );
+
+      button.classList.toggle(
+        'active',
+        isTarget
+      );
+
+    });
+}
+
+function restoreInjuryValue(value){
+
+  const injury =
+    String(value || '');
+
+  if(!injury){
+    return;
+  }
+
+  formState.injury =
+    injury;
+
+  document
+    .querySelectorAll('[data-injury]')
+    .forEach(button=>{
+
+      button.classList.toggle(
+        'active',
+        button.dataset.injury === injury
+      );
+
+    });
+
+  const fields =
+    document.getElementById(
+      'injuryFields'
+    );
+
+  if(!fields){
+    return;
+  }
+
+  if(injury === 'あり'){
+    fields.classList.remove(
+      'hidden'
+    );
+  }else{
+    fields.classList.add(
+      'hidden'
+    );
+  }
+}
+
+function clearFormDraft(){
+
+  clearTimeout(
+    formDraftSaveTimer
+  );
+
+  try{
+    localStorage.removeItem(
+      PRACTICE_FORM_DRAFT_CACHE_KEY
+    );
+  }catch(_){}
+}
+
+
+/* =========================
+   保存確認
+========================= */
+
+async function waitForState(
+  target,
+  maxAttempts
+){
+
+  for(
+    let i=0;
+    i<maxAttempts;
+    i++
+  ){
+
+    await sleep(
+      i === 0
+        ? 900
+        : 700
+    );
+
+    const result =
+      await jsonp(
+        {
+          action:'practiceReflectionToday',
+          sessionToken,
+          _verify:String(Date.now())
+        },
+        20000
+      );
+
+    if(
+      result &&
+      result.status !== 'error' &&
+      result.state === target
+    ){
+
+      todayState = result;
+
+      return result;
+    }
+  }
+
+  return null;
+}
+
+/* =========================
+   通信
+========================= */
+
+async function loadCachedTodaySnapshot(){
+
+  const currentFingerprint =
+    await getCurrentLineAccountFingerprint();
+
+  if(!currentFingerprint){
+    clearCachedTodaySnapshot();
+    return null;
+  }
+
+  let cached;
+
+  try{
+    cached =
+      JSON.parse(
+        localStorage.getItem(
+          PRACTICE_TODAY_CACHE_KEY
+        ) || 'null'
+      );
+  }catch(_){
+    clearCachedTodaySnapshot();
+    return null;
+  }
+
+  if(
+    !cached ||
+    typeof cached !== 'object'
+  ){
+    return null;
+  }
+
+  const accountFingerprint =
+    String(
+      cached.accountFingerprint || ''
+    ).trim();
+
+  const savedAtMs =
+    Number(
+      cached.savedAtMs || 0
+    );
+
+  const result =
+    cached.result &&
+    typeof cached.result === 'object'
+      ? cached.result
+      : null;
+
+  const now =
+    Date.now();
+
+  const cacheFresh =
+    savedAtMs > 0 &&
+    now - savedAtMs <
+      PRACTICE_TODAY_CACHE_MAX_AGE_MS;
+
+  const sameAccount =
+    accountFingerprint ===
+    currentFingerprint;
+
+  const sameDate =
+    result &&
+    String(result.date || '') ===
+      getLocalDateKey();
+
+  if(
+    !result ||
+    !cacheFresh ||
+    !sameAccount ||
+    !sameDate
+  ){
+    clearCachedTodaySnapshot();
+    return null;
+  }
+
+  return result;
+}
+
+
+async function saveCachedTodaySnapshot(
+  result
+){
+
+  if(
+    !result ||
+    typeof result !== 'object'
+  ){
+    return;
+  }
+
+  const accountFingerprint =
+    await getCurrentLineAccountFingerprint();
+
+  if(!accountFingerprint){
+    return;
+  }
+
+  const cacheData = {
+    accountFingerprint:
+      accountFingerprint,
+
+    savedAtMs:
+      Date.now(),
+
+    result:
+      result
+  };
+
+  try{
+    localStorage.setItem(
+      PRACTICE_TODAY_CACHE_KEY,
+      JSON.stringify(cacheData)
+    );
+  }catch(_){}
+}
+
+
+function clearCachedTodaySnapshot(){
+
+  try{
+    localStorage.removeItem(
+      PRACTICE_TODAY_CACHE_KEY
+    );
+  }catch(_){}
+}
+
+
+function getLocalDateKey(){
+
+  const now =
+    new Date();
+
+  const year =
+    now.getFullYear();
+
+  const month =
+    String(
+      now.getMonth() + 1
+    ).padStart(2,'0');
+
+  const day =
+    String(
+      now.getDate()
+    ).padStart(2,'0');
+
+  return (
+    year +
+    '-' +
+    month +
+    '-' +
+    day
+  );
+}
+
+
+async function loadCachedPlayerSession(){
+
+  const currentFingerprint =
+    await getCurrentLineAccountFingerprint();
+
+  if(!currentFingerprint){
+    clearCachedPlayerSession();
+    return '';
+  }
+
+  let cached;
+
+  try{
+    cached =
+      JSON.parse(
+        localStorage.getItem(
+          PRACTICE_SESSION_CACHE_KEY
+        ) || 'null'
+      );
+  }catch(_){
+    clearCachedPlayerSession();
+    return '';
+  }
+
+  if(
+    !cached ||
+    typeof cached !== 'object'
+  ){
+    return '';
+  }
+
+  const token =
+    String(
+      cached.sessionToken || ''
+    ).trim();
+
+  const accountFingerprint =
+    String(
+      cached.accountFingerprint || ''
+    ).trim();
+
+  const savedAtMs =
+    Number(
+      cached.savedAtMs || 0
+    );
+
+  const expiresAtMs =
+    Number(
+      cached.expiresAtMs || 0
+    );
+
+  const now =
+    Date.now();
+
+  const accountMatches =
+    accountFingerprint ===
+    currentFingerprint;
+
+  const clientCacheFresh =
+    savedAtMs > 0 &&
+    now - savedAtMs <
+      PRACTICE_SESSION_CACHE_MAX_AGE_MS;
+
+  const serverSessionFresh =
+    expiresAtMs > 0 &&
+    now +
+      PRACTICE_SESSION_CACHE_EXPIRY_MARGIN_MS <
+      expiresAtMs;
+
+  if(
+    !token ||
+    !accountMatches ||
+    !clientCacheFresh ||
+    !serverSessionFresh
+  ){
+    clearCachedPlayerSession();
+    return '';
+  }
+
+  return token;
+}
+
+
+async function refreshPlayerSession(){
+
+  idToken =
+    liff.getIDToken();
+
+  if(!idToken){
+    throw new Error(
+      'LINE認証情報を取得できませんでした。'
+    );
+  }
+
+  const sessionResult =
     await createPlayerSession(
       idToken
     );
 
-  const sessionToken =
+  const token =
     String(
-      session &&
-      (
-        session.sessionToken ||
-        (
-          session.data &&
-          session.data.sessionToken
-        )
-      ) ||
+      sessionResult &&
+      sessionResult.data &&
+      sessionResult.data.sessionToken ||
+      sessionResult &&
+      sessionResult.sessionToken ||
       ''
     ).trim();
 
-  if(!sessionToken){
+  if(!token){
     throw new Error(
       'ログインセッションを取得できませんでした。'
     );
   }
 
-  const results =
-    await Promise.allSettled([
-      jsonp(
-        {
-          action:
-            'coachAdvice.listMine',
+  sessionToken =
+    token;
 
-          sessionToken:
-            sessionToken,
+  await saveCachedPlayerSession(
+    sessionResult
+  );
 
-          limit:
-            '1'
-        },
-        16000
-      ),
-      jsonp(
-        {
-          action:
-            'feedback.listMine',
-
-          sessionToken:
-            sessionToken
-        },
-        16000
-      )
-    ]);
-
-  const adviceResult =
-    results[0].status === 'fulfilled'
-      ? results[0].value
-      : null;
-
-  const feedbackResult =
-    results[1].status === 'fulfilled'
-      ? results[1].value
-      : null;
-
-  if(
-    !isOk(adviceResult) &&
-    !isOk(feedbackResult)
-  ){
-    const firstError =
-      results.find(function(item){
-        return item.status === 'rejected';
-      });
-
-    throw new Error(
-      firstError &&
-      firstError.reason &&
-      firstError.reason.message
-        ? firstError.reason.message
-        : 'フィードバックを取得できませんでした。'
-    );
-  }
-
-  const player =
-    normalizePlayer(
-      (
-        adviceResult &&
-        adviceResult.player
-      ) ||
-      (
-        feedbackResult &&
-        feedbackResult.player
-      ) ||
-      {}
-    );
-
-  const records =
-    adviceResult &&
-    Array.isArray(adviceResult.records)
-      ? adviceResult.records
-      : [];
-
-  const feedback =
-    feedbackResult
-      ? normalizeFeedback(
-          feedbackResult.feedback ||
-          unwrapData(feedbackResult).feedback ||
-          null
-        )
-      : null;
-
-  return {
-    mode:
-      'player',
-
-    player:
-      player,
-
-    records:
-      records,
-
-    feedback:
-      feedback,
-
-    fetchedAt:
-      new Date().toISOString()
-  };
+  return token;
 }
 
-async function createPlayerSession(
-  idToken
+
+async function saveCachedPlayerSession(
+  sessionResult
 ){
-  const response =
-    await withTimeout(
-      fetch(
-        GAS_URL,
-        {
-          method:
-            'POST',
 
-          headers:
-            {
-              'Content-Type':
-                'text/plain;charset=utf-8'
-            },
+  const token =
+    String(
+      sessionResult &&
+      sessionResult.data &&
+      sessionResult.data.sessionToken ||
+      sessionResult &&
+      sessionResult.sessionToken ||
+      ''
+    ).trim();
 
-          body:
-            JSON.stringify({
-              action:
-                'practiceSession.create',
+  const expiresAtText =
+    String(
+      sessionResult &&
+      sessionResult.data &&
+      sessionResult.data.expiresAt ||
+      sessionResult &&
+      sessionResult.expiresAt ||
+      ''
+    ).trim();
 
-              idToken:
-                String(idToken || '')
-            }),
-
-          redirect:
-            'follow',
-
-          cache:
-            'no-store'
-        }
-      ),
-      20000,
-      'ログインセッションの作成がタイムアウトしました。'
+  const expiresAtMs =
+    Date.parse(
+      expiresAtText
     );
 
-  const text =
-    await response.text();
+  const accountFingerprint =
+    await getCurrentLineAccountFingerprint();
+
+  if(
+    !token ||
+    !accountFingerprint ||
+    !Number.isFinite(expiresAtMs)
+  ){
+    return;
+  }
+
+  const cacheData = {
+    sessionToken:
+      token,
+
+    accountFingerprint:
+      accountFingerprint,
+
+    savedAtMs:
+      Date.now(),
+
+    expiresAtMs:
+      expiresAtMs
+  };
+
+  try{
+    localStorage.setItem(
+      PRACTICE_SESSION_CACHE_KEY,
+      JSON.stringify(cacheData)
+    );
+  }catch(_){}
+}
+
+
+function clearCachedPlayerSession(){
+
+  try{
+    localStorage.removeItem(
+      PRACTICE_SESSION_CACHE_KEY
+    );
+  }catch(_){}
+}
+
+
+async function getCurrentLineAccountFingerprint(){
+
+  if(
+    !window.liff ||
+    typeof liff.getDecodedIDToken !==
+      'function'
+  ){
+    return '';
+  }
+
+  const decoded =
+    liff.getDecodedIDToken();
+
+  const lineUserId =
+    String(
+      decoded &&
+      decoded.sub ||
+      ''
+    ).trim();
+
+  if(!lineUserId){
+    return '';
+  }
+
+  return sha256Hex(
+    lineUserId
+  );
+}
+
+
+async function sha256Hex(value){
+
+  if(
+    !window.crypto ||
+    !window.crypto.subtle
+  ){
+    return '';
+  }
+
+  const bytes =
+    new TextEncoder()
+      .encode(
+        String(value || '')
+      );
+
+  const hash =
+    await crypto.subtle.digest(
+      'SHA-256',
+      bytes
+    );
+
+  return Array.from(
+    new Uint8Array(hash)
+  )
+    .map(
+      byte =>
+        byte
+          .toString(16)
+          .padStart(2,'0')
+    )
+    .join('');
+}
+
+
+async function createPlayerSession(idTokenValue){
+
+  const response = await withTimeout(
+    fetch(
+      GAS_URL,
+      {
+        method:'POST',
+        headers:{
+          'Content-Type':
+            'text/plain;charset=UTF-8'
+        },
+        body:JSON.stringify({
+          action:'practiceSession.create',
+          idToken:String(idTokenValue || '')
+        }),
+        redirect:'follow',
+        cache:'no-store',
+        credentials:'omit'
+      }
+    ),
+    25000,
+    'ログインセッションの作成がタイムアウトしました。'
+  );
+
+  const text = await response.text();
 
   let data;
 
   try{
-    data =
-      JSON.parse(
-        text
-      );
+    data = JSON.parse(text);
   }catch(_){
     throw new Error(
       'ログインセッションの応答を確認できませんでした。'
@@ -895,1170 +2966,369 @@ async function createPlayerSession(
 
   if(
     !response.ok ||
-    !isOk(data)
+    !data ||
+    data.status === 'error' ||
+    data.success === false
   ){
     throw new Error(
-      getMessage(data) ||
-      'ログインセッションを作成できませんでした。'
+      data && data.message
+        ? data.message
+        : 'ログインセッションを作成できませんでした。'
     );
   }
 
   return data;
 }
 
-async function postApi(
-  payload,
-  timeoutMs,
-  timeoutMessage
+async function postOpaque(payload){
+
+  await withTimeout(
+    fetch(
+      GAS_URL,
+      {
+        method:'POST',
+        mode:'no-cors',
+        headers:{
+          'Content-Type':
+            'text/plain;charset=UTF-8'
+        },
+        body:JSON.stringify(payload),
+        cache:'no-store',
+        credentials:'omit'
+      }
+    ),
+    20000,
+    'サーバーへの送信がタイムアウトしました。'
+  );
+}
+
+function jsonp(
+  params,
+  timeoutMs=20000
 ){
-  const response =
-    await withTimeout(
-      fetch(
-        GAS_URL,
-        {
-          method:
-            'POST',
 
-          headers:
-            {
-              'Content-Type':
-                'text/plain;charset=utf-8'
-            },
+  return new Promise(
+    (resolve,reject)=>{
 
-          body:
-            JSON.stringify(payload || {}),
+      const callback =
+        '__ninjaPractice_' +
+        Date.now() +
+        '_' +
+        Math.random()
+          .toString(36)
+          .slice(2);
 
-          redirect:
-            'follow',
+      const script =
+        document.createElement('script');
 
-          cache:
-            'no-store'
+      const timer =
+        setTimeout(
+          ()=>{
+
+            cleanup();
+
+            reject(
+              new Error(
+                'サーバー通信がタイムアウトしました。'
+              )
+            );
+
+          },
+          timeoutMs
+        );
+
+      function cleanup(){
+
+        clearTimeout(timer);
+
+        try{
+          delete window[callback];
+        }catch(_){}
+
+        if(script.parentNode){
+          script.parentNode.removeChild(script);
         }
-      ),
-      timeoutMs || 20000,
-      timeoutMessage || 'サーバー通信がタイムアウトしました。'
-    );
+      }
 
-  const text =
-    await response.text();
+      window[callback] =
+        data=>{
 
-  let data;
+          cleanup();
+          resolve(data);
 
-  try{
-    data =
-      JSON.parse(
-        text
-      );
-  }catch(_){
-    throw new Error(
-      'サーバー応答を確認できませんでした。'
-    );
-  }
+        };
 
-  if(
-    !response.ok ||
-    !isOk(data)
-  ){
-    throw new Error(
-      getMessage(data) ||
-      'サーバー通信に失敗しました。'
-    );
-  }
+      const query =
+        new URLSearchParams({
+          ...params,
+          callback,
+          _ts:String(Date.now())
+        }).toString();
 
-  return data;
-}
+      script.src =
+        GAS_URL +
+        '?' +
+        query;
 
-function renderFromCache(
-  cache
-){
-  render(
-    {
-      mode:
-        cache.mode || 'cache',
+      script.onerror =
+        ()=>{
 
-      player:
-        cache.player || {},
+          cleanup();
 
-      records:
-        Array.isArray(cache.records)
-          ? cache.records
-          : [],
+          reject(
+            new Error(
+              'Apps Scriptへ接続できませんでした。'
+            )
+          );
 
-      feedback:
-        cache.feedback || null,
+        };
 
-      fetchedAt:
-        cache.fetchedAt || cache.savedAt || ''
-    },
-    {
-      cached:
-        true
+      document.head.appendChild(script);
+
     }
   );
 }
 
-function renderFresh(
-  data
-){
-  render(
-    data,
-    {
-      cached:
-        false
-    }
-  );
-}
+/* =========================
+   UI
+========================= */
 
-function render(
-  data,
-  options
-){
-  const source =
-    data || {};
-
-  currentViewMode =
-    String(
-      source.mode || ''
-    );
-
-  const playerForMode =
-    normalizePlayer(
-      source.player || {}
-    );
-
-  currentGuardianPlayerId =
-    currentViewMode === 'guardian'
-      ? String(
-          playerForMode.playerId || ''
-        ).trim()
-      : '';
-
-  const player =
-    normalizePlayer(
-      source.player || {}
-    );
-
-  const records =
-    Array.isArray(source.records)
-      ? source.records
-      : [];
+function updatePlayerChip(){
 
   const chip =
     document.getElementById(
       'playerChip'
     );
 
-  const chipText =
-    [
-      player.playerName || player.name,
-      player.category
-    ]
-      .filter(Boolean)
-      .join(' / ');
-
-  if(chipText){
-    chip.textContent =
-      chipText;
-
-    chip.style.display =
-      'block';
-  }else{
-    chip.textContent =
-      '';
+  if(!player){
 
     chip.style.display =
       'none';
-  }
-
-  const adviceDate =
-    document.getElementById(
-      'adviceDate'
-    );
-
-  const adviceText =
-    document.getElementById(
-      'adviceText'
-    );
-
-  const adviceCoach =
-    document.getElementById(
-      'adviceCoach'
-    );
-
-  if(!records.length){
-    adviceDate.classList.add(
-      'hidden'
-    );
-
-    adviceCoach.classList.add(
-      'hidden'
-    );
-
-    const titleEl =
-      document.querySelector(
-        '#mainView .card .title'
-      );
-
-    const eyebrowEl =
-      document.querySelector(
-        '#mainView .card .eyebrow'
-      );
-
-    if (
-      source.mode === 'guardian'
-    ) {
-      if (titleEl) {
-        titleEl.textContent =
-          '選手カルテ';
-      }
-
-      if (eyebrowEl) {
-        eyebrowEl.textContent =
-          'PLAYER CARD';
-      }
-
-      adviceText.textContent =
-        '身体測定・アジリティ・シュート・コーチ所見を確認できます。';
-    } else {
-      if (titleEl) {
-        titleEl.textContent =
-          'コーチからのアドバイス';
-      }
-
-      if (eyebrowEl) {
-        eyebrowEl.textContent =
-          'COACH ADVICE';
-      }
-
-      adviceText.textContent =
-        'まだコーチからのアドバイスはありません。';
-    }
-
-  }else{
-    const titleEl =
-      document.querySelector(
-        '#mainView .card .title'
-      );
-
-    const eyebrowEl =
-      document.querySelector(
-        '#mainView .card .eyebrow'
-      );
-
-    if (titleEl) {
-      titleEl.textContent =
-        'コーチからのアドバイス';
-    }
-
-    if (eyebrowEl) {
-      eyebrowEl.textContent =
-        'COACH ADVICE';
-    }
-
-    const latestRecord =
-      records
-        .slice()
-        .sort(function(a,b){
-          const aTime =
-            Date.parse(
-              String(
-                a.updatedAt ||
-                a.createdAt ||
-                ''
-              ).replace(/\//g,'-')
-            ) || 0;
-
-          const bTime =
-            Date.parse(
-              String(
-                b.updatedAt ||
-                b.createdAt ||
-                ''
-              ).replace(/\//g,'-')
-            ) || 0;
-
-          return bTime - aTime;
-        })[0];
-
-    adviceDate.textContent =
-      formatDate(
-        latestRecord.updatedAt ||
-        latestRecord.createdAt
-      );
-
-    adviceDate.classList.remove(
-      'hidden'
-    );
-
-    adviceText.textContent =
-      latestRecord.adviceText || '';
-
-    adviceCoach.textContent =
-      'コーチ：' +
-      (
-        latestRecord.createdBy ||
-        'NINJA AIRS'
-      );
-
-    adviceCoach.classList.remove(
-      'hidden'
-    );
-  }
-
-  renderLatestFeedback(
-    source.feedback || null
-  );
-
-  const button =
-    document.getElementById(
-      'playerCardBtn'
-    );
-
-  if (button) {
-    button.disabled =
-      false;
-
-    button.textContent =
-      '選手カルテを見る';
-
-    button.classList.remove(
-      'hidden'
-    );
-
-    button.setAttribute(
-      'aria-hidden',
-      'false'
-    );
-  }
-
-  showOnly(
-    'mainView'
-  );
-
-  if(
-    options &&
-    options.cached
-  ){
-    setSyncStatus(
-      '',
-      ''
-    );
-  }
-}
-
-function renderLatestFeedback(
-  feedback
-){
-  const card =
-    document.getElementById(
-      'latestFeedbackCard'
-    );
-
-  const content =
-    document.getElementById(
-      'latestFeedbackContent'
-    );
-
-  if(
-    !feedback ||
-    !String(
-      feedback.feedbackText || ''
-    ).trim()
-  ){
-    card.classList.add(
-      'hidden'
-    );
-
-    content.innerHTML =
-      '';
 
     return;
   }
 
-  const sections =
-    parseFeedbackSections(
-      feedback.feedbackText
-    );
+  chip.textContent =
+    `${player.playerName || ''} / ${player.category || ''}`;
 
-  const items =
-    [
-      [
-        'いいところ',
-        sections.good
-      ],
-      [
-        '改善点',
-        sections.improvement
-      ],
-      [
-        '方向性',
-        sections.direction
-      ],
-      [
-        '総合所見',
-        sections.summary
-      ]
-    ]
-      .filter(function(item){
-        return item[1];
-      });
-
-  if(items.length){
-    content.innerHTML =
-      '<div class="feedback-grid">' +
-      items.map(function(item){
-        return (
-          '<div class="feedback-block">' +
-            '<small>' +
-              esc(item[0]) +
-            '</small>' +
-            '<div>' +
-              esc(item[1]) +
-            '</div>' +
-          '</div>'
-        );
-      }).join('') +
-      '</div>' +
-      (
-        feedback.savedAt
-          ? '<div class="feedback-date">更新：' +
-              esc(
-                formatDate(
-                  feedback.savedAt
-                )
-              ) +
-            '</div>'
-          : ''
-      );
-
-  }else{
-    content.innerHTML =
-      '<div class="feedback-block">' +
-        '<div>' +
-          esc(
-            feedback.feedbackText
-          ) +
-        '</div>' +
-      '</div>' +
-      (
-        feedback.savedAt
-          ? '<div class="feedback-date">更新：' +
-              esc(
-                formatDate(
-                  feedback.savedAt
-                )
-              ) +
-            '</div>'
-          : ''
-      );
-  }
-
-  card.classList.remove(
-    'hidden'
-  );
+  chip.style.display =
+    'block';
 }
 
-function parseFeedbackSections(
-  text
-){
-  const source =
-    String(
-      text || ''
-    )
-      .replace(/\r\n/g,'\n')
-      .trim();
+function showOnly(id){
 
-  const result =
-    {
-      good:
-        '',
+  [
+    'loadingView',
+    'checkInView',
+    'checkOutView',
+    'doneView',
+    'historyView',
+    'errorView'
+  ].forEach(
+    viewId=>{
 
-      improvement:
-        '',
+      document
+        .getElementById(viewId)
+        .classList.toggle(
+          'hidden',
+          viewId !== id
+        );
 
-      direction:
-        '',
-
-      summary:
-        ''
-    };
-
-  const matches =
-    [
-      ...source.matchAll(
-        /(?:^|\n)\s*#{0,3}\s*(いいところ|改善点|方向性|総合所見)\s*(?:\n|$)/g
-      )
-    ];
-
-  if(!matches.length){
-    return result;
-  }
-
-  matches.forEach(function(match,index){
-    const start =
-      match.index +
-      match[0].length;
-
-    const end =
-      index + 1 < matches.length
-        ? matches[index + 1].index
-        : source.length;
-
-    const body =
-      source
-        .slice(
-          start,
-          end
-        )
-        .trim();
-
-    if(match[1] === 'いいところ'){
-      result.good =
-        body;
     }
+  );
 
-    if(match[1] === '改善点'){
-      result.improvement =
-        body;
-    }
+  currentMainView = id;
 
-    if(match[1] === '方向性'){
-      result.direction =
-        body;
-    }
-
-    if(match[1] === '総合所見'){
-      result.summary =
-        body;
-    }
+  window.scrollTo({
+    top:0,
+    behavior:'auto'
   });
-
-  return result;
 }
 
-function readGuardianSelectedPlayerId(){
-  if(!currentCacheScope){
-    return '';
-  }
+function showFatal(message){
 
-  const scopedKey =
-    GUARDIAN_DEFAULT_PLAYER_ID_KEY +
-    ':' +
-    currentCacheScope;
-
-  const scopedValue =
-    getLocalStorageValue(
-      scopedKey
-    );
-
-  if(scopedValue){
-    return scopedValue;
-  }
-
-  return getLocalStorageValue(
-    GUARDIAN_DEFAULT_PLAYER_ID_KEY
+  setText(
+    'errorText',
+    friendlyError(message)
   );
+
+  showOnly('errorView');
 }
 
-async function createCacheScopeFromIdToken(
-  idToken
-){
-  const payload =
-    decodeJwtPayload(
-      idToken
-    );
-
-  const subject =
-    String(
-      payload.sub ||
-      payload.userId ||
-      ''
-    ).trim();
-
-  if(!subject){
-    return '';
-  }
-
-  return await sha256Hex(
-    subject
-  );
-}
-
-function decodeJwtPayload(
-  token
-){
-  const parts =
-    String(
-      token || ''
-    ).split('.');
-
-  if(parts.length < 2){
-    return {};
-  }
-
-  try{
-    const base64 =
-      parts[1]
-        .replace(/-/g,'+')
-        .replace(/_/g,'/');
-
-    const padded =
-      base64 +
-      '='.repeat(
-        (
-          4 - base64.length % 4
-        ) % 4
-      );
-
-    const binary =
-      atob(
-        padded
-      );
-
-    const bytes =
-      Uint8Array.from(
-        binary,
-        function(char){
-          return char.charCodeAt(0);
-        }
-      );
-
-    const json =
-      new TextDecoder()
-        .decode(
-          bytes
-        );
-
-    return JSON.parse(
-      json
-    );
-
-  }catch(_){
-    return {};
-  }
-}
-
-async function sha256Hex(
-  value
-){
-  const source =
-    String(
-      value || ''
-    );
-
-  try{
-    if(
-      window.crypto &&
-      window.crypto.subtle &&
-      window.TextEncoder
-    ){
-      const data =
-        new TextEncoder()
-          .encode(
-            source
-          );
-
-      const hash =
-        await window.crypto.subtle.digest(
-          'SHA-256',
-          data
-        );
-
-      return Array
-        .from(
-          new Uint8Array(hash)
-        )
-        .map(function(byte){
-          return byte
-            .toString(16)
-            .padStart(2,'0');
-        })
-        .join('');
-    }
-  }catch(_){}
-
-  return fallbackHash(
-    source
-  );
-}
-
-function fallbackHash(
-  source
-){
-  let hash =
-    5381;
+function friendlyError(message){
 
   const text =
-    String(
-      source || ''
-    );
+    String(message || '');
 
-  for(let i = 0; i < text.length; i += 1){
-    hash =
-      ((hash << 5) + hash) ^
-      text.charCodeAt(i);
-  }
-
-  return String(
-    hash >>> 0
-  );
-}
-
-function getFeedbackCacheKey(){
-  if(!currentCacheScope){
-    return '';
-  }
-
-  return FEEDBACK_CACHE_PREFIX +
-    currentCacheScope;
-}
-
-function readCachedFeedback(){
-  const key =
-    getFeedbackCacheKey();
-
-  if(!key){
-    return null;
-  }
-
-  const raw =
-    getLocalStorageValue(
-      key
-    );
-
-  if(!raw){
-    return null;
-  }
-
-  try{
-    const cache =
-      JSON.parse(
-        raw
-      );
-
-    if(
-      !cache ||
-      cache.version !== CACHE_VERSION ||
-      !cache.savedAt ||
-      Date.now() - Number(cache.savedAt) > CACHE_TTL_MS
-    ){
-      localStorage.removeItem(
-        key
-      );
-
-      return null;
-    }
-
-    return cache.data || null;
-
-  }catch(_){
-    localStorage.removeItem(
-      key
-    );
-
-    return null;
-  }
-}
-
-function saveCachedFeedback(
-  data
-){
-  const key =
-    getFeedbackCacheKey();
-
-  if(!key || !data){
-    return;
-  }
-
-  const safeData =
-    {
-      mode:
-        String(data.mode || ''),
-
-      player:
-        normalizePlayer(
-          data.player || {}
-        ),
-
-      records:
-        Array.isArray(data.records)
-          ? data.records.slice(0,5)
-          : [],
-
-      feedback:
-        normalizeFeedback(
-          data.feedback || null
-        ),
-
-      fetchedAt:
-        data.fetchedAt ||
-        new Date().toISOString()
-    };
-
-  try{
-    localStorage.setItem(
-      key,
-      JSON.stringify({
-        version:
-          CACHE_VERSION,
-
-        savedAt:
-          Date.now(),
-
-        data:
-          safeData
-      })
-    );
-  }catch(error){
-    console.warn(
-      '[NINJA Feedback cache save skipped]',
-      error
-    );
-  }
-}
-
-function normalizePlayer(
-  player
-){
-  const source =
-    player || {};
-
-  return {
-    playerId:
-      String(
-        source.playerId || ''
-      ).trim(),
-
-    playerName:
-      String(
-        source.playerName ||
-        source.name ||
-        ''
-      ).trim(),
-
-    name:
-      String(
-        source.name ||
-        source.playerName ||
-        ''
-      ).trim(),
-
-    category:
-      String(
-        source.category || ''
-      ).trim()
-  };
-}
-
-function normalizeFeedback(
-  feedback
-){
-  if(!feedback){
-    return null;
-  }
-
-  const source =
-    feedback || {};
-
-  const feedbackText =
-    String(
-      source.feedbackText ||
-      source.text ||
-      source.content ||
-      ''
-    ).trim();
-
-  if(!feedbackText){
-    return null;
-  }
-
-  return {
-    feedbackText:
-      feedbackText,
-
-    savedAt:
-      String(
-        source.savedAt ||
-        source.updatedAt ||
-        source.createdAt ||
-        ''
-      ).trim()
-  };
-}
-
-function isOk(
-  result
-){
-  return !!(
-    result &&
-    (
-      result.status === 'ok' ||
-      result.ok === true ||
-      result.success === true
-    )
-  );
-}
-
-function unwrapData(
-  result
-){
   if(
-    result &&
-    result.data &&
-    typeof result.data === 'object'
+    text.includes(
+      'LINEに連携された選手'
+    ) ||
+    text.includes(
+      '連携されていません'
+    )
   ){
-    return result.data;
+
+    return 'このLINEアカウントは選手情報と連携されていません。コーチへ連絡してください。';
   }
 
-  return result || {};
+  if(
+    text.includes('LINE認証')
+  ){
+
+    return 'LINE認証を確認できませんでした。LINEからもう一度開いてください。';
+  }
+
+  return text ||
+    'エラーが発生しました。';
 }
 
-function getMessage(
-  result
+function showMessage(
+  message,
+  isError
 ){
+
+  const el =
+    document.getElementById(
+      'message'
+    );
+
+  el.textContent =
+    message;
+
+  el.className =
+    'message ' +
+    (
+      isError
+        ? 'error'
+        : 'ok'
+    );
+
+  clearTimeout(
+    showMessage.timer
+  );
+
+  showMessage.timer =
+    setTimeout(
+      hideMessage,
+      3500
+    );
+}
+
+function hideMessage(){
+
+  const el =
+    document.getElementById(
+      'message'
+    );
+
+  el.className =
+    'message';
+
+  el.textContent = '';
+}
+
+function closeLiff(){
+
+  if(
+    window.liff &&
+    liff.isInClient()
+  ){
+
+    liff.closeWindow();
+
+  }else{
+
+    window.close();
+
+  }
+}
+
+/* =========================
+   共通
+========================= */
+
+function formatDateJa(value){
+
+  const m =
+    String(value || '')
+      .match(
+        /^(\d{4})-(\d{2})-(\d{2})$/
+      );
+
+  if(!m){
+    return value || '';
+  }
+
+  const d =
+    new Date(
+      Number(m[1]),
+      Number(m[2])-1,
+      Number(m[3])
+    );
+
+  const weeks =
+    [
+      '日',
+      '月',
+      '火',
+      '水',
+      '木',
+      '金',
+      '土'
+    ];
+
+  return (
+    `${Number(m[2])}月` +
+    `${Number(m[3])}日` +
+    `（${weeks[d.getDay()]}）`
+  );
+}
+
+function scoreText(value){
+
+  const n =
+    Number(value);
+
+  return (
+    n >= 1 &&
+    n <= 5
+  )
+    ? `${n} / 5`
+    : '未記録';
+}
+
+function value(id){
+
   return String(
-    result &&
-    result.message
-      ? result.message
-      : ''
+    document
+      .getElementById(id)
+      .value || ''
   ).trim();
 }
 
-function showError(
-  message
+function setText(
+  id,
+  text
 ){
-  const text =
-    String(
-      message || ''
-    );
-
-  let friendly =
-    text;
-
-  if(
-    text.includes('LINE') &&
-    (
-      text.includes('連携') ||
-      text.includes('選手')
-    )
-  ){
-    friendly =
-      'このLINEアカウントは選手情報と連携されていません。必要な場合は、選手または保護者登録を行ってください。';
-
-  }else if(text.includes('認証')){
-    friendly =
-      'LINE認証を確認できませんでした。LINEからもう一度開いてください。';
-  }
 
   document
-    .getElementById('errorText')
+    .getElementById(id)
     .textContent =
-      friendly;
+      text == null
+        ? ''
+        : String(text);
+}
 
-  showOnly(
-    'errorView'
+function sleep(ms){
+
+  return new Promise(
+    resolve=>
+      setTimeout(
+        resolve,
+        ms
+      )
   );
-}
-
-function showOnly(
-  id
-){
-  [
-    'loadingView',
-    'mainView',
-    'errorView'
-  ].forEach(function(viewId){
-    document
-      .getElementById(viewId)
-      .classList
-      .toggle(
-        'hidden',
-        viewId !== id
-      );
-  });
-
-  window.scrollTo({
-    top:
-      0,
-
-    behavior:
-      'instant'
-  });
-}
-
-function setLoading(
-  message
-){
-  const el =
-    document.getElementById(
-      'loadingText'
-    );
-
-  if(el){
-    el.textContent =
-      message || '';
-  }
-}
-
-function setSyncStatus(
-  message,
-  kind
-){
-  const el =
-    document.getElementById(
-      'syncStatus'
-    );
-
-  if(!el){
-    return;
-  }
-
-  el.textContent =
-    message || '';
-
-  el.classList.toggle(
-    'hidden',
-    !message
-  );
-
-  el.classList.toggle(
-    'warning',
-    kind === 'warning'
-  );
-
-  el.classList.toggle(
-    'error',
-    kind === 'error'
-  );
-}
-
-function jsonp(
-  params,
-  timeoutMs
-){
-  return new Promise(function(resolve,reject){
-    const callback =
-      '__ninjaFeedback_' +
-      Date.now() +
-      '_' +
-      Math.random()
-        .toString(36)
-        .slice(2);
-
-    const script =
-      document.createElement(
-        'script'
-      );
-
-    const timer =
-      setTimeout(function(){
-        cleanup();
-
-        reject(
-          new Error(
-            'サーバー通信がタイムアウトしました。'
-          )
-        );
-      },timeoutMs || 16000);
-
-    function cleanup(){
-      clearTimeout(
-        timer
-      );
-
-      try{
-        delete window[callback];
-      }catch(_){}
-
-      if(script.parentNode){
-        script.parentNode.removeChild(
-          script
-        );
-      }
-    }
-
-    window[callback] =
-      function(data){
-        cleanup();
-        resolve(data);
-      };
-
-    const query =
-      new URLSearchParams(
-        Object.assign(
-          {},
-          params,
-          {
-            callback:
-              callback,
-
-            _ts:
-              String(Date.now())
-          }
-        )
-      ).toString();
-
-    script.src =
-      GAS_URL +
-      '?' +
-      query;
-
-    script.onerror =
-      function(){
-        cleanup();
-
-        reject(
-          new Error(
-            'Apps Scriptへ接続できませんでした。'
-          )
-        );
-      };
-
-    document.head.appendChild(
-      script
-    );
-  });
-}
-
-function formatDate(
-  value
-){
-  const text =
-    String(
-      value || ''
-    ).trim();
-
-  const match =
-    text.match(
-      /^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})(?:\s+(\d{1,2}):(\d{2}))?/
-    );
-
-  if(!match){
-    return text;
-  }
-
-  const month =
-    Number(
-      match[2]
-    );
-
-  const day =
-    Number(
-      match[3]
-    );
-
-  return match[4]
-    ? month +
-        '月' +
-        day +
-        '日 ' +
-        match[4] +
-        ':' +
-        match[5]
-    : month +
-        '月' +
-        day +
-        '日';
 }
 
 function withTimeout(
@@ -2066,36 +3336,25 @@ function withTimeout(
   ms,
   message
 ){
+
   return Promise.race([
     promise,
-    new Promise(function(_,reject){
-      setTimeout(function(){
-        reject(
-          new Error(
-            message
-          )
-        );
-      },ms);
-    })
+
+    new Promise(
+      (_,reject)=>
+        setTimeout(
+          ()=>
+            reject(
+              new Error(message)
+            ),
+          ms
+        )
+    )
   ]);
 }
 
-function getLocalStorageValue(
-  key
-){
-  try{
-    return String(
-      localStorage.getItem(key) ||
-      ''
-    ).trim();
-  }catch(_){
-    return '';
-  }
-}
+function esc(value){
 
-function esc(
-  value
-){
   return String(
     value == null
       ? ''
@@ -2107,6 +3366,8 @@ function esc(
     .replace(/"/g,'&quot;')
     .replace(/'/g,'&#39;');
 }
+
 </script>
+
 </body>
 </html>
