@@ -825,10 +825,14 @@
       </div>
 
       <div id="commitmentStatus" class="commitment-status">
-        読み込み中…
+        今のこだわりはまだありません。
       </div>
 
-      <div id="commitmentActiveList" class="commitment-list"></div>
+      <div id="commitmentActiveList" class="commitment-list">
+        <div class="commitment-empty">
+          今のこだわりはまだありません。必要な時だけ「＋ 新しく決める」を開いてください。
+        </div>
+      </div>
 
       <details class="commitment-create">
         <summary>＋ 新しく決める</summary>
@@ -1262,7 +1266,7 @@ const LIFF_ID = '2010789200-zlXQJwx5';
 const GAS_URL =
   'https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
 
-const PRACTICE_CHECK_PAGE_VERSION = 'v1.5-practice-commitment-local-cache';
+const PRACTICE_CHECK_PAGE_VERSION = 'v1.6-practice-commitment-no-loading-text';
 
 const HISTORY_LIMIT = 10;
 
@@ -1466,11 +1470,12 @@ async function reloadToday(options){
   todayState = result;
 
   updatePlayerChip();
+
+  await restoreCachedPracticeCommitments();
+
   renderToday(result);
 
   await restoreFormDraft();
-
-  await restoreCachedPracticeCommitments();
 
   loadPracticeCommitments({
     silent:
