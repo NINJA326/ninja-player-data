@@ -1262,7 +1262,7 @@ const LIFF_ID = '2010789200-zlXQJwx5';
 const GAS_URL =
   'https://script.google.com/macros/s/AKfycbxbnca_UIigFLiSfTGOtlU4871H_cm9rHy8iutFT5P9HJR5w3TBvBoA0IZ5fQWkUJRw/exec';
 
-const PRACTICE_CHECK_PAGE_VERSION = 'v1.3-practice-commitment-compact-growth-list';
+const PRACTICE_CHECK_PAGE_VERSION = 'v1.4-practice-commitment-growth-date-range';
 
 const HISTORY_LIMIT = 10;
 
@@ -2328,7 +2328,7 @@ function renderPracticeCommitments(){
             <div class="commitment-text">${esc(record.title)}</div>
             <div class="commitment-meta">
               できた日：${esc(commitmentCompletedDateLabel(record))}
-              / 期間：${esc(commitmentSpanLabel(record))}
+              / 期間：${esc(commitmentDateRangeLabel(record))}
             </div>
           </div>
         `)
@@ -2498,18 +2498,31 @@ function openCommitmentGrowthList(){
 }
 
 
-function commitmentCompletedDateLabel(record){
+function commitmentDateRangeLabel(record){
+
+  const start =
+    commitmentDateOnlyLabel(
+      record && record.startDate
+    );
+
+  const end =
+    commitmentCompletedDateLabel(record);
+
+  if(
+    start &&
+    end
+  ){
+    return `${start}〜${end}`;
+  }
+
+  return start || end || '';
+}
+
+
+function commitmentDateOnlyLabel(value){
 
   const raw =
-    String(
-      record &&
-      (
-        record.completedAt ||
-        record.updatedAt ||
-        ''
-      ) ||
-      ''
-    ).trim();
+    String(value || '').trim();
 
   if(!raw){
     return '';
@@ -2528,6 +2541,19 @@ function commitmentCompletedDateLabel(record){
   }
 
   return `${Number(m[2])}月${Number(m[3])}日`;
+}
+
+
+function commitmentCompletedDateLabel(record){
+
+  return commitmentDateOnlyLabel(
+    record &&
+    (
+      record.completedAt ||
+      record.updatedAt ||
+      ''
+    )
+  );
 }
 
 
